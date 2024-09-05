@@ -1,12 +1,16 @@
 from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QButtonGroup
-from PySide6.QtCore import Qt, QEvent
-from PySide6.QtGui import QPainter, QColor, QWheelEvent
+from PySide6.QtCore import Qt, QPoint, QPointF
+from PySide6.QtGui import QPainter, QColor, QWheelEvent, QMouseEvent
+import numpy as np
 
 class GridCanvas(QWidget):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.grid_size = 100  # Size of each grid cell
         self.zoom_factor = 1.0  # Initial zoom factor
+        self.is_grabbed = True  # Track if grab mode is enabled
+        self.last_mouse_pos = None  # Track the last mouse position for dragging
+        self.offset = QPointF(0, 0)  # Offset for grid dragging
 
     def paintEvent(self, event):
         painter = QPainter(self)
@@ -19,24 +23,61 @@ class GridCanvas(QWidget):
         # Apply zoom factor to grid size
         zoomed_grid_size = self.grid_size * self.zoom_factor
 
-        # Draw vertical grid lines around cursor position
-        for x in range(0, self.width(), int(zoomed_grid_size)):
+        # Apply offset to shift the grid based on dragging
+        x_offset = self.offset.x()
+        y_offset = self.offset.y()
+
+        # Draw vertical grid lines
+        for x in np.arange(-x_offset % zoomed_grid_size, self.width(), zoomed_grid_size):
             painter.drawLine(x, 0, x, self.height())
 
-        # Draw horizontal grid lines around cursor position
-        for y in range(0, self.height(), int(zoomed_grid_size)):
+        # Draw horizontal grid lines
+        for y in np.arange(-y_offset % zoomed_grid_size, self.height(), zoomed_grid_size):
             painter.drawLine(0, y, self.width(), y)
 
     def wheelEvent(self, event: QWheelEvent):
-        # Zoom in or out based on the wheel movement
-        zoom_delta = event.angleDelta().y() / 120  # Standardized wheel delta value
-        zoom_step = 0.1  # Amount of zoom per step
-        new_zoom_factor = self.zoom_factor + (zoom_step * zoom_delta)
-        
+        # Get the mouse position relative to the widget
+        mouse_pos = event.position()
+
+        # Convert the mouse position to the grid's coordinate system before zoom
+        grid_pos_before_zoom = (mouse_pos + self.offset) / (self.grid_size * self.zoom_factor)
+
+        # Calculate the zoom delta based on the wheel movement
+        zoom_delta = event.angleDelta().y() / 120
+        zoom_step = 0.1
+        new_zoom_factor = self.zoom_factor + zoom_step * zoom_delta
+
         # Ensure the zoom factor is within reasonable bounds
         if 0.1 <= new_zoom_factor <= 5.0:
+
+            grid_pos_after_zoom = (mouse_pos + self.offset) / (self.grid_size * new_zoom_factor)
+
+            # Adjust the offset to keep the grid under the mouse stationary
+            self.offset += (grid_pos_before_zoom - grid_pos_after_zoom) * self.grid_size * new_zoom_factor
+
+            # Set the new zoom factor
             self.zoom_factor = new_zoom_factor
-            self.update()  # Trigger a redraw with the new zoom factor
+
+            # Trigger a redraw
+            self.update()
+
+    def mousePressEvent(self, event: QMouseEvent):
+        # Start dragging if the left mouse button is pressed
+        if event.button() == Qt.LeftButton and self.is_grabbed:
+            self.last_mouse_pos = event.position()
+
+    def mouseMoveEvent(self, event: QMouseEvent):
+        # Handle grid dragging when "Grab" is active
+        if self.is_grabbed and self.last_mouse_pos:
+            delta = event.position() - self.last_mouse_pos
+            self.offset -= delta  # Move the grid by the delta
+            self.last_mouse_pos = event.position()  # Update the last mouse position
+            self.update()  # Redraw the grid with the new offset
+
+    def mouseReleaseEvent(self, event: QMouseEvent):
+        # Stop dragging when the mouse button is released
+        if event.button() == Qt.LeftButton and self.is_grabbed:
+            self.last_mouse_pos = None
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -80,11 +121,11 @@ class MainWindow(QMainWindow):
             self.buttons[0].setChecked(True)
 
         # Create canvas widget
-        canvas = GridCanvas()
+        self.canvas = GridCanvas()
 
         # Add widgets to the layout
         layout.addWidget(self.control_panel)
-        layout.addWidget(canvas)
+        layout.addWidget(self.canvas)
 
         self.setWindowTitle("Circuit Builder")
         self.resize(800, 600)
@@ -94,12 +135,15 @@ class MainWindow(QMainWindow):
 
     def grab_action(self):
         print("Grab selected")
+        self.canvas.is_grabbed = True  # Enable grab mode
 
     def wire_action(self):
         print("Wire selected")
+        self.canvas.is_grabbed = False  # Disable grab mode for wire placement
 
     def beamsplitter_action(self):
         print("Beam splitter selected")
+        self.canvas.is_grabbed = False  # Disable grab mode for beam splitter
 
 if __name__ == "__main__":
     app = QApplication([])
