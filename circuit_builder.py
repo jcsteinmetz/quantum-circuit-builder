@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton
+from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QButtonGroup
 from PySide6.QtCore import Qt, QEvent
 from PySide6.QtGui import QPainter, QColor, QWheelEvent
 
@@ -52,6 +52,29 @@ class MainWindow(QMainWindow):
         self.control_panel.setLayout(control_panel_layout)
         self.control_panel.setFixedWidth(150)  # Adjust width as needed
 
+        # Create buttons and button group
+        self.button_group = QButtonGroup()
+        self.button_group.setExclusive(True)  # Ensure only one button is toggled at a time
+
+        # Create button labels and actions
+        button_labels = [("Grab", self.grab_action),
+                         ("Wire", self.wire_action),
+                         ("Beam splitter", self.beamsplitter_action)]
+
+        # Create buttons and connect them to actions
+        self.buttons = []
+        for label, action in button_labels:
+            button = QPushButton(label)
+            button.setCheckable(True)
+            self.button_group.addButton(button)
+            control_panel_layout.addWidget(button)
+            self.buttons.append(button)
+            button.clicked.connect(action)  # Connect button to the corresponding action
+
+        # Set the first button to be toggled by default
+        if self.buttons:
+            self.buttons[0].setChecked(True)
+
         # Create canvas widget
         canvas = GridCanvas()
         canvas.setStyleSheet("background-color: white;")  # Set background color to white
@@ -60,11 +83,20 @@ class MainWindow(QMainWindow):
         layout.addWidget(self.control_panel)
         layout.addWidget(canvas)
 
-        self.setWindowTitle("Circuit builder")
+        self.setWindowTitle("Circuit Builder")
         self.resize(800, 600)
 
         # Install event filter to detect clicks anywhere
         self.installEventFilter(self)
+
+    def grab_action(self):
+        print("Grab selected")
+
+    def wire_action(self):
+        print("Wire selected")
+
+    def beamsplitter_action(self):
+        print("Beam splitter selected")
 
 if __name__ == "__main__":
     app = QApplication([])
