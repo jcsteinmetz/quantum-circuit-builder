@@ -10,6 +10,10 @@ class GridCanvas(QWidget):
 
     def paintEvent(self, event):
         painter = QPainter(self)
+
+        # Fill the canvas with the background color
+        painter.fillRect(self.rect(), QColor(255, 255, 255))
+
         painter.setPen(QColor(200, 200, 200))  # Light gray color for grid lines
 
         # Apply zoom factor to grid size
@@ -77,7 +81,6 @@ class MainWindow(QMainWindow):
 
         # Create canvas widget
         canvas = GridCanvas()
-        canvas.setStyleSheet("background-color: white;")  # Set background color to white
 
         # Add widgets to the layout
         layout.addWidget(self.control_panel)
