@@ -1,6 +1,6 @@
 from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QButtonGroup
 from PySide6.QtCore import Qt, QPoint, QPointF
-from PySide6.QtGui import QPainter, QColor, QWheelEvent, QMouseEvent
+from PySide6.QtGui import QPainter, QColor, QWheelEvent, QMouseEvent, QPen
 import numpy as np
 
 class GridCanvas(QWidget):
@@ -13,13 +13,18 @@ class GridCanvas(QWidget):
         self.offset = QPointF(0, 0)  # Offset for grid dragging
         self.update_cursor()
         self.show_floating_image = False  # Track if square should be shown
-        self.floating_image_pos = None  # Position of the square
+        self.floating_image_pos = QPointF(0, 0)  # Position of the square
         self.setMouseTracking(True)
+        self.placed_components = []  # List to store placed components
 
     def update_cursor(self):
         if self.status == "grab":
             self.setCursor(Qt.SizeAllCursor)
         elif self.status == "input":
+            self.setCursor(Qt.BlankCursor)
+        elif self.status == "output":
+            self.setCursor(Qt.BlankCursor)
+        elif self.status == "wire":
             self.setCursor(Qt.BlankCursor)
         else:
             self.setCursor(Qt.ArrowCursor)
@@ -47,26 +52,44 @@ class GridCanvas(QWidget):
         for y in np.arange(-y_offset % zoomed_grid_size, self.height(), zoomed_grid_size):
             painter.drawLine(0, y, self.width(), y)
 
+        # Draw placed components
+        for component in self.placed_components:
+            self.draw_component(painter, component['type'], component['pos'])
+
         # Draw a floating image if needed
         if self.show_floating_image:
             self.draw_floating_image()
+
+    def draw_component(self, painter, comp_type, pos):
+        if comp_type == "input":
+            painter.setBrush(QColor(0, 0, 255, 100))  # Semi-transparent blue color
+            painter.drawRect(pos.x() - 50*self.zoom_factor, pos.y() - 50*self.zoom_factor, 100*self.zoom_factor, 100*self.zoom_factor)  # 100x100 square
+        elif comp_type == "output":
+            painter.setBrush(QColor(0, 0, 255, 100))  # Semi-transparent blue color
+            painter.drawRect(pos.x() - 50*self.zoom_factor, pos.y() - 50*self.zoom_factor, 100*self.zoom_factor, 100*self.zoom_factor)  # 100x100 square
+        elif comp_type == "wire":
+            pen = QPen(QColor(0, 0, 255, 100))
+            pen.setWidth(5)  # Set the width of the line (you can adjust this value)
+            painter.setPen(pen)
+            painter.drawLine(QPoint(0, pos.y()), QPoint(self.width(), pos.y()))
 
     def draw_floating_image(self):
         painter = QPainter(self)
         if self.status == "input":
             painter.setBrush(QColor(0, 0, 255, 100))  # Semi-transparent blue color
             painter.drawRect(self.floating_image_pos.x() - 50*self.zoom_factor, self.floating_image_pos.y() - 50*self.zoom_factor, 100*self.zoom_factor, 100*self.zoom_factor)  # 100x100 square
-        if self.status == "output":
+        elif self.status == "output":
             painter.setBrush(QColor(0, 0, 255, 100))  # Semi-transparent blue color
             painter.drawRect(self.floating_image_pos.x() - 50*self.zoom_factor, self.floating_image_pos.y() - 50*self.zoom_factor, 100*self.zoom_factor, 100*self.zoom_factor)  # 100x100 square
-
+        elif self.status == "wire":
+            pen = QPen(QColor(0, 0, 255, 100))
+            pen.setWidth(5)  # Set the width of the line (you can adjust this value)
+            painter.setPen(pen)
+            painter.drawLine(QPoint(0,self.floating_image_pos.y()), QPoint(self.width(),self.floating_image_pos.y()))
 
     def wheelEvent(self, event: QWheelEvent):
         # Get the mouse position relative to the widget
         mouse_pos = event.position()
-
-        # Convert the mouse position to the grid's coordinate system before zoom
-        grid_pos_before_zoom = (mouse_pos + self.offset) / (self.grid_size * self.zoom_factor)
 
         # Calculate the zoom delta based on the wheel movement
         zoom_delta = event.angleDelta().y() / 120
@@ -76,10 +99,18 @@ class GridCanvas(QWidget):
         # Ensure the zoom factor is within reasonable bounds
         if 0.1 <= new_zoom_factor <= 5.0:
 
-            grid_pos_after_zoom = (mouse_pos + self.offset) / (self.grid_size * new_zoom_factor)
+            # Convert the mouse position to the grid's coordinate system before zoom
+            mouse_pos_before_zoom = (mouse_pos + self.offset) / (self.grid_size * self.zoom_factor)
+            mouse_pos_after_zoom = (mouse_pos + self.offset) / (self.grid_size * new_zoom_factor)
+
+            # Scale the distance from mouse to each component
+            for comp in self.placed_components:
+                distance_to_mouse = comp['pos'] - mouse_pos
+                new_distance_to_mouse = distance_to_mouse * (new_zoom_factor / self.zoom_factor)
+                comp['pos'] = mouse_pos + new_distance_to_mouse
 
             # Adjust the offset to keep the grid under the mouse stationary
-            self.offset += (grid_pos_before_zoom - grid_pos_after_zoom) * self.grid_size * new_zoom_factor
+            self.offset += (mouse_pos_before_zoom - mouse_pos_after_zoom) * self.grid_size * new_zoom_factor
 
             # Set the new zoom factor
             self.zoom_factor = new_zoom_factor
@@ -88,30 +119,39 @@ class GridCanvas(QWidget):
             self.update()
 
     def mousePressEvent(self, event: QMouseEvent):
-        # Start dragging if the left mouse button is pressed
-        if event.button() == Qt.LeftButton and self.status == "grab":
-            self.last_mouse_pos = event.position()
+        if event.button() == Qt.LeftButton:
+            if self.status in ["input", "output", "wire"]:
+                # Place a copy of the floating image
+                self.placed_components.append({'type': self.status, 'pos': self.floating_image_pos})
+                self.update()  # Redraw to show the new component
+
+            elif self.status == "grab":
+                self.last_mouse_pos = event.position()
 
     def mouseMoveEvent(self, event: QMouseEvent):
         # Handle grid dragging when "Grab" is active
         if self.status == "grab" and self.last_mouse_pos:
             delta = event.position() - self.last_mouse_pos
             self.offset -= delta  # Move the grid by the delta
+
+            # Move placed components
+            for comp in self.placed_components:
+                comp['pos'] += delta
+
             self.last_mouse_pos = event.position()  # Update the last mouse position
             self.update()  # Redraw the grid with the new offset
 
         # Update the floating image's position if "Input" mode is active
-        if self.show_floating_image:
-            mouse_pos = event.position()
-            # Calculate the grid-aligned position
-            zoomed_grid_size = self.grid_size * self.zoom_factor
+        mouse_pos = event.position()
+        # Calculate the grid-aligned position
+        zoomed_grid_size = self.grid_size * self.zoom_factor
 
-            # Calculate the nearest grid point by rounding to the nearest grid cell
-            x = round((mouse_pos.x() + self.offset.x()) / zoomed_grid_size) * zoomed_grid_size - self.offset.x()
-            y = round((mouse_pos.y() + self.offset.y()) / zoomed_grid_size) * zoomed_grid_size - self.offset.y()
+        # Calculate the nearest grid point by rounding to the nearest grid cell
+        x = round((mouse_pos.x() + self.offset.x()) / zoomed_grid_size) * zoomed_grid_size - self.offset.x()
+        y = round((mouse_pos.y() + self.offset.y()) / zoomed_grid_size) * zoomed_grid_size - self.offset.y()
 
-            self.floating_image_pos = QPointF(x, y)
-            self.update()  # Redraw to show the square at the new position
+        self.floating_image_pos = QPointF(x, y)
+        self.update()  # Redraw to show the square at the new position
 
     def mouseReleaseEvent(self, event: QMouseEvent):
         # Stop dragging when the mouse button is released
@@ -120,9 +160,14 @@ class GridCanvas(QWidget):
 
     def enterEvent(self, event):
         self.update_cursor()  # Update cursor on entering the widget
+        if self.status in ["input", "output", "wire"]:
+            self.show_floating_image = True  # Show floating image when entering the canvas
+        self.update()
 
     def leaveEvent(self, event):
         self.setCursor(Qt.ArrowCursor)  # Reset cursor on leaving the widget
+        self.show_floating_image = False  # Hide floating image when leaving the canvas
+        self.update()
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -142,30 +187,40 @@ class MainWindow(QMainWindow):
         self.control_panel.setLayout(control_panel_layout)
         self.control_panel.setFixedWidth(150)  # Adjust width as needed
 
-        # Create buttons and button group
-        self.button_group = QButtonGroup()
-        self.button_group.setExclusive(True)  # Ensure only one button is toggled at a time
+        # Create tool group
+        self.tool_group = QButtonGroup()
+        self.tool_group.setExclusive(True)  # Ensure only one button is toggled at a time
 
-        # Create button labels and actions
-        button_labels = [("Grab", self.grab_action),
+        # Create tool/button labels and actions
+        tool_labels = [("Grab", self.grab_action),
                          ("Input", self.input_action),
                          ("Output", self.output_action),
-                         ("Wire", self.wire_action),
-                         ("Beam splitter", self.beamsplitter_action)]
+                         ("Wire", self.wire_action)]
 
-        # Create buttons and connect them to actions
+        button_labels = [("Clear", self.clear_action),
+                         ("Quit", self.quit_action)]
+
+        # Create tools/buttons and connect them to actions
+        self.tools = []
+        for label, action in tool_labels:
+            tool = QPushButton(label)
+            tool.setCheckable(True)
+            self.tool_group.addButton(tool)
+            control_panel_layout.addWidget(tool)
+            self.tools.append(tool)
+            tool.clicked.connect(action)  # Connect button to the corresponding action
+
         self.buttons = []
         for label, action in button_labels:
             button = QPushButton(label)
-            button.setCheckable(True)
-            self.button_group.addButton(button)
             control_panel_layout.addWidget(button)
             self.buttons.append(button)
-            button.clicked.connect(action)  # Connect button to the corresponding action
+            button.clicked.connect(action)
+
 
         # Set the first button to be toggled by default
-        if self.buttons:
-            self.buttons[0].setChecked(True)
+        if self.tools:
+            self.tools[0].setChecked(True)
 
         # Create canvas widget
         self.canvas = GridCanvas()
@@ -187,7 +242,7 @@ class MainWindow(QMainWindow):
         self.canvas.update_cursor()  # Update cursor
         self.canvas.show_floating_image = False  # Hide the floating image
     
-    def input_action(self, checked):
+    def input_action(self):
         print("Input selected")
         self.canvas.status = "input"  # Disable grab mode for wire placement
         self.canvas.update_cursor()  # Update cursor
@@ -198,21 +253,24 @@ class MainWindow(QMainWindow):
         print("Output selected")
         self.canvas.status = "output"  # Disable grab mode for wire placement
         self.canvas.update_cursor()  # Update cursor
-        self.canvas.show_floating_image = True  # Hide the floating image
+        self.canvas.show_floating_image = True  # Show the floating image
 
     def wire_action(self):
         self.canvas.update()
         print("Wire selected")
         self.canvas.status = "wire"  # Disable grab mode for wire placement
         self.canvas.update_cursor()  # Update cursor
-        self.canvas.show_floating_image = False  # Hide the floating image
+        self.canvas.show_floating_image = True  # Show the floating image
 
-    def beamsplitter_action(self):
+    def clear_action(self):
         self.canvas.update()
-        print("Beam splitter selected")
-        self.canvas.status = "beamsplitter"  # Disable grab mode for beam splitter
-        self.canvas.update_cursor()  # Update cursor
-        self.canvas.show_floating_image = False  # Hide the floating image
+        print("Clear selected")
+        self.canvas.placed_components = []
+
+    def quit_action(self):
+        self.canvas.update()
+        print("Quit selected")
+        QApplication.instance().quit()
 
 if __name__ == "__main__":
     app = QApplication([])
