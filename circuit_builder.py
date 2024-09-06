@@ -11,6 +11,13 @@ class GridCanvas(QWidget):
         self.is_grabbed = True  # Track if grab mode is enabled
         self.last_mouse_pos = None  # Track the last mouse position for dragging
         self.offset = QPointF(0, 0)  # Offset for grid dragging
+        self.update_cursor()
+
+    def update_cursor(self):
+        if self.is_grabbed:
+            self.setCursor(Qt.SizeAllCursor)
+        else:
+            self.setCursor(Qt.ArrowCursor)
 
     def paintEvent(self, event):
         painter = QPainter(self)
@@ -79,6 +86,12 @@ class GridCanvas(QWidget):
         if event.button() == Qt.LeftButton and self.is_grabbed:
             self.last_mouse_pos = None
 
+    def enterEvent(self, event):
+        self.update_cursor()  # Update cursor on entering the widget
+
+    def leaveEvent(self, event):
+        self.setCursor(Qt.ArrowCursor)  # Reset cursor on leaving the widget
+
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -103,6 +116,8 @@ class MainWindow(QMainWindow):
 
         # Create button labels and actions
         button_labels = [("Grab", self.grab_action),
+                         ("Input", self.input_action),
+                         ("Output", self.output_action),
                          ("Wire", self.wire_action),
                          ("Beam splitter", self.beamsplitter_action)]
 
@@ -136,14 +151,27 @@ class MainWindow(QMainWindow):
     def grab_action(self):
         print("Grab selected")
         self.canvas.is_grabbed = True  # Enable grab mode
+        self.canvas.update_cursor()  # Update cursor
+    
+    def input_action(self):
+        print("Input selected")
+        self.canvas.is_grabbed = False  # Disable grab mode for wire placement
+        self.canvas.update_cursor()  # Update cursor
+
+    def output_action(self):
+        print("Output selected")
+        self.canvas.is_grabbed = False  # Disable grab mode for wire placement
+        self.canvas.update_cursor()  # Update cursor
 
     def wire_action(self):
         print("Wire selected")
         self.canvas.is_grabbed = False  # Disable grab mode for wire placement
+        self.canvas.update_cursor()  # Update cursor
 
     def beamsplitter_action(self):
         print("Beam splitter selected")
         self.canvas.is_grabbed = False  # Disable grab mode for beam splitter
+        self.canvas.update_cursor()  # Update cursor
 
 if __name__ == "__main__":
     app = QApplication([])
