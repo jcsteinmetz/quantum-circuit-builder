@@ -2,6 +2,7 @@ from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, Q
 from PySide6.QtCore import Qt, QPoint, QPointF
 from PySide6.QtGui import QPainter, QColor, QWheelEvent, QMouseEvent, QPen
 import numpy as np
+from copy import copy
 
 class GridCanvas(QWidget):
     def __init__(self, *args, **kwargs):
@@ -155,7 +156,7 @@ class GridCanvas(QWidget):
             if self.status == "wire_start":
                 # Place the start of the wire
                 self.placed_components.append({'type': self.status, 'pos': self.floating_image_pos})
-                self.wires.append({'start': self.floating_image_pos, 'end': None})  # Start of the wire
+                self.wires.append({'start': copy(self.floating_image_pos), 'end': None})  # Start of the wire
                 self.update()  # Redraw to show the new component
 
                 self.status = "wire_end"
@@ -168,7 +169,7 @@ class GridCanvas(QWidget):
                 wire_end_pos = QPointF(self.floating_image_pos.x(), self.placed_components[-1]['pos'].y())
                 self.placed_components.append({'type': self.status, 'pos': wire_end_pos})
                 if self.wires:
-                    self.wires[-1]['end'] = wire_end_pos  # End of the wire
+                    self.wires[-1]['end'] = copy(wire_end_pos)  # End of the wire
                 self.update()  # Redraw to show the new component
 
                 self.status = "wire_start"
@@ -182,6 +183,7 @@ class GridCanvas(QWidget):
     def mouseMoveEvent(self, event: QMouseEvent):
         # Handle grid dragging when "Grab" is active
         if self.status == "grab" and self.last_mouse_pos:
+
             delta = event.position() - self.last_mouse_pos
             self.offset -= delta  # Move the grid by the delta
 
