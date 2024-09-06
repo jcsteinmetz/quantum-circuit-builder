@@ -8,14 +8,19 @@ class GridCanvas(QWidget):
         super().__init__(*args, **kwargs)
         self.grid_size = 100  # Size of each grid cell
         self.zoom_factor = 1.0  # Initial zoom factor
-        self.is_grabbed = True  # Track if grab mode is enabled
+        self.status = "grab"  # Track which button is toggled
         self.last_mouse_pos = None  # Track the last mouse position for dragging
         self.offset = QPointF(0, 0)  # Offset for grid dragging
         self.update_cursor()
+        self.show_floating_image = False  # Track if square should be shown
+        self.floating_image_pos = None  # Position of the square
+        self.setMouseTracking(True)
 
     def update_cursor(self):
-        if self.is_grabbed:
+        if self.status == "grab":
             self.setCursor(Qt.SizeAllCursor)
+        elif self.status == "input":
+            self.setCursor(Qt.BlankCursor)
         else:
             self.setCursor(Qt.ArrowCursor)
 
@@ -41,6 +46,20 @@ class GridCanvas(QWidget):
         # Draw horizontal grid lines
         for y in np.arange(-y_offset % zoomed_grid_size, self.height(), zoomed_grid_size):
             painter.drawLine(0, y, self.width(), y)
+
+        # Draw a floating image if needed
+        if self.show_floating_image:
+            self.draw_floating_image()
+
+    def draw_floating_image(self):
+        painter = QPainter(self)
+        if self.status == "input":
+            painter.setBrush(QColor(0, 0, 255, 100))  # Semi-transparent blue color
+            painter.drawRect(self.floating_image_pos.x() - 50*self.zoom_factor, self.floating_image_pos.y() - 50*self.zoom_factor, 100*self.zoom_factor, 100*self.zoom_factor)  # 100x100 square
+        if self.status == "output":
+            painter.setBrush(QColor(0, 0, 255, 100))  # Semi-transparent blue color
+            painter.drawRect(self.floating_image_pos.x() - 50*self.zoom_factor, self.floating_image_pos.y() - 50*self.zoom_factor, 100*self.zoom_factor, 100*self.zoom_factor)  # 100x100 square
+
 
     def wheelEvent(self, event: QWheelEvent):
         # Get the mouse position relative to the widget
@@ -70,20 +89,33 @@ class GridCanvas(QWidget):
 
     def mousePressEvent(self, event: QMouseEvent):
         # Start dragging if the left mouse button is pressed
-        if event.button() == Qt.LeftButton and self.is_grabbed:
+        if event.button() == Qt.LeftButton and self.status == "grab":
             self.last_mouse_pos = event.position()
 
     def mouseMoveEvent(self, event: QMouseEvent):
         # Handle grid dragging when "Grab" is active
-        if self.is_grabbed and self.last_mouse_pos:
+        if self.status == "grab" and self.last_mouse_pos:
             delta = event.position() - self.last_mouse_pos
             self.offset -= delta  # Move the grid by the delta
             self.last_mouse_pos = event.position()  # Update the last mouse position
             self.update()  # Redraw the grid with the new offset
 
+        # Update the floating image's position if "Input" mode is active
+        if self.show_floating_image:
+            mouse_pos = event.position()
+            # Calculate the grid-aligned position
+            zoomed_grid_size = self.grid_size * self.zoom_factor
+
+            # Calculate the nearest grid point by rounding to the nearest grid cell
+            x = round((mouse_pos.x() + self.offset.x()) / zoomed_grid_size) * zoomed_grid_size - self.offset.x()
+            y = round((mouse_pos.y() + self.offset.y()) / zoomed_grid_size) * zoomed_grid_size - self.offset.y()
+
+            self.floating_image_pos = QPointF(x, y)
+            self.update()  # Redraw to show the square at the new position
+
     def mouseReleaseEvent(self, event: QMouseEvent):
         # Stop dragging when the mouse button is released
-        if event.button() == Qt.LeftButton and self.is_grabbed:
+        if event.button() == Qt.LeftButton and self.status == "grab":
             self.last_mouse_pos = None
 
     def enterEvent(self, event):
@@ -149,29 +181,38 @@ class MainWindow(QMainWindow):
         self.installEventFilter(self)
 
     def grab_action(self):
+        self.canvas.update()
         print("Grab selected")
-        self.canvas.is_grabbed = True  # Enable grab mode
+        self.canvas.status = "grab"  # Enable grab mode
         self.canvas.update_cursor()  # Update cursor
+        self.canvas.show_floating_image = False  # Hide the floating image
     
-    def input_action(self):
+    def input_action(self, checked):
         print("Input selected")
-        self.canvas.is_grabbed = False  # Disable grab mode for wire placement
+        self.canvas.status = "input"  # Disable grab mode for wire placement
         self.canvas.update_cursor()  # Update cursor
+        self.canvas.show_floating_image = True  # Show the floating image
 
     def output_action(self):
+        self.canvas.update()
         print("Output selected")
-        self.canvas.is_grabbed = False  # Disable grab mode for wire placement
+        self.canvas.status = "output"  # Disable grab mode for wire placement
         self.canvas.update_cursor()  # Update cursor
+        self.canvas.show_floating_image = True  # Hide the floating image
 
     def wire_action(self):
+        self.canvas.update()
         print("Wire selected")
-        self.canvas.is_grabbed = False  # Disable grab mode for wire placement
+        self.canvas.status = "wire"  # Disable grab mode for wire placement
         self.canvas.update_cursor()  # Update cursor
+        self.canvas.show_floating_image = False  # Hide the floating image
 
     def beamsplitter_action(self):
+        self.canvas.update()
         print("Beam splitter selected")
-        self.canvas.is_grabbed = False  # Disable grab mode for beam splitter
+        self.canvas.status = "beamsplitter"  # Disable grab mode for beam splitter
         self.canvas.update_cursor()  # Update cursor
+        self.canvas.show_floating_image = False  # Hide the floating image
 
 if __name__ == "__main__":
     app = QApplication([])
