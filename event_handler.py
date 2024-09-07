@@ -1,7 +1,5 @@
-from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QButtonGroup
-from PySide6.QtCore import Qt, QPoint, QPointF, QObject, QEvent
-from PySide6.QtGui import QPainter, QColor, QWheelEvent, QMouseEvent, QPen
-import numpy as np
+from PySide6.QtCore import Qt, QPointF, QObject, QEvent
+from PySide6.QtGui import QColor, QWheelEvent, QMouseEvent
 from copy import copy
 
 class EventHandler(QObject):
@@ -56,13 +54,15 @@ class EventHandler(QObject):
                 self.last_mouse_pos = event.position()
 
     def handle_mouse_move(self, event: QMouseEvent):
+        mouse_pos = event.position()
+
         # Handle grid dragging when "Grab" is active
-        self.canvas.snap_floating_image(event)
+        self.canvas.update_floating_image(mouse_pos)
 
         if self.canvas.status == "grab" and self.last_mouse_pos:
-            delta = event.position() - self.last_mouse_pos
+            delta = mouse_pos - self.last_mouse_pos
             self.canvas.drag(delta)
-            self.last_mouse_pos = event.position()  # Update the last mouse position
+            self.last_mouse_pos = mouse_pos  # Update the last mouse position
 
     def handle_mouse_release(self, event: QMouseEvent):
         # Stop dragging when the mouse button is released
