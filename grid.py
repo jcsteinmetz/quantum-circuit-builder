@@ -31,6 +31,6 @@ class Grid:
 
     def snap(self, mouse_pos):
         # Calculate the nearest grid point by rounding to the nearest grid cell
-        x = round((mouse_pos.x() + self.grid.offset.x()) / self.grid.size) * self.grid.size - self.grid.offset.x()
-        y = round((mouse_pos.y() + self.grid.offset.y()) / self.grid.size) * self.grid.size - self.grid.offset.y()
+        x = round((mouse_pos.x() + self.offset.x()) / self.size) * self.size - self.offset.x()
+        y = round((mouse_pos.y() + self.offset.y()) / self.size) * self.size - self.offset.y()
         return QPointF(x, y)
