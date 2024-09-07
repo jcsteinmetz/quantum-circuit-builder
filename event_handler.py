@@ -28,14 +28,14 @@ class EventHandler(QObject):
         if event.button() == Qt.LeftButton:
             if self.canvas.dragging_enabled:
                 self.last_mouse_pos = event.position()
-            elif self.canvas.active_tool and self.canvas.active_tool.pos not in [comp.pos for comp in self.canvas.placed_components]:
+            elif self.canvas.active_tool and not self.canvas.active_tool.overlapping:
                 self.canvas.active_tool.place()
 
     def handle_mouse_move(self, event: QMouseEvent):
         mouse_pos = event.position()
 
         if self.canvas.active_tool and self.canvas.active_tool.show_preview:
-            self.canvas.active_tool.pos = self.canvas.grid.snap(mouse_pos)
+            self.canvas.active_tool.set_position(mouse_pos)
 
         # Redraw to show the square at the new position
         self.canvas.update()
