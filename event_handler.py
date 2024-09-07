@@ -28,7 +28,7 @@ class EventHandler(QObject):
         if event.button() == Qt.LeftButton:
             if self.canvas.dragging_enabled:
                 self.last_mouse_pos = event.position()
-            elif self.canvas.active_tool:
+            elif self.canvas.active_tool and self.canvas.active_tool.pos not in [comp.pos for comp in self.canvas.placed_components]:
                 self.canvas.active_tool.place()
 
     def handle_mouse_move(self, event: QMouseEvent):
