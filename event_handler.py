@@ -1,6 +1,6 @@
 from PySide6.QtCore import Qt, QPointF, QObject, QEvent
 from PySide6.QtGui import QColor, QWheelEvent, QMouseEvent
-from copy import copy
+from components import WireStart
 
 class EventHandler(QObject):
     def __init__(self, canvas):
@@ -26,47 +26,29 @@ class EventHandler(QObject):
 
     def handle_mouse_press(self, event: QMouseEvent):
         if event.button() == Qt.LeftButton:
-            if self.canvas.status == "wire_start":
-                # Place the start of the wire
-                self.canvas.placed_components.append({'type': self.canvas.status, 'pos': self.canvas.floating_image_pos, 'color': QColor(0, 0, 255, 100)})
-                self.canvas.wires.append({'start': copy(self.canvas.floating_image_pos), 'end': None})  # Start of the wire
-                self.canvas.update()  # Redraw to show the new component
-
-                self.canvas.status = "wire_end"
-                
-                # Make floating image disappear until mouse moves
-                self.canvas.show_floating_image = False
-
-            elif self.canvas.status == "wire_end":
-                # Update the end of the wire
-                wire_end_pos = QPointF(self.canvas.floating_image_pos.x(), self.canvas.placed_components[-1]['pos'].y())
-                self.canvas.placed_components.append({'type': self.canvas.status, 'pos': wire_end_pos, 'color': QColor(255, 0, 0, 100)})
-                if self.canvas.wires:
-                    self.canvas.wires[-1]['end'] = copy(wire_end_pos)  # End of the wire
-                self.canvas.update()  # Redraw to show the new component
-
-                self.canvas.status = "wire_start"
-
-                # Make floating image disappear until mouse moves
-                self.canvas.show_floating_image = False
-
-            elif self.canvas.status == "grab":
+            if self.canvas.dragging_enabled:
                 self.last_mouse_pos = event.position()
+            elif self.canvas.active_tool:
+                self.canvas.active_tool.place()
 
     def handle_mouse_move(self, event: QMouseEvent):
         mouse_pos = event.position()
 
-        # Handle grid dragging when "Grab" is active
-        self.canvas.update_floating_image(mouse_pos)
+        if self.canvas.active_tool and self.canvas.active_tool.show_preview:
+            self.canvas.active_tool.pos = self.canvas.snap(mouse_pos)
 
-        if self.canvas.status == "grab" and self.last_mouse_pos:
+        # Redraw to show the square at the new position
+        self.canvas.update()
+
+        # Handle grid dragging when "Grab" is active
+        if self.canvas.dragging_enabled and self.last_mouse_pos:
             delta = mouse_pos - self.last_mouse_pos
             self.canvas.drag(delta)
             self.last_mouse_pos = mouse_pos  # Update the last mouse position
 
     def handle_mouse_release(self, event: QMouseEvent):
         # Stop dragging when the mouse button is released
-        if event.button() == Qt.LeftButton and self.canvas.status == "grab":
+        if event.button() == Qt.LeftButton and self.canvas.dragging_enabled:
             self.last_mouse_pos = None
 
     def handle_wheel(self, event: QWheelEvent):
@@ -77,12 +59,11 @@ class EventHandler(QObject):
         self.canvas.zoom(event.position(), new_zoom_factor)
 
     def handle_enter(self, event):
-        self.canvas.update_cursor()  # Update cursor on entering the widget
-        if self.canvas.status in ["wire_start", "wire_end"]:
-            self.canvas.show_floating_image = True  # Show floating image when entering the canvas
+        self.canvas.setCursor(self.canvas.active_tool.cursor)
+        self.canvas.active_tool.show_preview = True
         self.canvas.update()
 
     def handle_leave(self, event):
-        self.canvas.setCursor(Qt.ArrowCursor)  # Reset cursor on leaving the widget
-        self.canvas.show_floating_image = False  # Hide floating image when leaving the canvas
+        self.canvas.setCursor(Qt.ArrowCursor)
+        self.canvas.active_tool.show_preview = False 
         self.canvas.update()

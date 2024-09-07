@@ -1,5 +1,6 @@
 from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QButtonGroup
 from canvas import Canvas
+from components import WireStart, Grab
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -62,26 +63,16 @@ class MainWindow(QMainWindow):
         self.resize(800, 600)
 
     def grab_action(self):
+        self.canvas.active_tool = Grab(self.canvas)
         self.canvas.update()
-        print("Grab selected")
-        self.canvas.status = "grab"  # Enable grab mode
-        self.canvas.update_cursor()  # Update cursor
-        self.canvas.show_floating_image = False  # Hide the floating image
 
     def wire_action(self):
+        self.canvas.active_tool = WireStart(self.canvas)
         self.canvas.update()
-        print("Wire selected")
-        self.canvas.status = "wire_start"  # Disable grab mode for wire placement
-        self.canvas.update_cursor()  # Update cursor
-        self.canvas.show_floating_image = True  # Show the floating image        
 
     def clear_action(self):
+        self.canvas.components = []
         self.canvas.update()
-        print("Clear selected")
-        self.canvas.placed_components = []
-        self.canvas.wires = []
 
     def quit_action(self):
-        self.canvas.update()
-        print("Quit selected")
         QApplication.instance().quit()
