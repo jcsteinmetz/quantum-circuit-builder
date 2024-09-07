@@ -1,95 +1,52 @@
-import numpy as np
 from PySide6.QtWidgets import QWidget
 from PySide6.QtCore import QPointF
-from PySide6.QtGui import QPainter, QColor, QPen
+from PySide6.QtGui import QPainter
 from event_handler import EventHandler
 from components import Grab
+from grid import Grid
 
 class Canvas(QWidget):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.grid_size = 100  # Size of each grid cell
-        self.zoom_factor = 1.0  # Initial zoom factor
-        self.dragging_enabled = False  # Track which button is toggled
-        self.offset = QPointF(0, 0)  # Offset for grid dragging
+        self.grid = Grid(self)
+        self.active_tool = Grab(self)
+        self.dragging_enabled = False
         self.setMouseTracking(True)
         self.event_handler = EventHandler(self)
 
-        self.active_tool = Grab(self)
-        self.components = []
+        self.placed_components = []
 
     def paintEvent(self, event):
         painter = QPainter(self)
 
-        self.draw_grid(painter)
+        # Draw the grid
+        self.grid.draw(painter)
 
         # Draw placed components
-        for comp in self.components:
-            comp.draw(painter, self.zoom_factor)
+        for comp in self.placed_components:
+            comp.draw(painter)
 
         # Draw active tool preview
         if self.active_tool and self.active_tool.show_preview:
-            self.active_tool.draw(painter, self.zoom_factor)
-    
-    def snap(self, mouse_pos):
-        zoomed_grid_size = self.grid_size * self.zoom_factor
-
-        # Calculate the nearest grid point by rounding to the nearest grid cell
-        x = round((mouse_pos.x() + self.offset.x()) / zoomed_grid_size) * zoomed_grid_size - self.offset.x()
-        y = round((mouse_pos.y() + self.offset.y()) / zoomed_grid_size) * zoomed_grid_size - self.offset.y()
-        return QPointF(x, y)
+            self.active_tool.draw(painter)
     
     def drag(self, delta):
-        self.offset -= delta  # Move the grid by the delta
+        self.grid.offset -= delta  # Move the grid by the delta
 
-        for comp in self.components:
+        for comp in self.placed_components:
             comp.move(delta)
 
         self.update()  # Redraw the grid with the new offset
 
-    def zoom(self, mouse_pos, new_zoom_factor):
+    def zoom(self, mouse_pos, new_grid_size):
         # Ensure the zoom factor is within reasonable bounds
-        if 0.1 <= new_zoom_factor <= 5.0:
-            self.zoom_grid(mouse_pos, new_zoom_factor)
-            self.zoom_components(mouse_pos, new_zoom_factor)
+        if 0.1 <= new_grid_size / self.grid.size <= 5.0:
+            self.grid.zoom(mouse_pos, new_grid_size)
+            for comp in self.placed_components:
+                comp.zoom(mouse_pos, new_grid_size)
 
             # Set the new zoom factor
-            self.zoom_factor = new_zoom_factor
+            self.grid.size = new_grid_size
 
             # Trigger a redraw
             self.update()
-
-    def zoom_components(self, mouse_pos, new_zoom_factor):
-        # Scale the distance from mouse to each component
-        for comp in self.components:
-            distance_to_mouse = comp.pos - mouse_pos
-            new_distance_to_mouse = distance_to_mouse * (new_zoom_factor / self.zoom_factor)
-            comp.pos = mouse_pos + new_distance_to_mouse
-            if comp.start_pos:
-                distance_to_mouse = comp.start_pos - mouse_pos
-                new_distance_to_mouse = distance_to_mouse * (new_zoom_factor / self.zoom_factor)
-                comp.start_pos = mouse_pos + new_distance_to_mouse
-
-    def zoom_grid(self, mouse_pos, new_zoom_factor):
-        # Adjust the offset to keep the grid under the mouse stationary
-        mouse_pos_before_zoom = (mouse_pos + self.offset) / (self.grid_size * self.zoom_factor)
-        mouse_pos_after_zoom = (mouse_pos + self.offset) / (self.grid_size * new_zoom_factor)
-        self.offset += (mouse_pos_before_zoom - mouse_pos_after_zoom) * self.grid_size * new_zoom_factor
-
-    def draw_grid(self, painter):
-        # Fill the canvas with the background color
-        painter.fillRect(self.rect(), QColor(255, 255, 255))
-
-        # Light gray color for grid lines
-        painter.setPen(QColor(200, 200, 200))
-
-        # Apply zoom factor to grid size
-        zoomed_grid_size = self.grid_size * self.zoom_factor
-
-        # Draw vertical grid lines
-        for x in np.arange(-self.offset.x() % zoomed_grid_size, self.width(), zoomed_grid_size):
-            painter.drawLine(x, 0, x, self.height())
-
-        # Draw horizontal grid lines
-        for y in np.arange(-self.offset.y() % zoomed_grid_size, self.height(), zoomed_grid_size):
-            painter.drawLine(0, y, self.width(), y)

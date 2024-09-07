@@ -35,7 +35,7 @@ class EventHandler(QObject):
         mouse_pos = event.position()
 
         if self.canvas.active_tool and self.canvas.active_tool.show_preview:
-            self.canvas.active_tool.pos = self.canvas.snap(mouse_pos)
+            self.canvas.active_tool.pos = self.canvas.grid.snap(mouse_pos)
 
         # Redraw to show the square at the new position
         self.canvas.update()
@@ -55,8 +55,8 @@ class EventHandler(QObject):
         # Calculate the zoom factor based on the wheel movement
         zoom_delta = event.angleDelta().y() / 120
         zoom_step = 0.1
-        new_zoom_factor = self.canvas.zoom_factor + zoom_step * zoom_delta
-        self.canvas.zoom(event.position(), new_zoom_factor)
+        new_grid_size = self.canvas.grid.size * (1 + zoom_step * zoom_delta)
+        self.canvas.zoom(event.position(), new_grid_size)
 
     def handle_enter(self, event):
         self.canvas.setCursor(self.canvas.active_tool.cursor)
