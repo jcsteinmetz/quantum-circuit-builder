@@ -23,15 +23,34 @@ class Wire:
         self.spinbox.setValue(0)  # Set initial value
 
     def draw(self, painter):
+        if self.start_pos and self.end_pos and self.start_placed:
+            # draw wire
+            pen = QPen(self.canvas.style.wire_color)
+            pen.setWidth(self.canvas.style.wire_width)
+            painter.setPen(pen)
+            painter.drawLine(QPointF(self.start_pos.x(), self.start_pos.y()), QPointF(self.end_pos.x(), self.end_pos.y()))
+
+            # Draw wire end
+            if self.overlapping:
+                pen = QPen(self.canvas.style.overlap_color)
+                painter.setBrush(self.canvas.style.overlap_color)
+            else:
+                pen = QPen(self.canvas.style.wire_color)
+                painter.setBrush(self.canvas.style.wireend_color)
+
+            pen.setWidth(self.canvas.style.wire_width)
+            painter.setPen(pen)
+            painter.drawRect(self.end_pos.x() - 0.5 * self.canvas.grid.size, self.end_pos.y() - 0.5 * self.canvas.grid.size, self.canvas.grid.size, self.canvas.grid.size)  # 100x100 square
+
         if self.start_pos:
             # Draw wire start
             if self.overlapping:
-                pen = QPen(self.canvas.color_scheme.overlap_color)
-                painter.setBrush(self.canvas.color_scheme.overlap_color)
+                pen = QPen(self.canvas.style.overlap_color)
+                painter.setBrush(self.canvas.style.overlap_color)
             else:
-                pen = QPen(self.canvas.color_scheme.wirestart_color)
-                painter.setBrush(self.canvas.color_scheme.wirestart_color)
-            pen.setWidth(5)
+                pen = QPen(self.canvas.style.wire_color)
+                painter.setBrush(self.canvas.style.wirestart_color)
+            pen.setWidth(self.canvas.style.wire_width)
             painter.setPen(pen)
             painter.drawRect(self.start_pos.x() - 0.5 * self.canvas.grid.size, self.start_pos.y() - 0.5 * self.canvas.grid.size, self.canvas.grid.size, self.canvas.grid.size)  # 100x100 square
 
@@ -40,25 +59,6 @@ class Wire:
             self.spinbox.move(int(box_pos.x()), int(box_pos.y()))
             self.spinbox.resize(int(self.canvas.grid.size * 0.8), int(self.canvas.grid.size * 0.8))
             self.spinbox.show()
-
-        if self.start_pos and self.end_pos and self.start_placed:
-            # Draw wire end
-            if self.overlapping:
-                pen = QPen(self.canvas.color_scheme.overlap_color)
-                painter.setBrush(self.canvas.color_scheme.overlap_color)
-            else:
-                pen = QPen(self.canvas.color_scheme.wireend_color)
-                painter.setBrush(self.canvas.color_scheme.wireend_color)
-
-            pen.setWidth(5)
-            painter.setPen(pen)
-            painter.drawRect(self.end_pos.x() - 0.5 * self.canvas.grid.size, self.end_pos.y() - 0.5 * self.canvas.grid.size, self.canvas.grid.size, self.canvas.grid.size)  # 100x100 square
-
-            # draw wire
-            pen = QPen(self.canvas.color_scheme.wire_color)
-            pen.setWidth(5)
-            painter.setPen(pen)
-            painter.drawLine(QPointF(self.start_pos.x(), self.start_pos.y()), QPointF(self.end_pos.x(), self.end_pos.y()))
 
         if isinstance(self.canvas.active_tool, NormalCursor):
             self.spinbox.setEnabled(True)

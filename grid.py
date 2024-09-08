@@ -9,10 +9,10 @@ class Grid:
     
     def draw(self, painter):
         # Fill in background
-        painter.fillRect(self.canvas.rect(), self.canvas.color_scheme.bg_color)
+        painter.fillRect(self.canvas.rect(), self.canvas.style.bg_color)
 
         # Draw grid lines
-        painter.setPen(self.canvas.color_scheme.gridline_color)
+        painter.setPen(self.canvas.style.gridline_color)
 
         for x in np.arange(-self.offset.x() % self.size, self.canvas.width(), self.size):
             painter.drawLine(x, 0, x, self.canvas.height())
