@@ -118,7 +118,6 @@ class Wire:
         # Remove the component itself from the canvas
         if self in self.canvas.placed_components:
             self.canvas.placed_components.remove(self)
-            
 
     @property
     def occupied_coords(self):
@@ -127,8 +126,13 @@ class Wire:
         if not self.placed:
             return [self.start_pos]
         else:
-            return [QPointF(occupied_x, self.start_pos.y()) for occupied_x in np.arange(self.start_pos.x(), self.end_pos.x() + self.canvas.grid.size, self.canvas.grid.size)]
+            start_coord = int(self.start_pos.x() // self.canvas.grid.size)
+            end_coord = int(self.end_pos.x() // self.canvas.grid.size)
 
+            # Generate grid indices between start and end (must use grid indices to avoid floating point errors)
+            grid_coords = np.arange(start_coord, end_coord + 1)
+            return [QPointF(coord * self.canvas.grid.size + self.canvas.grid.offset.x(), self.start_pos.y() + self.canvas.grid.offset.y()) for coord in grid_coords]
+    
     @property
     def overlapping(self):
         if self.start_pos and not self.start_placed:
