@@ -51,8 +51,6 @@ class EventHandler(QObject):
             self.last_mouse_pos = None
 
     def handle_wheel(self, event: QWheelEvent):
-        mouse_pos = event.position()
-
         # Calculate the zoom factor based on the wheel movement
         zoom_delta = event.angleDelta().y() / 120
         zoom_step = 0.1

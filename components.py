@@ -123,12 +123,18 @@ class Wire:
         if not self.placed:
             return [self.start_pos]
         else:
-            start_coord = int(self.start_pos.x() // self.canvas.grid.size)
-            end_coord = int(self.end_pos.x() // self.canvas.grid.size)
+            start_x_offset = self.start_pos.x() + self.canvas.grid.offset.x()
+            end_x_offset = self.end_pos.x() + self.canvas.grid.offset.x()
 
-            # Generate grid indices between start and end (must use grid indices to avoid floating point errors)
-            grid_coords = np.arange(start_coord, end_coord + 1)
-            return [QPointF(coord * self.canvas.grid.size + self.canvas.grid.offset.x(), self.start_pos.y() + self.canvas.grid.offset.y()) for coord in grid_coords]
+            # Convert the adjusted positions to grid indices
+            start_index = int(start_x_offset // self.canvas.grid.size)
+            end_index = int(end_x_offset // self.canvas.grid.size)
+
+            # Generate grid indices between start and end (inclusive)
+            grid_indices = np.arange(start_index, end_index + 1)
+
+            # Convert grid indices back to positions, accounting for the grid offset
+            return [QPointF(index * self.canvas.grid.size - self.canvas.grid.offset.x(), self.start_pos.y()) for index in grid_indices]
     
     @property
     def overlapping(self):
@@ -140,6 +146,9 @@ class Wire:
             elif any([self.start_pos + QPointF(self.canvas.grid.size, 0) in comp.occupied_coords for comp in self.canvas.placed_components]):
                 return True
             else:
+                for comp in self.canvas.placed_components:
+                    print(self.start_pos,"not in",comp.occupied_coords)
+                print(self.canvas.grid.size)
                 return False
         elif self.start_pos and self.end_pos and not self.placed:
             # check if the end point directly overlaps another component
