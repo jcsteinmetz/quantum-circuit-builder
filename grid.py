@@ -5,7 +5,7 @@ import numpy as np
 class Grid:
     def __init__(self, canvas):
         self.canvas = canvas
-        self.size = 100  # Size of each grid cell
+        self.size = 50  # Size of each grid cell
         self.offset = QPointF(0, 0)
         self.line_color = QColor(200, 200, 200)
         self.bg_color = QColor(255, 255, 255)

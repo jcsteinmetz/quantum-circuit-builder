@@ -40,9 +40,13 @@ class Canvas(QWidget):
     def zoom(self, mouse_pos, new_grid_size):
         # Ensure the zoom factor is within reasonable bounds
         if 5 <= new_grid_size <= 250:
+
             self.grid.zoom(mouse_pos, new_grid_size)
+
             for comp in self.placed_components:
                 comp.zoom(mouse_pos, new_grid_size)
+            if self.active_tool:
+                self.active_tool.zoom(mouse_pos, new_grid_size)
 
             # Set the new zoom factor
             self.grid.size = new_grid_size

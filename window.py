@@ -1,6 +1,6 @@
 from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QButtonGroup
 from canvas import Canvas
-from components import WireStart, Grab, NormalCursor
+from components import Grab, NormalCursor, Wire
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -72,7 +72,8 @@ class MainWindow(QMainWindow):
         self.canvas.update()
 
     def wire_action(self):
-        self.canvas.active_tool = WireStart(self.canvas)
+        # self.canvas.active_tool = WireStart(self.canvas)
+        self.canvas.active_tool = Wire(self.canvas)
         self.canvas.update()
 
     def clear_action(self):

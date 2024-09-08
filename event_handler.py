@@ -1,6 +1,5 @@
 from PySide6.QtCore import Qt, QPointF, QObject, QEvent
 from PySide6.QtGui import QColor, QWheelEvent, QMouseEvent
-from components import WireStart
 
 class EventHandler(QObject):
     def __init__(self, canvas):
@@ -52,6 +51,8 @@ class EventHandler(QObject):
             self.last_mouse_pos = None
 
     def handle_wheel(self, event: QWheelEvent):
+        mouse_pos = event.position()
+
         # Calculate the zoom factor based on the wheel movement
         zoom_delta = event.angleDelta().y() / 120
         zoom_step = 0.1
@@ -66,4 +67,6 @@ class EventHandler(QObject):
     def handle_leave(self, event):
         self.canvas.setCursor(Qt.ArrowCursor)
         self.canvas.active_tool.show_preview = False 
+        if self.canvas.active_tool.spinbox:
+            self.canvas.active_tool.spinbox.hide()
         self.canvas.update()
