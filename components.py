@@ -36,6 +36,7 @@ class Wire:
                 pen = QPen(self.start_color)
                 painter.setBrush(self.start_color)
             pen.setWidth(5)
+            painter.setPen(pen)
             painter.drawRect(self.start_pos.x() - 0.5 * self.canvas.grid.size, self.start_pos.y() - 0.5 * self.canvas.grid.size, self.canvas.grid.size, self.canvas.grid.size)  # 100x100 square
 
             # Draw the spinbox in the center of the square
