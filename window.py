@@ -1,6 +1,6 @@
 from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QButtonGroup
 from canvas import Canvas
-from components import WireStart, Grab
+from components import WireStart, Grab, NormalCursor
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -25,8 +25,9 @@ class MainWindow(QMainWindow):
         self.tool_group.setExclusive(True)  # Ensure only one button is toggled at a time
 
         # Create tool/button labels and actions
-        tool_labels = [("Grab", self.grab_action),
-                         ("Wire", self.wire_action)]
+        tool_labels = [("Normal", self.normal_action),
+                       ("Grab", self.grab_action),
+                       ("Wire", self.wire_action)]
 
         button_labels = [("Clear", self.clear_action),
                          ("Quit", self.quit_action)]
@@ -62,6 +63,10 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("Circuit Builder")
         self.resize(800, 600)
 
+    def normal_action(self):
+        self.canvas.active_tool = NormalCursor(self.canvas)
+        self.canvas.update()
+    
     def grab_action(self):
         self.canvas.active_tool = Grab(self.canvas)
         self.canvas.update()
@@ -71,7 +76,8 @@ class MainWindow(QMainWindow):
         self.canvas.update()
 
     def clear_action(self):
-        self.canvas.components = []
+        for comp in self.canvas.placed_components[:]:
+            comp.delete()
         self.canvas.update()
 
     def quit_action(self):

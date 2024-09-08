@@ -2,18 +2,17 @@ from PySide6.QtWidgets import QWidget
 from PySide6.QtCore import QPointF
 from PySide6.QtGui import QPainter
 from event_handler import EventHandler
-from components import Grab
+from components import NormalCursor
 from grid import Grid
 
 class Canvas(QWidget):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.grid = Grid(self)
-        self.active_tool = Grab(self)
+        self.active_tool = NormalCursor(self)
         self.dragging_enabled = False
         self.setMouseTracking(True)
         self.event_handler = EventHandler(self)
-
         self.placed_components = []
 
     def paintEvent(self, event):
@@ -40,7 +39,7 @@ class Canvas(QWidget):
 
     def zoom(self, mouse_pos, new_grid_size):
         # Ensure the zoom factor is within reasonable bounds
-        if 0.1 <= new_grid_size / self.grid.size <= 5.0:
+        if 5 <= new_grid_size <= 250:
             self.grid.zoom(mouse_pos, new_grid_size)
             for comp in self.placed_components:
                 comp.zoom(mouse_pos, new_grid_size)
