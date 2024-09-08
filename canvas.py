@@ -1,14 +1,15 @@
 from PySide6.QtWidgets import QWidget
-from PySide6.QtCore import QPointF
 from PySide6.QtGui import QPainter
 from event_handler import EventHandler
 from components import NormalCursor
 from grid import Grid
+from color_scheme import ColorScheme
 
 class Canvas(QWidget):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, color_scheme, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.grid = Grid(self)
+        self.color_scheme = ColorScheme(color_scheme)
         self.active_tool = NormalCursor(self)
         self.dragging_enabled = False
         self.setMouseTracking(True)

@@ -54,7 +54,8 @@ class MainWindow(QMainWindow):
             self.tools[0].setChecked(True)
 
         # Create canvas widget
-        self.canvas = Canvas()
+        color_scheme = "basic"
+        self.canvas = Canvas(color_scheme)
 
         # Add widgets to the layout
         layout.addWidget(self.control_panel)

@@ -8,10 +8,6 @@ class Wire:
     def __init__(self, canvas):
         self.start_pos = None
         self.end_pos = None
-        self.start_color = QColor(0, 0, 255, 100)
-        self.end_color = QColor(0, 255, 0, 100)
-        self.overlap_color = QColor(255, 0, 0, 100)
-        self.wire_color = QColor(0, 0, 0, 100)
         self.canvas = canvas
         self.canvas.dragging_enabled = False
         self.show_preview = True
@@ -30,11 +26,11 @@ class Wire:
         if self.start_pos:
             # Draw wire start
             if self.overlapping:
-                pen = QPen(self.overlap_color)
-                painter.setBrush(self.overlap_color)
+                pen = QPen(self.canvas.color_scheme.overlap_color)
+                painter.setBrush(self.canvas.color_scheme.overlap_color)
             else:
-                pen = QPen(self.start_color)
-                painter.setBrush(self.start_color)
+                pen = QPen(self.canvas.color_scheme.wirestart_color)
+                painter.setBrush(self.canvas.color_scheme.wirestart_color)
             pen.setWidth(5)
             painter.setPen(pen)
             painter.drawRect(self.start_pos.x() - 0.5 * self.canvas.grid.size, self.start_pos.y() - 0.5 * self.canvas.grid.size, self.canvas.grid.size, self.canvas.grid.size)  # 100x100 square
@@ -48,18 +44,18 @@ class Wire:
         if self.start_pos and self.end_pos and self.start_placed:
             # Draw wire end
             if self.overlapping:
-                pen = QPen(self.overlap_color)
-                painter.setBrush(self.overlap_color)
+                pen = QPen(self.canvas.color_scheme.overlap_color)
+                painter.setBrush(self.canvas.color_scheme.overlap_color)
             else:
-                pen = QPen(self.end_color)
-                painter.setBrush(self.end_color)
+                pen = QPen(self.canvas.color_scheme.wireend_color)
+                painter.setBrush(self.canvas.color_scheme.wireend_color)
 
             pen.setWidth(5)
             painter.setPen(pen)
             painter.drawRect(self.end_pos.x() - 0.5 * self.canvas.grid.size, self.end_pos.y() - 0.5 * self.canvas.grid.size, self.canvas.grid.size, self.canvas.grid.size)  # 100x100 square
 
             # draw wire
-            pen = QPen(self.wire_color)
+            pen = QPen(self.canvas.color_scheme.wire_color)
             pen.setWidth(5)
             painter.setPen(pen)
             painter.drawLine(QPointF(self.start_pos.x(), self.start_pos.y()), QPointF(self.end_pos.x(), self.end_pos.y()))

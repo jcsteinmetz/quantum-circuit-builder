@@ -1,5 +1,5 @@
-from PySide6.QtCore import Qt, QPointF, QObject, QEvent
-from PySide6.QtGui import QColor, QWheelEvent, QMouseEvent
+from PySide6.QtCore import Qt, QObject, QEvent
+from PySide6.QtGui import QWheelEvent, QMouseEvent
 
 class EventHandler(QObject):
     def __init__(self, canvas):

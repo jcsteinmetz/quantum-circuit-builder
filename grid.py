@@ -1,4 +1,3 @@
-from PySide6.QtGui import QColor
 from PySide6.QtCore import QPointF
 import numpy as np
 
@@ -7,15 +6,13 @@ class Grid:
         self.canvas = canvas
         self.size = 50  # Size of each grid cell
         self.offset = QPointF(0, 0)
-        self.line_color = QColor(200, 200, 200)
-        self.bg_color = QColor(255, 255, 255)
     
     def draw(self, painter):
         # Fill in background
-        painter.fillRect(self.canvas.rect(), self.bg_color)
+        painter.fillRect(self.canvas.rect(), self.canvas.color_scheme.bg_color)
 
         # Draw grid lines
-        painter.setPen(self.line_color)
+        painter.setPen(self.canvas.color_scheme.gridline_color)
 
         for x in np.arange(-self.offset.x() % self.size, self.canvas.width(), self.size):
             painter.drawLine(x, 0, x, self.canvas.height())
