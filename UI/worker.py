@@ -3,6 +3,9 @@ from PySide6.QtCore import QThread, Signal, Slot, QTimer
 import random
 
 class ProgressBar(QWidget):
+    """
+    Progress bar that appears underneath the console as a visual indicator that the application is currently running.
+    """
     def __init__(self, window):
         super().__init__()
         self.window = window
@@ -24,7 +27,6 @@ class ProgressBar(QWidget):
         return progress_bar
     
 class WorkerThread(QThread):
-
     finished = Signal()
     error_occurred = Signal(str)
 

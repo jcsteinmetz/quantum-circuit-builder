@@ -1,9 +1,16 @@
+"""
+Contains the ToolBar class.
+"""
+
+from copy import copy
 from PySide6.QtWidgets import QSizePolicy, QWidget, QToolBar, QApplication, QComboBox, QStyle
 from PySide6.QtGui import QAction, QActionGroup
 from component import Select, Grab, Wire, BeamSplitter, Switch, Loss, Detector
-from copy import copy
 
 class ToolBar(QToolBar):
+    """
+    Class containing all toolbar buttons and dropdowns and their corresponding actions.
+    """
     def __init__(self, window):
         super().__init__()
 
@@ -41,15 +48,14 @@ class ToolBar(QToolBar):
         # Buttons
         self.add_button("Open", self.open_trigger, open_icon)
         self.add_button("Save", self.save_trigger, save_icon)
-        self.add_button("Undo", self.undo_trigger, undo_icon)
-        self.add_button("Redo", self.redo_trigger, redo_icon)
+        self.add_button("Undo", self.window.undo(), undo_icon)
+        self.add_button("Redo", self.window.redo(), redo_icon)
         self.addSeparator()
         self.add_tools(tools)
         self.add_button("Delete", self.delete_trigger, delete_icon)
         self.addSeparator()
         self.add_dropdown(self.set_backend, backend_options)
         self.addSeparator()
-
         self.add_button("Re-center", self.recenter_trigger, recenter_icon)
         self.add_button("Run", self.window.worker_thread.start_task, run_icon)
         self.add_button("Dark mode", self.darkmode_trigger, darkmode_icon, checkable=True, checked=True)
@@ -60,6 +66,9 @@ class ToolBar(QToolBar):
         self.add_button("Quit", self.quit_trigger, quit_icon)
 
     def add_tools(self, tools):
+        """
+        Add a list of tools to the toolbar. Only one tool can be selected at a time.
+        """
         action_group = QActionGroup(self)
         action_group.setExclusive(True)
 
@@ -73,18 +82,24 @@ class ToolBar(QToolBar):
             action.setCheckable(True)
             if tool_type == Select:
                 action.setChecked(True)
-            
+
             self.addAction(action)
             action_group.addAction(action)
             action.triggered.connect(lambda checked, t=tool_type: self.set_active_tool(t))
 
     def add_dropdown(self, dropdown_trigger, options):
+        """
+        Add a dropdown menu to the toolbar.
+        """
         dropdown = QComboBox()
         dropdown.addItems(options.keys())
         dropdown.currentIndexChanged.connect(lambda index: dropdown_trigger(options[dropdown.currentText()]))
         self.addWidget(dropdown)
 
     def add_button(self, name, trigger, icon, checkable=False, checked=False):
+        """
+        Add a button to the toolbar. Buttons perform a one-time action when clicked.
+        """
         if icon:
             action = QAction(icon, name, self)
         else:
@@ -141,11 +156,8 @@ class ToolBar(QToolBar):
     def open_trigger(self):
         pass
 
-    def undo_trigger(self):
-        self.window.undo()
-
-    def redo_trigger(self):
-        self.window.redo()
-
     def quit_trigger(self):
+        """
+        Quits the application
+        """
         QApplication.instance().quit()

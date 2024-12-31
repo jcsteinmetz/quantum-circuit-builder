@@ -97,16 +97,16 @@ class Canvas(QWidget):
 
         if 5 <= new_grid_size <= 250: # make sure the canvas is a reasonable size
             # zoom the grid
-            self.grid.zoom(self.event_handler.mouse_position, new_grid_size)
+            self.grid.zoom(self.event_handler.current_mouse_position, new_grid_size)
 
             # zoom placed components
             for comp_list in self.placed_components.values():
                 for comp in comp_list:
-                    comp.zoom(self.event_handler.mouse_position, new_grid_size)
+                    comp.zoom(self.event_handler.current_mouse_position, new_grid_size)
 
             # zoom the active component preview
             if not isinstance(self.active_tool, Select) and not isinstance(self.active_tool, Grab):
-                self.active_tool.zoom(self.event_handler.mouse_position, new_grid_size)
+                self.active_tool.zoom(self.event_handler.current_mouse_position, new_grid_size)
 
             self.grid.size = new_grid_size
 

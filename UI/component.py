@@ -95,17 +95,17 @@ class Component(ABC):
     @property
     def snappedPosition(self):
         if not self.position:
-            return self.window.canvas.grid.snap(self.window.canvas.event_handler.mouse_position)
+            return self.window.canvas.grid.snap(self.window.canvas.event_handler.current_mouse_position)
         elif hasattr(self, "end_position"):
             if self.position and not self.end_position:
                 # Wires are horizontal
                 if isinstance(self, Wire):
-                    x = self.window.canvas.grid.snap(self.window.canvas.event_handler.mouse_position)[0]
+                    x = self.window.canvas.grid.snap(self.window.canvas.event_handler.current_mouse_position)[0]
                     y = self.window.canvas.grid.snap(self.position)[1]
                     return (x, y)
                 # Other double components are vertical
                 x = self.window.canvas.grid.snap(self.position)[0]
-                y = self.window.canvas.grid.snap(self.window.canvas.event_handler.mouse_position)[1]
+                y = self.window.canvas.grid.snap(self.window.canvas.event_handler.current_mouse_position)[1]
                 return (x, y)
             
     def set_style(self):
