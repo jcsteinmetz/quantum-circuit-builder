@@ -64,6 +64,10 @@ class Canvas(QWidget):
                 for comp in comp_list:
                     comp.zoom(self.event_handler.mouse_position, new_grid_size)
 
+            # zoom the active component preview
+            if not isinstance(self.active_tool, Select) and not isinstance(self.active_tool, Grab):
+                self.active_tool.zoom(self.event_handler.mouse_position, new_grid_size)
+
             self.grid.size = new_grid_size
 
     def sort_components(self):

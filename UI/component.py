@@ -112,6 +112,25 @@ class Component(ABC):
 
         if shape_type == "square":
             painter.drawRect(bottom_left.x(), bottom_left.y(), scale, scale)
+        elif shape_type == "circle":
+            painter.drawEllipse(pos, 0.5*scale, 0.5*scale)
+        elif shape_type == "half circle":
+            rectangle = QRectF(pos.x() - 0.75*scale, pos.y() - 0.5*scale, scale, scale)
+            start_angle = -90 * 16 # in 16ths of a degree
+            span_angle = 180 * 16
+            painter.drawPie(rectangle, start_angle, span_angle)
+        elif shape_type == "X":
+            painter.drawLine(bottom_left, top_right)
+            painter.drawLine(top_left, bottom_right)
+            painter.drawEllipse(pos, 0.25*scale, 0.25*scale)
+        elif shape_type == "diagonal line":
+            painter.drawLine(bottom_left, top_right)
+            painter.drawEllipse(pos, 0.25*scale, 0.25*scale)
+        elif shape_type == "arrow":
+            painter.drawLine(bottom_left, pos)
+            painter.drawLine(top_left, pos)
+        
+    # Transformations
 
     def move(self, delta):
         if self.position:
@@ -214,6 +233,86 @@ class SingleComponent(Component):
     def __init__(self, window):
         super().__init__(window)
         self.hide = False
+
+    def place(self):
+        # hide the component underneath where this component is placed
+        for comp_list in self.window.canvas.placed_components.values():
+            for comp in comp_list:
+                if issubclass(comp.__class__, DoubleComponent):
+                    if self.snappedPosition == self.window.canvas.grid.snap(comp.position):
+                        comp.hide_start = True
+                    if self.snappedPosition == self.window.canvas.grid.snap(comp.end_position):
+                        comp.hide_end = True
+                elif issubclass(comp.__class__, SingleComponent):
+                    if self.snappedPosition == self.window.canvas.grid.snap(comp.position):
+                        comp.hide = True
+
+        self.position = copy(self.snappedPosition)
+        self.window.canvas.active_tool = self.__class__(self.window)
+        if isinstance(self, Detector):
+            self.window.canvas.placed_components["detectors"].append(self)
+        else:
+            self.window.canvas.placed_components["components"].append(self)
+        self.window.canvas.sort_components()
+
+    def preview(self, painter):
+        if not self.position:
+            pen = QPen(self._transparent(QColor(*self.border_color)))
+            pen.setWidth(self.line_width)
+            painter.setPen(pen)
+
+            if self.placeable:
+                painter.setBrush(self._transparent(QColor(*self.color)))
+            else:
+                painter.setBrush(self._transparent(QColor(*self.error_color)))
+            self.draw_shape(painter, self.snappedPosition, self.shape_type)
+
+    def draw(self, painter):
+        if self.position and not self.hide:
+            pen = QPen(QColor(*self.border_color))
+            pen.setWidth(self.line_width)
+            painter.setPen(pen)
+            painter.setBrush(QColor(*self.color))
+            self.draw_shape(painter, self.position, self.shape_type)
+
+            self.draw_name(painter, self.position)
+
+class Detector(SingleComponent):
+    def __init__(self, window):
+        super().__init__(window)
+
+        self.shape_type = "half circle"
+        self.shape_scale = 0.75
+
+        # Properties
+        self.herald = 0
+    
+    @property
+    def placeable(self):
+        # Can only be placed on top of a wire end
+        for comp in self.window.canvas.placed_components["wires"]:
+            allowed_point = self.window.canvas.grid.snap(comp.end_position)
+            if self.snappedPosition == allowed_point:
+                return True
+        return False
+
+class Loss(SingleComponent):
+    def __init__(self, window):
+        super().__init__(window)
+
+        # Style
+        self.shape_scale = 0.5
+        self.shape_type = "diagonal line"
+
+        # Properties
+        self.eta = 1
+    
+    @property
+    def placeable(self):
+        if self.overlaps_a_component(self.snappedPosition):
+            return False
+        if self.overlaps_a_wire(self.snappedPosition):
+            return True
 
 class DoubleComponent(Component):
     def __init__(self, window):
@@ -332,3 +431,47 @@ class Wire(DoubleComponent):
             return False
         return True
     
+class BeamSplitter(DoubleComponent):
+    def __init__(self, window):
+        super().__init__(window)
+
+        # Style
+        self.shape_scale = 0.5
+        self.shape_type = "circle"
+        self.end_shape_type = "circle"
+
+        # Properties
+        self.theta = 90
+
+    @property
+    def placeable(self):
+        if self.overlaps_a_component(self.snappedPosition):
+            return False
+        if self.overlaps_itself(self.snappedPosition):
+            return False
+        if self.spans_a_component(self.snappedPosition):
+            return False
+        if self.overlaps_a_wire(self.snappedPosition):
+            return True
+        return False
+    
+class Switch(DoubleComponent):
+    def __init__(self, window):
+        super().__init__(window)
+
+        # Style
+        self.shape_scale = 0.5
+        self.shape_type = "X"
+        self.end_shape_type = "X"
+
+    @property
+    def placeable(self):
+        if self.overlaps_a_component(self.snappedPosition):
+            return False
+        if self.overlaps_itself(self.snappedPosition):
+            return False
+        if self.spans_a_component(self.snappedPosition):
+            return False
+        if self.overlaps_a_wire(self.snappedPosition):
+            return True
+        return False
