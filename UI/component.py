@@ -129,7 +129,7 @@ class Component(ABC):
         elif shape_type == "arrow":
             painter.drawLine(bottom_left, pos)
             painter.drawLine(top_left, pos)
-        
+
     # Transformations
 
     def move(self, delta):
@@ -149,6 +149,35 @@ class Component(ABC):
                 distance_to_mouse = (self.end_position[0] - mouse_pos[0], self.end_position[1] - mouse_pos[1])
                 new_distance_to_mouse = (distance_to_mouse[0] * (new_grid_size / self.window.canvas.grid.size), distance_to_mouse[1] * (new_grid_size / self.window.canvas.grid.size))
                 self.end_position = (mouse_pos[0] + new_distance_to_mouse[0], mouse_pos[1] + new_distance_to_mouse[1])
+
+    def set_selected(self, check):
+        if check:
+            self.is_selected = True
+            self.window.control_panel.components_tab.select_item(self)
+        else:
+            self.is_selected = False
+            self.window.control_panel.components_tab.deselect_item(self)
+        self.set_style()
+
+    def contains(self, pos):
+        scale = self.shape_scale*self.window.canvas.grid.size
+        if self.position:
+            x_min = self.position[0] - 0.5*scale
+            x_max = self.position[0] + 0.5*scale
+            y_min = self.position[1] - 0.5*scale
+            y_max = self.position[1] + 0.5*scale
+            if x_min <= pos[0] <= x_max and y_min <= pos[1] <= y_max:
+                return True
+            
+        if hasattr(self, "end_position"):
+            if self.end_position and not isinstance(self, Wire):
+                x_min = self.end_position[0] - 0.5*scale
+                x_max = self.end_position[0] + 0.5*scale
+                y_min = self.end_position[1] - 0.5*scale
+                y_max = self.end_position[1] + 0.5*scale
+                if x_min <= pos[0] <= x_max and y_min <= pos[1] <= y_max:
+                    return True
+        return False        
 
     # Placeable checks
 

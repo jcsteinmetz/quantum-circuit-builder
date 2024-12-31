@@ -9,3 +9,9 @@ class ComponentsTab(QTreeWidget):
         self.setHeaderLabels(["Property", "Value"])
         self.component_types = []
         # self.itemClicked.connect(self.on_item_clicked)
+
+    def select_item(self, item):
+        pass
+
+    def deselect_item(self, item):
+        pass
