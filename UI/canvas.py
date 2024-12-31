@@ -18,7 +18,7 @@ class Canvas(QWidget):
         self.gridline_color = None
         self.set_style()
 
-        self.active_tool = Grab(window)
+        self.active_tool = Select(window)
 
     def paintEvent(self, event):
         painter = QPainter(self)
