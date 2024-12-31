@@ -113,6 +113,24 @@ class Component(ABC):
         if shape_type == "square":
             painter.drawRect(bottom_left.x(), bottom_left.y(), scale, scale)
 
+    def move(self, delta):
+        if self.position:
+            self.position = (self.position[0] + delta[0], self.position[1] + delta[1])
+        if hasattr(self, "end_position"):
+            if self.end_position:
+                self.end_position = (self.end_position[0] + delta[0], self.end_position[1] + delta[1])
+
+    def zoom(self, mouse_pos, new_grid_size):
+        if self.position:
+            distance_to_mouse = (self.position[0] - mouse_pos[0], self.position[1] - mouse_pos[1])
+            new_distance_to_mouse = (distance_to_mouse[0] * (new_grid_size / self.window.canvas.grid.size), distance_to_mouse[1] * (new_grid_size / self.window.canvas.grid.size))
+            self.position = (mouse_pos[0] + new_distance_to_mouse[0], mouse_pos[1] + new_distance_to_mouse[1])
+        if hasattr(self, "end_position"):
+            if self.end_position:
+                distance_to_mouse = (self.end_position[0] - mouse_pos[0], self.end_position[1] - mouse_pos[1])
+                new_distance_to_mouse = (distance_to_mouse[0] * (new_grid_size / self.window.canvas.grid.size), distance_to_mouse[1] * (new_grid_size / self.window.canvas.grid.size))
+                self.end_position = (mouse_pos[0] + new_distance_to_mouse[0], mouse_pos[1] + new_distance_to_mouse[1])
+
     # Placeable checks
 
     def overlaps_a_wire(self, pos):
