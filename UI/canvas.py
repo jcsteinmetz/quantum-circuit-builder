@@ -23,6 +23,17 @@ class Canvas(QWidget):
 
         self.active_tool = Select(window)
 
+    @property
+    def n_wires(self):
+        return len(self.placed_components["wires"])
+    
+    @property
+    def n_photons(self):
+        n_photons = 0
+        for wire in self.placed_components["wires"]:
+            n_photons += wire.n_photons
+        return n_photons
+
     def paintEvent(self, event):
         painter = QPainter(self)
 
@@ -78,6 +89,12 @@ class Canvas(QWidget):
     def set_style(self):
         self.bg_color = (255, 255, 255)
         self.gridline_color = (0, 0, 0)
+
+    def deselect_all(self):
+        for comp_list in self.placed_components.values():
+            for comp in comp_list:
+                comp.is_selected = False
+        self.update()
 
     def enablePreview(self):
         self.preview_enabled = True

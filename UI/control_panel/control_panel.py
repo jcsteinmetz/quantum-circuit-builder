@@ -1,6 +1,6 @@
 from PySide6.QtWidgets import QTabWidget
-from components_tab import ComponentsTab
-from output_tab import OutputTab
+from control_panel.tabs.components_tab import ComponentsTab
+from control_panel.tabs.output_tab import OutputTab
 
 class ControlPanel(QTabWidget):
     def __init__(self, window):

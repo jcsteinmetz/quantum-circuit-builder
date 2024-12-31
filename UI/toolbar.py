@@ -84,16 +84,35 @@ class ToolBar(QToolBar):
         self.window.canvas.active_tool = tool_type(self.window)
 
     def darkmode_trigger(self):
-        pass
+        new_style = None
+        if self.window.canvas.style_choice == "basic":
+            new_style = "darkmode"
+        elif self.window.canvas.style_choice == "darkmode":
+            new_style = "basic"
+        self.window.canvas.style_choice = new_style
+        self.window.canvas.set_style()
+        for comp_list in self.window.canvas.placed_components.values():
+            for comp in comp_list:
+                comp.set_style()
+
+        # Recreate active tool so it updates the style
+        self.window.canvas.active_tool = self.window.canvas.active_tool.__class__(self.window)
+        self.window.canvas.repaint()
 
     def recenter_trigger(self):
-        pass
+        self.window.canvas.drag(copy(self.window.canvas.grid.offset))
+        self.window.canvas.repaint()
 
     def delete_trigger(self):
-        pass
+        for comp_list in self.window.canvas.placed_components.values():
+            for comp in comp_list[:]:
+                if comp.is_selected:
+                    comp.delete()
+        self.window.control_panel.components_tab.refresh()
+        self.window.canvas.repaint()
 
     def clear_trigger(self):
-        pass
+        self.window.clear()
 
     def save_trigger(self):
         pass
@@ -102,10 +121,10 @@ class ToolBar(QToolBar):
         pass
 
     def undo_trigger(self):
-        pass
+        self.window.undo()
 
     def redo_trigger(self):
-        pass
+        self.window.redo()
 
     def quit_trigger(self):
-        pass
+        QApplication.instance().quit()

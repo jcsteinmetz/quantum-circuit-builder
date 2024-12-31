@@ -57,6 +57,25 @@ class Component(ABC):
     def set_cursor(self):
         self.window.canvas.setCursor(self.cursor)
 
+    # Interface
+
+    @abstractmethod
+    def addToConsole(self):
+        raise NotImplementedError
+
+    # Serialization
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        del state["window"]
+        del state["property_manager"]
+        return state
+    
+    def set_unserializable_attributes(self, window):
+        self.window = window
+        self.property_manager = PropertiesManager(self, self.window.canvas)
+        self.create_property_manager()
+        self.set_style()
+
     # Colors
 
     def _transparent(self, col):
@@ -144,6 +163,27 @@ class Component(ABC):
 
     # Transformations
 
+    def snap(self):
+        self.position = self.window.canvas.grid.snap(self.position)
+        if hasattr(self, "end_position"):
+            self.end_position = self.window.canvas.grid.snap(self.end_position)
+
+    def delete(self):
+        self.property_manager.hide()
+        if self in self.window.canvas.placed_components["wires"]:
+            self.window.canvas.placed_components["wires"].remove(self)
+            # delete components attached to the wire
+            for comp_list in self.window.canvas.placed_components.values():
+                for comp in comp_list[:]:
+                    comp.snap()
+                    self.snap()
+                    if comp.position[1] == self.position[1]:
+                        comp.delete()
+        elif self in self.window.canvas.placed_components["components"]:
+            self.window.canvas.placed_components["components"].remove(self)
+        elif self in self.window.canvas.placed_components["detectors"]:
+            self.window.canvas.placed_components["detectors"].remove(self)
+
     def move(self, delta):
         if self.position:
             self.position = (self.position[0] + delta[0], self.position[1] + delta[1])
@@ -192,6 +232,21 @@ class Component(ABC):
         return False        
 
     # Placeable checks
+
+    @property
+    def connected_wires(self):
+        comp_wires = []
+        self.snap()
+        for w, wire in enumerate(self.window.canvas.placed_components["wires"]):
+            wire.snap()
+            if self.position[1] == wire.position[1]:
+                if wire.position[0] <= self.position[0] <= wire.end_position[0]:
+                    comp_wires.append(w+1)
+            if hasattr(self, "end_position"):
+                if self.end_position[1] == wire.end_position[1]:
+                    if wire.position[0] <= self.end_position[0] <= wire.end_position[0]:
+                        comp_wires.append(w+1)
+        return comp_wires
 
     def overlaps_a_wire(self, pos):
         for comp in self.window.canvas.placed_components["wires"]:
@@ -296,7 +351,9 @@ class SingleComponent(Component):
             self.window.canvas.placed_components["components"].append(self)
         self.window.canvas.sort_components()
 
+        self.window.console.refresh()
         self.window.control_panel.components_tab.refresh()
+        self.window.mark_unsaved_changes()
 
     def preview(self, painter):
         if not self.position:
@@ -348,6 +405,9 @@ class Detector(SingleComponent):
             if self.snappedPosition == allowed_point:
                 return True
         return False
+    
+    def addToConsole(self):
+        raise NotImplementedError
 
 class Loss(SingleComponent):
     def __init__(self, window):
@@ -373,6 +433,12 @@ class Loss(SingleComponent):
             return False
         if self.overlaps_a_wire(self.snappedPosition):
             return True
+        
+    def addToConsole(self):
+        if self.eta == 1:
+            self.window.console.code += "add loss on wire"+str(self.connected_wires[0])+"\n"
+        else:
+            self.window.console.code += "add loss on wire"+str(self.connected_wires[0])+"with eta"+str(self.eta)+"\n"
 
 class DoubleComponent(Component):
     def __init__(self, window):
@@ -394,7 +460,10 @@ class DoubleComponent(Component):
                 self.window.canvas.placed_components["components"].append(self)
             self.window.canvas.sort_components()
 
+            self.window.console.refresh()
             self.window.control_panel.components_tab.refresh()
+
+            self.window.mark_unsaved_changes()
     
     def preview(self, painter):
         if not self.position:
@@ -506,6 +575,9 @@ class Wire(DoubleComponent):
             return False
         return True
     
+    def addToConsole(self):
+        pass
+    
 class BeamSplitter(DoubleComponent):
     def __init__(self, window):
         super().__init__(window)
@@ -537,6 +609,12 @@ class BeamSplitter(DoubleComponent):
             return True
         return False
     
+    def addToConsole(self):
+        if self.theta == 90:
+            self.window.console.code += "add beamsplitter on wires"+str(self.connected_wires)+"\n"
+        else:
+            self.window.console.code += "add beamsplitter on wires"+str(self.connected_wires)+"with theta"+str(self.theta)+"\n"
+    
 class Switch(DoubleComponent):
     def __init__(self, window):
         super().__init__(window)
@@ -560,3 +638,6 @@ class Switch(DoubleComponent):
         if self.overlaps_a_wire(self.snappedPosition):
             return True
         return False
+    
+    def addToConsole(self):
+        self.window.console.code += "add switch on wires"+str(self.connected_wires)+"\n"
