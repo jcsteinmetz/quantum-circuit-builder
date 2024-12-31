@@ -28,6 +28,9 @@ class MainWindow(QMainWindow):
         self.setWindowState(Qt.WindowMaximized)
         self.resize(800, 600)
 
+        # Prevent focus from being on a widget
+        self.setFocus()
+
     def qvbox_widget(self, widgets):
         layout = QVBoxLayout()
         for w in widgets:
