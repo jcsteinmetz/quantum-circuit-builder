@@ -132,3 +132,5 @@ class ComponentsTab(QTreeWidget):
         # update the property
         if grandchild_item:
             grandchild_item.setText(1, str(property_value))
+
+        self.window.mark_unsaved_changes()

@@ -105,12 +105,20 @@ class Component(ABC):
                 return (x, y)
             
     def set_style(self):
-        self.color = (0, 0, 0)
-        if not self.is_selected:
-            self.border_color = (0, 0, 0)
-        else:
-            self.border_color = (219, 197, 119)
-            # self.border_color = (0, 128, 255)
+        if self.window.canvas.style_choice == "basic":
+            self.color = (0, 0, 0)
+            if not self.is_selected:
+                self.border_color = (0, 0, 0)
+            else:
+                self.border_color = (219, 197, 119)
+                # self.border_color = (0, 128, 255)
+        elif self.window.canvas.style_choice == "darkmode":
+            self.color = (255, 255, 255)
+            if not self.is_selected:
+                self.border_color = (255, 255, 255)
+            else:
+                self.border_color = (219, 197, 119)
+                # self.border_color = (0, 128, 255)
         inverse_color = self._invert(self.color)
         self.property_manager.setStyleSheet(f"background-color: {QColor(*self.color).name()}; color: {QColor(*inverse_color).name()}")
 
