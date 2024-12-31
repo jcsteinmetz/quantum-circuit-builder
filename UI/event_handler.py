@@ -86,6 +86,7 @@ class EventHandler(QObject):
                     for comp_list in self.canvas.placed_components.values():
                         for comp in comp_list:
                             if isinstance(self.canvas.active_tool, Select) and comp.contains(event.position().toTuple()):
+                                comp.property_manager.draw(comp.position)
                                 comp.set_selected(True)
                             else:
                                 comp.set_selected(False)

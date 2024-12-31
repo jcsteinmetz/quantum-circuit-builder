@@ -1,7 +1,8 @@
 from PySide6.QtCore import Qt, QPointF, QRectF
-from PySide6.QtGui import QColor, QPen
+from PySide6.QtGui import QColor, QPen, QIntValidator, QDoubleValidator
 from copy import copy
 from abc import ABC, abstractmethod
+from properties_manager import PropertiesManager
 
 class Select:
     def __init__(self, window):
@@ -30,6 +31,9 @@ class Component(ABC):
         self.cursor = Qt.CrossCursor
         self.is_selected = False
 
+        # Property manager
+        self.property_manager = PropertiesManager(self, self.window.canvas)
+
         # Default style
         self.color = None
         self.border_color = None
@@ -38,6 +42,12 @@ class Component(ABC):
         self.shape_type = "square"
         self.error_color = (255, 0, 0)
         self.set_style()
+
+    # Setup
+
+    @abstractmethod
+    def create_property_manager(self):
+        raise NotImplementedError
 
     @property
     @abstractmethod
@@ -82,6 +92,8 @@ class Component(ABC):
         else:
             self.border_color = (219, 197, 119)
             # self.border_color = (0, 128, 255)
+        inverse_color = self._invert(self.color)
+        self.property_manager.setStyleSheet(f"background-color: {QColor(*self.color).name()}; color: {QColor(*inverse_color).name()}")
 
     @property
     def name(self):
@@ -284,6 +296,8 @@ class SingleComponent(Component):
             self.window.canvas.placed_components["components"].append(self)
         self.window.canvas.sort_components()
 
+        self.window.control_panel.components_tab.refresh()
+
     def preview(self, painter):
         if not self.position:
             pen = QPen(self._transparent(QColor(*self.border_color)))
@@ -306,6 +320,9 @@ class SingleComponent(Component):
 
             self.draw_name(painter, self.position)
 
+            if not (self.is_selected and self.property_manager.properties):
+                self.property_manager.hide()
+
 class Detector(SingleComponent):
     def __init__(self, window):
         super().__init__(window)
@@ -315,6 +332,13 @@ class Detector(SingleComponent):
 
         # Properties
         self.herald = 0
+        self.create_property_manager()
+
+    def create_property_manager(self):
+        self.property_manager.add_property("herald", self.update_herald, self.herald, QIntValidator(0, 100))
+
+    def update_herald(self):
+        self.herald = int(self.property_manager.properties["herald"].text())
     
     @property
     def placeable(self):
@@ -335,6 +359,13 @@ class Loss(SingleComponent):
 
         # Properties
         self.eta = 1
+        self.create_property_manager()
+
+    def create_property_manager(self):
+        self.property_manager.add_property("eta", self.update_eta, self.eta, QDoubleValidator(0, 1, 2))
+
+    def update_eta(self):
+        self.eta = float(self.property_manager.properties["eta"].text())
     
     @property
     def placeable(self):
@@ -362,6 +393,8 @@ class DoubleComponent(Component):
             else:
                 self.window.canvas.placed_components["components"].append(self)
             self.window.canvas.sort_components()
+
+            self.window.control_panel.components_tab.refresh()
     
     def preview(self, painter):
         if not self.position:
@@ -414,6 +447,9 @@ class DoubleComponent(Component):
                 painter.setBrush(QColor(*self.color))
                 self.draw_shape(painter, self.end_position, self.end_shape_type)
 
+            if not (self.is_selected and self.property_manager.properties):
+                self.property_manager.hide()
+
         if self.position:
             if not self.hide_start:
                 # draw wire start
@@ -431,6 +467,16 @@ class Wire(DoubleComponent):
         # Style
         self.shape_scale = 0.75
         self.end_shape_type = None
+
+        # Properties
+        self.n_photons = 0
+        self.create_property_manager()
+
+    def create_property_manager(self):
+        self.property_manager.add_property("n_photons", self.update_n_photons, self.n_photons, QIntValidator(0, 100))
+
+    def update_n_photons(self):
+        self.n_photons = int(self.property_manager.properties["n_photons"].text())
 
     @property
     def placeable(self):
@@ -471,6 +517,13 @@ class BeamSplitter(DoubleComponent):
 
         # Properties
         self.theta = 90
+        self.create_property_manager()
+
+    def create_property_manager(self):
+        self.property_manager.add_property("angle", self.update_theta, self.theta, QDoubleValidator(0, 180, 2))
+
+    def update_theta(self):
+        self.theta = float(self.property_manager.properties["angle"].text())
 
     @property
     def placeable(self):
@@ -492,6 +545,9 @@ class Switch(DoubleComponent):
         self.shape_scale = 0.5
         self.shape_type = "X"
         self.end_shape_type = "X"
+
+    def create_property_manager(self):
+        pass
 
     @property
     def placeable(self):
