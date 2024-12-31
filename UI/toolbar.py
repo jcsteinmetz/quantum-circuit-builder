@@ -1,6 +1,6 @@
 from PySide6.QtWidgets import QToolBar
 from PySide6.QtGui import QAction, QActionGroup
-from component import Select, Grab
+from component import Select, Grab, Wire
 
 class ToolBar(QToolBar):
     def __init__(self, window):
@@ -10,7 +10,8 @@ class ToolBar(QToolBar):
         # Tools (name of tool class, tool icon)
         tools = {
             "Select": (Select, None),
-            "Grab": (Grab, None)
+            "Grab": (Grab, None),
+            "Wire": (Wire, None)
         }
 
         # Buttons

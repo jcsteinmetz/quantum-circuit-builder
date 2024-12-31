@@ -13,6 +13,9 @@ class Canvas(QWidget):
         self.setMouseTracking(True)
         self.preview_enabled = False
 
+        # Placed components
+        self.placed_components = {"wires": [], "components": [], "detectors": []}
+
         # Style
         self.bg_color = None
         self.gridline_color = None
@@ -25,6 +28,16 @@ class Canvas(QWidget):
 
         # Draw the grid
         self.grid.draw(painter)
+
+        # Draw placed components
+        for comp_list in self.placed_components.values():
+            for comp in comp_list:
+                comp.draw(painter)
+
+        # Draw tool preview
+        if self.preview_enabled:
+            if not isinstance(self.active_tool, Select) and not isinstance(self.active_tool, Grab):
+                self.active_tool.preview(painter)
 
     def drag(self, delta):
         """
@@ -42,6 +55,11 @@ class Canvas(QWidget):
             self.grid.zoom(self.event_handler.mouse_position, new_grid_size)
 
             self.grid.size = new_grid_size
+
+    def sort_components(self):
+        self.placed_components["wires"] = sorted(self.placed_components["wires"], key = lambda comp: (comp.position[1], comp.position[0]))
+        self.placed_components["components"] = sorted(self.placed_components["components"], key = lambda comp: (comp.position[0], comp.position[1]))
+        self.placed_components["detectors"] = sorted(self.placed_components["detectors"], key = lambda comp: (comp.position[1], comp.position[0]))
 
     def set_style(self):
         self.bg_color = (255, 255, 255)

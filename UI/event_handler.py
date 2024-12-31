@@ -39,7 +39,7 @@ class EventHandler(QObject):
                 self.canvas.active_tool.set_dragging_cursor()
 
             elif self.canvas.active_tool.placeable:
-                pass
+                self.canvas.active_tool.place()
 
             self.mouse_pressed_position = event.position().toTuple()
 
@@ -71,6 +71,7 @@ class EventHandler(QObject):
     def handle_enter(self, event):
         self.mouse_position = event.position().toTuple()
         self.canvas.active_tool.set_cursor()
+        self.canvas.enablePreview()
         self.canvas.update()
 
     def handle_leave(self, event):

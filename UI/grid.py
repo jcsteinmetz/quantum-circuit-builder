@@ -24,3 +24,8 @@ class Grid:
         mouse_pos_before_zoom = ((mouse_pos[0] + self.offset[0])/self.size, (mouse_pos[1] + self.offset[1])/self.size)
         mouse_pos_after_zoom = ((mouse_pos[0] + self.offset[0])/new_grid_size, (mouse_pos[1] + self.offset[1])/new_grid_size)
         self.offset = (self.offset[0] + (mouse_pos_before_zoom[0] - mouse_pos_after_zoom[0])*new_grid_size, self.offset[1] + (mouse_pos_before_zoom[1] - mouse_pos_after_zoom[1])*new_grid_size)
+
+    def snap(self, pos):
+        x = round((pos[0] + self.offset[0]) / self.size) * self.size - self.offset[0]
+        y = round((pos[1] + self.offset[1]) / self.size) * self.size - self.offset[1]
+        return (x, y)
