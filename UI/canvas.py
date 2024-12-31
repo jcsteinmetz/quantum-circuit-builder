@@ -33,6 +33,16 @@ class Canvas(QWidget):
         # Move the grid
         self.grid.offset = (self.grid.offset[0] - delta[0], self.grid.offset[1] - delta[1])
 
+    def zoom(self, zoom_delta):
+        zoom_step = 0.1
+        new_grid_size = self.grid.size * (1 + zoom_step * zoom_delta)
+
+        if 5 <= new_grid_size <= 250: # make sure the canvas is a reasonable size
+            # zoom the grid
+            self.grid.zoom(self.event_handler.mouse_position, new_grid_size)
+
+            self.grid.size = new_grid_size
+
     def set_style(self):
         self.bg_color = (255, 255, 255)
         self.gridline_color = (0, 0, 0)

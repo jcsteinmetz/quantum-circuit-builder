@@ -19,3 +19,8 @@ class Grid:
 
         for y in np.arange(-self.offset[1] % self.size, self.canvas.height(), self.size):
             painter.drawLine(0, y, self.canvas.width(), y)
+
+    def zoom(self, mouse_pos, new_grid_size):
+        mouse_pos_before_zoom = ((mouse_pos[0] + self.offset[0])/self.size, (mouse_pos[1] + self.offset[1])/self.size)
+        mouse_pos_after_zoom = ((mouse_pos[0] + self.offset[0])/new_grid_size, (mouse_pos[1] + self.offset[1])/new_grid_size)
+        self.offset = (self.offset[0] + (mouse_pos_before_zoom[0] - mouse_pos_after_zoom[0])*new_grid_size, self.offset[1] + (mouse_pos_before_zoom[1] - mouse_pos_after_zoom[1])*new_grid_size)

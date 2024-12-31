@@ -81,4 +81,6 @@ class EventHandler(QObject):
         self.canvas.update()
 
     def handle_wheel(self, event):
-        pass
+        zoom_delta = event.angleDelta().y() / 120
+        self.canvas.zoom(zoom_delta)
+        self.canvas.update()
