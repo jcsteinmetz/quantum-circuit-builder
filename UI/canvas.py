@@ -14,7 +14,7 @@ class Canvas(QWidget):
         self.event_handler = EventHandler(self)
         self.setMouseTracking(True)
         self.preview_enabled = False
-
+        self.gram_matrix = np.ones((0, 0))
 
         # Placed components
         self.placed_components = {"wires": [], "components": [], "detectors": []}
@@ -25,6 +25,13 @@ class Canvas(QWidget):
         self.set_style()
 
         self.active_tool = Select(window)
+
+    @property
+    def overlaps(self):
+        if self.n_photons in [0, 1]:
+            return [1]
+        upper_triangular_indices = np.triu_indices(self.n_photons, k=1)
+        return list(self.gram_matrix[upper_triangular_indices])
 
     @property
     def n_wires(self):

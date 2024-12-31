@@ -62,8 +62,12 @@ class Component(ABC):
     @abstractmethod
     def addToConsole(self):
         raise NotImplementedError
+    
+    def addToSim(self):
+        raise NotImplementedError
 
     # Serialization
+
     def __getstate__(self):
         state = self.__dict__.copy()
         del state["window"]
@@ -187,6 +191,9 @@ class Component(ABC):
                     self.snap()
                     if comp.position[1] == self.position[1]:
                         comp.delete()
+                    elif hasattr(comp, "end_position"):
+                        if comp.end_position[1] == self.position[1]:
+                            comp.delete()
         elif self in self.window.canvas.placed_components["components"]:
             self.window.canvas.placed_components["components"].remove(self)
         elif self in self.window.canvas.placed_components["detectors"]:
@@ -209,6 +216,8 @@ class Component(ABC):
                 distance_to_mouse = (self.end_position[0] - mouse_pos[0], self.end_position[1] - mouse_pos[1])
                 new_distance_to_mouse = (distance_to_mouse[0] * (new_grid_size / self.window.canvas.grid.size), distance_to_mouse[1] * (new_grid_size / self.window.canvas.grid.size))
                 self.end_position = (mouse_pos[0] + new_distance_to_mouse[0], mouse_pos[1] + new_distance_to_mouse[1])
+
+    # Selecting
 
     def set_selected(self, check):
         if check:
@@ -404,6 +413,7 @@ class Detector(SingleComponent):
 
     def update_herald(self):
         self.herald = int(self.property_manager.properties["herald"].text())
+        self.window.console.refresh()
     
     @property
     def placeable(self):
@@ -415,7 +425,10 @@ class Detector(SingleComponent):
         return False
     
     def addToConsole(self):
-        raise NotImplementedError
+        pass
+    
+    def addToSim(self):
+        pass
 
 class Loss(SingleComponent):
     def __init__(self, window):
@@ -434,6 +447,7 @@ class Loss(SingleComponent):
 
     def update_eta(self):
         self.eta = float(self.property_manager.properties["eta"].text())
+        self.window.console.refresh()
     
     @property
     def placeable(self):
@@ -447,6 +461,10 @@ class Loss(SingleComponent):
             self.window.console.code += "add loss on wire"+str(self.connected_wires[0])+"\n"
         else:
             self.window.console.code += "add loss on wire"+str(self.connected_wires[0])+"with eta"+str(self.eta)+"\n"
+
+    def addToSim(self):
+        print("adding loss (placeholder code)")
+
 
 class DoubleComponent(Component):
     def __init__(self, window):
@@ -467,7 +485,6 @@ class DoubleComponent(Component):
             else:
                 self.window.canvas.placed_components["components"].append(self)
             self.window.canvas.sort_components()
-
             self.window.console.refresh()
             self.window.control_panel.components_tab.refresh()
 
@@ -554,6 +571,8 @@ class Wire(DoubleComponent):
 
     def update_n_photons(self):
         self.n_photons = int(self.property_manager.properties["n_photons"].text())
+        self.window.control_panel.gram_matrix_tab.update_gram_matrix()
+        self.window.console.refresh()
 
     @property
     def placeable(self):
@@ -585,6 +604,9 @@ class Wire(DoubleComponent):
     
     def addToConsole(self):
         pass
+
+    def addToSim(self):
+        pass
     
 class BeamSplitter(DoubleComponent):
     def __init__(self, window):
@@ -604,6 +626,7 @@ class BeamSplitter(DoubleComponent):
 
     def update_theta(self):
         self.theta = float(self.property_manager.properties["angle"].text())
+        self.window.console.refresh()
 
     @property
     def placeable(self):
@@ -623,6 +646,9 @@ class BeamSplitter(DoubleComponent):
         else:
             self.window.console.code += "add beamsplitter on wires"+str(self.connected_wires)+"with theta"+str(self.theta)+"\n"
     
+    def addToSim(self):
+        print("add beamsplitter (placeholder code)")
+
 class Switch(DoubleComponent):
     def __init__(self, window):
         super().__init__(window)
@@ -649,3 +675,6 @@ class Switch(DoubleComponent):
     
     def addToConsole(self):
         self.window.console.code += "add switch on wires"+str(self.connected_wires)+"\n"
+
+    def addToSim(self):
+        print("adding switch (placeholder code)")

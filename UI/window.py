@@ -4,6 +4,8 @@ from PySide6.QtCore import Qt
 from canvas import Canvas
 from console import Console
 from control_panel.control_panel import ControlPanel
+from worker import ProgressBar, WorkerThread
+from interface import Interface
 from toolbar import ToolBar
 from copy import deepcopy
 import os
@@ -22,6 +24,12 @@ class MainWindow(QMainWindow):
         self.redo_stack = []
         self.running = False
 
+        # Interface with simulation
+        self.interface = Interface(self)
+
+        # Worker thread
+        self.worker_thread = WorkerThread(self)
+
         # Main widgets
         self.control_panel = ControlPanel(self)
         self.console_label = QLabel("Console")
@@ -29,9 +37,12 @@ class MainWindow(QMainWindow):
         self.canvas = Canvas(self)
         toolbar = ToolBar(self)
 
+        # Progress bar
+        self.progress_bar = ProgressBar(self)
+
         # Create central widget layout
         splitter = QSplitter(Qt.Horizontal)
-        left_widget = self.qvbox_widget([self.control_panel, self.console_label, self.console])
+        left_widget = self.qvbox_widget([self.control_panel, self.console_label, self.console, self.progress_bar])
         right_widget = self.qvbox_widget([self.canvas])
         splitter.addWidget(left_widget)
         splitter.addWidget(right_widget)
@@ -82,6 +93,7 @@ class MainWindow(QMainWindow):
 
         # Recreate circuit
         self.control_panel.components_tab.refresh()
+        self.control_panel.gram_matrix_tab.set_gram_matrix()
         self.canvas.deselect_all()
         self.canvas.update()
 
@@ -100,6 +112,7 @@ class MainWindow(QMainWindow):
 
         # Recreate circuit
         self.control_panel.components_tab.refresh()
+        self.control_panel.gram_matrix_tab.set_gram_matrix()
         self.canvas.deselect_all()
         self.canvas.update()
 
@@ -130,6 +143,7 @@ class MainWindow(QMainWindow):
                 comp.delete()
         self.console.refresh()
         self.control_panel.components_tab.clear_components()
+        self.control_panel.gram_matrix_tab.update_gram_matrix()
         self.canvas.repaint()
 
     def save_file(self):
@@ -141,6 +155,7 @@ class MainWindow(QMainWindow):
         if file_path:
             save_data = (
                 self.canvas.placed_components,
+                self.canvas.gram_matrix,
                 self.canvas.grid.offset,
                 self.canvas.grid.size
             )
@@ -149,7 +164,7 @@ class MainWindow(QMainWindow):
         
         self.active_file = file_path.split("/")[-1]
         self.unsaved_changes = False
-        self.update_title
+        self.update_title()
 
     def open_file(self):
         # File open dialog
@@ -164,6 +179,7 @@ class MainWindow(QMainWindow):
 
             (
                 self.canvas.placed_components,
+                self.canvas.gram_matrix,
                 self.canvas.grid.offset,
                 self.canvas.grid.size
             ) = load_data
@@ -175,6 +191,7 @@ class MainWindow(QMainWindow):
 
             # Recreate circuit
             self.control_panel.components_tab.refresh()
+            self.control_panel.gram_matrix_tab.set_gram_matrix()
             self.console.refresh()
             self.canvas.update()
 

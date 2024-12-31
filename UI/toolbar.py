@@ -19,6 +19,12 @@ class ToolBar(QToolBar):
             "Loss": (Loss, None),
             "Detector": (Detector, None)
         }
+
+        backend_options = {
+            "Select backend": None,
+            "Fock backend": "fock",
+            "Symbolic backend": "sym"
+        }
         
         # Button icons
         open_icon = self.style().standardIcon(QStyle.StandardPixmap.SP_DialogOpenButton)
@@ -41,9 +47,11 @@ class ToolBar(QToolBar):
         self.add_tools(tools)
         self.add_button("Delete", self.delete_trigger, delete_icon)
         self.addSeparator()
+        self.add_dropdown(self.set_backend, backend_options)
+        self.addSeparator()
 
         self.add_button("Re-center", self.recenter_trigger, recenter_icon)
-        
+        self.add_button("Run", self.window.worker_thread.start_task, run_icon)
         self.add_button("Dark mode", self.darkmode_trigger, darkmode_icon, checkable=True, checked=True)
         spacer = QWidget()
         spacer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
@@ -70,6 +78,12 @@ class ToolBar(QToolBar):
             action_group.addAction(action)
             action.triggered.connect(lambda checked, t=tool_type: self.set_active_tool(t))
 
+    def add_dropdown(self, dropdown_trigger, options):
+        dropdown = QComboBox()
+        dropdown.addItems(options.keys())
+        dropdown.currentIndexChanged.connect(lambda index: dropdown_trigger(options[dropdown.currentText()]))
+        self.addWidget(dropdown)
+
     def add_button(self, name, trigger, icon, checkable=False, checked=False):
         if icon:
             action = QAction(icon, name, self)
@@ -82,6 +96,13 @@ class ToolBar(QToolBar):
 
     def set_active_tool(self, tool_type):
         self.window.canvas.active_tool = tool_type(self.window)
+
+    def set_backend(self, backend_choice):
+        self.window.interface.backend = backend_choice
+        if backend_choice == "fock":
+            self.window.control_panel.gram_matrix_tab.lock_gram_matrix()
+        else:
+            self.window.control_panel.gram_matrix_tab.unlock_gram_matrix()
 
     def darkmode_trigger(self):
         new_style = None
