@@ -3,18 +3,20 @@ from PySide6.QtGui import QPainter
 from event_handler import EventHandler
 from components import NormalCursor
 from grid import Grid
-from style import Style
+from style import StyleOptions
 
 class Canvas(QWidget):
     def __init__(self, style_choice, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.grid = Grid(self)
-        self.style = Style(style_choice)
+        self.style = StyleOptions(style_choice)
         self.active_tool = NormalCursor(self)
         self.dragging_enabled = False
         self.setMouseTracking(True)
         self.event_handler = EventHandler(self)
         self.placed_components = []
+        self.occupied_by_wires = []
+        self.occupied_by_components = []
 
     def paintEvent(self, event):
         painter = QPainter(self)

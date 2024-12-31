@@ -27,13 +27,14 @@ class EventHandler(QObject):
         if event.button() == Qt.LeftButton:
             if self.canvas.dragging_enabled:
                 self.last_mouse_pos = event.position()
+                self.canvas.setCursor(Qt.ClosedHandCursor)
             elif self.canvas.active_tool and not self.canvas.active_tool.overlapping:
                 self.canvas.active_tool.place()
 
     def handle_mouse_move(self, event: QMouseEvent):
         mouse_pos = event.position()
 
-        if self.canvas.active_tool and self.canvas.active_tool.show_preview:
+        if self.canvas.active_tool:
             self.canvas.active_tool.set_position(mouse_pos)
 
         # Redraw to show the square at the new position
@@ -48,6 +49,7 @@ class EventHandler(QObject):
     def handle_mouse_release(self, event: QMouseEvent):
         # Stop dragging when the mouse button is released
         if event.button() == Qt.LeftButton and self.canvas.dragging_enabled:
+            self.canvas.setCursor(Qt.OpenHandCursor)
             self.last_mouse_pos = None
 
     def handle_wheel(self, event: QWheelEvent):

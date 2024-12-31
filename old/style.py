@@ -1,6 +1,6 @@
 from PySide6.QtGui import QColor
 
-class Style:
+class StyleOptions:
     def __init__(self, style_choice):
         self.bg_color = None
         self.gridline_color = None
