@@ -53,16 +53,17 @@ class Select(CanvasTool):
             for comp_list in self.window.canvas.placed_components.values():
                 for comp in comp_list:
                     # Select all components inside the rectangle
-                    is_selected = selected_rect.contains(QPoint(*comp.position))
-                    if hasattr(comp, "end_position"):
-                        is_selected = is_selected and selected_rect.contains(QPoint(*comp.end_position))
+                    if len(comp.position) > 0:
+                        is_selected = selected_rect.contains(QPoint(*comp.position[0]))
+                    if len(comp.position) > 1:
+                        is_selected = is_selected and selected_rect.contains(QPoint(*comp.position[1]))
                     comp.set_selected(is_selected)
                 
                     # If the user clicked on a component without moving the mouse, then select that component
                     if self.window.canvas.current_mouse_position == self.window.canvas.mouse_pressed_position:
                         is_selected = comp.contains(event.position().toTuple())
                         if is_selected:
-                            comp.property_manager.draw(comp.position)
+                            comp.property_manager.draw(comp.position[0])
                         comp.set_selected(is_selected)
 
 class Grab(CanvasTool):

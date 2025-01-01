@@ -68,9 +68,9 @@ class Canvas(QWidget):
         return n_photons
 
     def sort_components(self):
-        self.placed_components["wires"] = sorted(self.placed_components["wires"], key = lambda comp: (comp.position[1], comp.position[0]))
-        self.placed_components["components"] = sorted(self.placed_components["components"], key = lambda comp: (comp.position[0], comp.position[1]))
-        self.placed_components["detectors"] = sorted(self.placed_components["detectors"], key = lambda comp: (comp.position[1], comp.position[0]))
+        self.placed_components["wires"] = sorted(self.placed_components["wires"], key = lambda comp: (comp.position[0][1], comp.position[0][0]))
+        self.placed_components["components"] = sorted(self.placed_components["components"], key = lambda comp: (comp.position[0][0], comp.position[0][1]))
+        self.placed_components["detectors"] = sorted(self.placed_components["detectors"], key = lambda comp: (comp.position[0][1], comp.position[0][0]))
 
     def set_style(self):
         if self.style_choice == "basic":

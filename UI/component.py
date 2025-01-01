@@ -7,7 +7,7 @@ from properties_manager import PropertiesManager
 class Component(ABC):
     def __init__(self, window):
         self.window = window
-        self.position = None
+        self._position = []
         self.cursor_type = Qt.CrossCursor
         self.is_selected = False
 
@@ -19,11 +19,29 @@ class Component(ABC):
         self.border_color = None
         self.line_width = 3
         self.shape_scale = 1
-        self.shape_type = "square"
+        self.shape_type = ["square"]
         self.error_color = (255, 0, 0)
         self.set_style()
 
     # Setup
+
+    @property
+    def position(self):
+        # Initialize position to the correct length
+        if len(self._position) != self.length:
+            self._position = [0] * self.length
+        return self._position
+    
+    @position.setter
+    def position(self, value):
+        if len(value) != self.length:
+            raise ValueError(f"Position must have {self.length} elements.")
+        self._position = value
+
+    @property
+    @abstractmethod
+    def length(self):
+        pass
 
     @abstractmethod
     def create_property_manager(self):
@@ -33,6 +51,87 @@ class Component(ABC):
     @abstractmethod
     def placeable(self):
         raise NotImplementedError
+    
+    def on_mouse_press(self, event: QMouseEvent):
+        pass
+
+    def on_mouse_move(self, event: QMouseEvent):
+        pass
+
+    def on_mouse_release(self, event: QMouseEvent):
+        pass
+
+    def place(self):
+        for i, pos in enumerate(self.position):
+            # Place the earliest unplaced node
+            if not pos:
+                self.position[i] = copy(self.potential_placement)
+
+                # If all nodes are placed, log the component
+                if i == len(self.position) - 1:
+                    self.log()
+
+                break
+
+    def log(self):
+        self.window.canvas.active_tool = self.__class__(self.window)
+        if isinstance(self, Wire):
+            self.window.canvas.placed_components["wires"].append(self)
+        elif isinstance(self, Detector):
+            self.window.canvas.placed_components["detectors"].append(self)
+        else:
+            self.window.canvas.placed_components["components"].append(self)
+
+        self.window.canvas.sort_components()
+        self.window.console.refresh()
+        self.window.control_panel.components_tab.refresh()
+
+        self.window.mark_unsaved_changes()
+
+    def draw(self, painter):
+        for i, pos in enumerate(self.position):
+            if pos:
+                # draw connecting wire
+                if i != 0:
+                    pen = QPen(QColor(*self.border_color))
+                    pen.setWidth(self.line_width)
+                    painter.setPen(pen)
+                    previous_pos = self.position[i-1]
+                    painter.drawLine(QPointF(previous_pos[0], previous_pos[1]), QPointF(pos[0], pos[1]))
+
+                # draw node
+                pen = QPen(QColor(*self.border_color))
+                pen.setWidth(self.line_width)
+                painter.setPen(pen)
+                painter.setBrush(QColor(*self.color))
+                self.draw_shape(painter, pos, self.shape_type[i])
+        self.draw_name(painter, self.position[0])
+
+    def preview(self, painter):
+        for i, pos in enumerate(self.position):
+            if pos:
+                pen = QPen(QColor(*self.border_color))
+                pen.setWidth(self.line_width)
+                painter.setPen(pen)
+
+                # draw node
+                painter.setBrush(QColor(*self.color))
+                self.draw_shape(painter, pos, self.shape_type[i])
+            else:
+                pen = QPen(self._transparent(QColor(*self.border_color)))
+                pen.setWidth(self.line_width)
+                painter.setPen(pen)
+                if self.placeable:
+                    painter.setBrush(self._transparent(QColor(*self.color)))
+                else:
+                    painter.setBrush(self._transparent(QColor(*self.error_color)))
+                self.draw_shape(painter, self.potential_placement, self.shape_type[i])
+
+                # draw wire
+                if i != 0:
+                    previous_pos = self.position[i-1]
+                    painter.drawLine(QPointF(previous_pos[0], previous_pos[1]), QPointF(self.potential_placement[0], self.potential_placement[1]))
+                break
 
     # Interface
 
@@ -71,19 +170,23 @@ class Component(ABC):
 
     @property
     def potential_placement(self):
-        if not self.position:
-            return self.window.canvas.grid.snap(self.window.canvas.current_mouse_position)
-        elif hasattr(self, "end_position"):
-            if self.position and not self.end_position:
-                # Wires are horizontal
+        snapped_mouse_position = self.window.canvas.grid.snap(self.window.canvas.current_mouse_position)
+        if len(self.position) == 1:
+            if not self.position[0]:
+                return snapped_mouse_position
+        if len(self.position) > 1:
+            if self.position[0]:
+                start_position = self.window.canvas.grid.snap(self.position[0])
                 if isinstance(self, Wire):
-                    x = self.window.canvas.grid.snap(self.window.canvas.current_mouse_position)[0]
-                    y = self.window.canvas.grid.snap(self.position)[1]
+                    # enforce wire being horizontal
+                    x = snapped_mouse_position[0]
+                    y = start_position[1]
                     return (x, y)
-                # Other double components are vertical
-                x = self.window.canvas.grid.snap(self.position)[0]
-                y = self.window.canvas.grid.snap(self.window.canvas.current_mouse_position)[1]
+                # enforce components being vertical
+                x = start_position[0]
+                y = snapped_mouse_position[1]
                 return (x, y)
+        return snapped_mouse_position
             
     def set_style(self):
         if self.window.canvas.style_choice == "basic":
@@ -153,9 +256,7 @@ class Component(ABC):
     # Transformations
 
     def snap(self):
-        self.position = self.window.canvas.grid.snap(self.position)
-        if hasattr(self, "end_position"):
-            self.end_position = self.window.canvas.grid.snap(self.end_position)
+        self.position = [self.window.canvas.grid.snap(pos) if pos else None for pos in self.position]
 
     def delete(self):
         self.property_manager.hide()
@@ -167,10 +268,11 @@ class Component(ABC):
                 for comp in comp_list[:]:
                     comp.snap()
                     self.snap()
-                    if comp.position[1] == self.position[1]:
-                        comp_list.remove(comp)
-                    elif hasattr(comp, "end_position"):
-                        if comp.end_position[1] == self.position[1]:
+                    if len(comp.position) > 0:
+                        if comp.position[0][1] == self.position[0][1] and (self.position[0][0] <= comp.position[0][0] <= self.position[1][0]):
+                            comp_list.remove(comp)
+                    if len(comp.position) > 1:
+                        if comp.position[1][1] == self.position[0][1] and (self.position[0][0] <= comp.position[1][0] <= self.position[1][0]):
                             comp_list.remove(comp)
 
         elif self in self.window.canvas.placed_components["components"]:
@@ -179,24 +281,20 @@ class Component(ABC):
             self.window.canvas.placed_components["detectors"].remove(self)
 
     def move(self, delta):
-        if self.position:
-            self.position = self._move_endpoint(self.position, delta)
-        if hasattr(self, "end_position"):
-            if self.end_position:
-                self.end_position = self._move_endpoint(self.end_position, delta)
+        self.position = [self._move_node(pos, delta) for pos in self.position]
 
-    def _move_endpoint(self, endpoint, delta):
-        return (endpoint[0] + delta[0], endpoint[1] + delta[1])
+    def _move_node(self, node, delta):
+        if not node:
+            return None
+        return (node[0] + delta[0], node[1] + delta[1])
 
     def zoom(self, mouse_pos, new_grid_size):
-        if self.position:
-            self.position = self._zoom_endpoint(self.position, mouse_pos, new_grid_size)
-        if hasattr(self, "end_position"):
-            if self.end_position:
-                self.end_position = self._zoom_endpoint(self.end_position, mouse_pos, new_grid_size)
+        self.position = [self._zoom_node(pos, mouse_pos, new_grid_size) for pos in self.position]
 
-    def _zoom_endpoint(self, endpoint, mouse_pos, new_grid_size):
-        distance_to_mouse = (endpoint[0] - mouse_pos[0], endpoint[1] - mouse_pos[1])
+    def _zoom_node(self, node, mouse_pos, new_grid_size):
+        if not node:
+            return None
+        distance_to_mouse = (node[0] - mouse_pos[0], node[1] - mouse_pos[1])
         new_distance_to_mouse = (distance_to_mouse[0] * (new_grid_size / self.window.canvas.grid.size), distance_to_mouse[1] * (new_grid_size / self.window.canvas.grid.size))
         return (mouse_pos[0] + new_distance_to_mouse[0], mouse_pos[1] + new_distance_to_mouse[1])
 
@@ -211,25 +309,19 @@ class Component(ABC):
             self.window.control_panel.components_tab.deselect_item(self)
         self.set_style()
 
-    def contains(self, pos):
+    def contains(self, position_to_check):
+        return any([self._node_contains(pos, position_to_check) for pos in self.position])    
+
+    def _node_contains(self, node, position_to_check):
+        if not node:
+            return False
         scale = self.shape_scale*self.window.canvas.grid.size
-        if self.position:
-            x_min = self.position[0] - 0.5*scale
-            x_max = self.position[0] + 0.5*scale
-            y_min = self.position[1] - 0.5*scale
-            y_max = self.position[1] + 0.5*scale
-            if x_min <= pos[0] <= x_max and y_min <= pos[1] <= y_max:
-                return True
-            
-        if hasattr(self, "end_position"):
-            if self.end_position and not isinstance(self, Wire):
-                x_min = self.end_position[0] - 0.5*scale
-                x_max = self.end_position[0] + 0.5*scale
-                y_min = self.end_position[1] - 0.5*scale
-                y_max = self.end_position[1] + 0.5*scale
-                if x_min <= pos[0] <= x_max and y_min <= pos[1] <= y_max:
-                    return True
-        return False        
+        x_min = node[0] - 0.5*scale
+        x_max = node[0] + 0.5*scale
+        y_min = node[1] - 0.5*scale
+        y_max = node[1] + 0.5*scale
+        if x_min <= position_to_check[0] <= x_max and y_min <= position_to_check[1] <= y_max:
+            return True
 
     # Placeable checks
 
@@ -239,162 +331,105 @@ class Component(ABC):
         self.snap()
         for w, wire in enumerate(self.window.canvas.placed_components["wires"]):
             wire.snap()
-            if self.position[1] == wire.position[1]:
-                if wire.position[0] <= self.position[0] <= wire.end_position[0]:
-                    comp_wires.append(w+1)
-            if hasattr(self, "end_position"):
-                if self.end_position[1] == wire.end_position[1]:
-                    if wire.position[0] <= self.end_position[0] <= wire.end_position[0]:
-                        comp_wires.append(w+1)
+            wire_y = wire.position[0][1]
+            wire_x_start = wire.position[0][0]
+            wire_x_end = wire.position[1][0]
+            for pos in self.position:
+                if pos:
+                    if pos[1] == wire_y:
+                        if wire_x_start <= pos[0] <= wire_x_end:
+                            comp_wires.append(w+1)
         return comp_wires
 
-    def overlaps_a_wire(self, pos):
-        for comp in self.window.canvas.placed_components["wires"]:
-            wire_start = self.window.canvas.grid.snap(comp.position)
-            wire_end = self.window.canvas.grid.snap(comp.end_position)
-            if pos[1] == wire_start[1]:
-                if wire_start[0] < pos[0] < wire_end[0]:
-                    return True
-        return False
-    
-    def overlaps_a_wire_edge(self, pos):
+    def overlaps_a_wire(self, position_to_check):
         for wire in self.window.canvas.placed_components["wires"]:
-            wire_start = self.window.canvas.grid.snap(wire.position)
-            wire_end = self.window.canvas.grid.snap(wire.end_position)
-            if pos[1] == wire_start[1]:
-                if wire_start[0] == pos[0] or wire_end[0] == pos[0]:
+            wire_x_start = self.window.canvas.grid.snap(wire.position[0])[0]
+            wire_x_end = self.window.canvas.grid.snap(wire.position[1])[0]
+            wire_y = self.window.canvas.grid.snap(wire.position[0])[1]
+            if position_to_check[1] == wire_y:
+                if wire_x_start < position_to_check[0] < wire_x_end:
                     return True
         return False
     
-    def overlaps_a_component(self, pos):
+    def overlaps_a_wire_edge(self, position_to_check):
+        for wire in self.window.canvas.placed_components["wires"]:
+            wire_x_start = self.window.canvas.grid.snap(wire.position[0])[0]
+            wire_x_end = self.window.canvas.grid.snap(wire.position[1])[0]
+            wire_y = self.window.canvas.grid.snap(wire.position[0])[1]
+            if position_to_check[1] == wire_y:
+                if wire_x_start == position_to_check[0] or wire_x_end == position_to_check[0]:
+                    return True
+        return False
+    
+    def overlaps_a_component(self, position_to_check):
         for comp in self.window.canvas.placed_components["components"]:
-            if issubclass(comp.__class__, DoubleComponent):
-                comp_start = self.window.canvas.grid.snap(comp.position)
-                comp_end = self.window.canvas.grid.snap(comp.end_position)
-                if pos[0] == comp_start[0]:
-                    if min(comp_start[1], comp_end[1]) <= pos[1] <= max(comp_start[1], comp_end[1]):
+            if len(self.position) == 2:
+                comp_start = self.window.canvas.grid.snap(comp.position[0])
+                comp_end = self.window.canvas.grid.snap(comp.position[1])
+                if position_to_check[0] == comp_start[0]:
+                    if min(comp_start[1], comp_end[1]) <= position_to_check[1] <= max(comp_start[1], comp_end[1]):
                         return True
-            elif issubclass(comp.__class__, SingleComponent):
-                if pos == self.window.canvas.grid.snap(comp.position):
+            elif len(self.position) == 1:
+                if position_to_check == self.window.canvas.grid.snap(comp.position[0]):
                     return True
         return False
     
-    def overlaps_itself(self, pos):
-        if self.position:
-            if pos == self.window.canvas.grid.snap(self.position):
-                return True
-        return False
+    def overlaps_itself(self, position_to_check):
+        self.snap()
+        return any([position_to_check == pos for pos in self.position])
     
     def spans_a_component(self, pos):
-        if self.position:
-            for comp_list in self.window.canvas.placed_components.values():
-                for comp in comp_list:
-                    comp_start = self.window.canvas.grid.snap(comp.position)
-                    if self.position[0] == comp_start[0]:
-                        if hasattr(comp, "end_position"):
-                            comp_end = self.window.canvas.grid.snap(comp.end_position)
-                            if self.position[1] <= comp_start[1] and pos[1] >= comp_end[1]:
-                                return True
-                            if self.position[1] <= comp_end[1] and pos[1] >= comp_start[1]:
-                                return True
-                            if self.position[1] >= comp_start[1] and pos[1] <= comp_end[1]:
-                                return True
-                            if self.position[1] >= comp_end[1] and pos[1] <= comp_start[1]:
-                                return True
-                        else:
-                            if self.position[1] <= comp_start[1] and pos[1] >= comp_start[1]:
-                                return True
-                            if pos[1] <= comp_start[1] and self.position[1] >= comp_start[1]:
-                                return True
+        if len(self.position) > 0:
+            if self.position[0]:
+                for comp_list in self.window.canvas.placed_components.values():
+                    for comp in comp_list:
+                        comp_start = self.window.canvas.grid.snap(comp.position[0])
+                        if self.position[0][0] == comp_start[0]:
+                            if len(self.position) > 1:
+                                comp_end = self.window.canvas.grid.snap(comp.position[1])
+                                if self.position[0][1] <= comp_start[1] and pos[1] >= comp_end[1]:
+                                    return True
+                                if self.position[0][1] <= comp_end[1] and pos[1] >= comp_start[1]:
+                                    return True
+                                if self.position[0][1] >= comp_start[1] and pos[1] <= comp_end[1]:
+                                    return True
+                                if self.position[0][1] >= comp_end[1] and pos[1] <= comp_start[1]:
+                                    return True
+                            else:
+                                if self.position[0][1] <= comp_start[1] and pos[1] >= comp_start[1]:
+                                    return True
+                                if pos[1] <= comp_start[1] and self.position[0][1] >= comp_start[1]:
+                                    return True
         return False
     
     def spans_a_wire(self, pos):
-        if self.position:
-            # Can't be on the opposite side of a wire from the start point
-            for comp in self.window.canvas.placed_components["wires"]:
-                comp_start = self.window.canvas.grid.snap(comp.position)
-                comp_end = self.window.canvas.grid.snap(comp.end_position)
-                if self.position[1] == comp_start[1]:
-                    if self.position[0] <= comp_start[0] and pos[0] >= comp_end[0]:
-                        return True
-                    if self.position[0] >= comp_end[0] and pos[0] <= comp_start[0]:
-                        return True
+        if len(self.position) > 0:
+            if self.position[0]:
+                # Can't be on the opposite side of a wire from the start point
+                for comp in self.window.canvas.placed_components["wires"]:
+                    comp_start = self.window.canvas.grid.snap(comp.position[0])
+                    comp_end = self.window.canvas.grid.snap(comp.position[1])
+                    if self.position[0][1] == comp_start[1]:
+                        if self.position[0][0] <= comp_start[0] and pos[0] >= comp_end[0]:
+                            return True
+                        if self.position[0][0] >= comp_end[0] and pos[0] <= comp_start[0]:
+                            return True
         return False
-    
-class SingleComponent(Component):
-    def __init__(self, window):
-        super().__init__(window)
-        self.hide = False
 
-    def on_mouse_press(self, event: QMouseEvent):
-        pass
-
-    def on_mouse_move(self, event: QMouseEvent):
-       pass
-
-    def on_mouse_release(self, event: QMouseEvent):
-        pass
-
-    def place(self):
-        # hide the component underneath where this component is placed
-        for comp_list in self.window.canvas.placed_components.values():
-            for comp in comp_list:
-                if issubclass(comp.__class__, DoubleComponent):
-                    if self.potential_placement == self.window.canvas.grid.snap(comp.position):
-                        comp.hide_start = True
-                    if self.potential_placement == self.window.canvas.grid.snap(comp.end_position):
-                        comp.hide_end = True
-                elif issubclass(comp.__class__, SingleComponent):
-                    if self.potential_placement == self.window.canvas.grid.snap(comp.position):
-                        comp.hide = True
-
-        self.position = copy(self.potential_placement)
-        self.window.canvas.active_tool = self.__class__(self.window)
-        if isinstance(self, Detector):
-            self.window.canvas.placed_components["detectors"].append(self)
-        else:
-            self.window.canvas.placed_components["components"].append(self)
-        self.window.canvas.sort_components()
-
-        self.window.console.refresh()
-        self.window.control_panel.components_tab.refresh()
-        self.window.mark_unsaved_changes()
-
-    def preview(self, painter):
-        if not self.position:
-            pen = QPen(self._transparent(QColor(*self.border_color)))
-            pen.setWidth(self.line_width)
-            painter.setPen(pen)
-
-            if self.placeable:
-                painter.setBrush(self._transparent(QColor(*self.color)))
-            else:
-                painter.setBrush(self._transparent(QColor(*self.error_color)))
-            self.draw_shape(painter, self.potential_placement, self.shape_type)
-
-    def draw(self, painter):
-        if self.position and not self.hide:
-            pen = QPen(QColor(*self.border_color))
-            pen.setWidth(self.line_width)
-            painter.setPen(pen)
-            painter.setBrush(QColor(*self.color))
-            self.draw_shape(painter, self.position, self.shape_type)
-
-            self.draw_name(painter, self.position)
-
-            if not (self.is_selected and self.property_manager.properties):
-                self.property_manager.hide()
-
-class Detector(SingleComponent):
+class Detector(Component):
     def __init__(self, window):
         super().__init__(window)
 
-        self.shape_type = "half circle"
+        self.shape_type = ["half circle"]
         self.shape_scale = 0.75
 
         # Properties
         self.herald = 0
         self.create_property_manager()
+
+    @property
+    def length(self):
+        return 1
 
     def create_property_manager(self):
         self.property_manager.add_property("herald", self.update_herald, self.herald, QIntValidator(0, 100))
@@ -407,7 +442,7 @@ class Detector(SingleComponent):
     def placeable(self):
         # Can only be placed on top of a wire end
         for comp in self.window.canvas.placed_components["wires"]:
-            allowed_point = self.window.canvas.grid.snap(comp.end_position)
+            allowed_point = self.window.canvas.grid.snap(comp.position[1])
             if self.potential_placement == allowed_point:
                 return True
         return False
@@ -418,17 +453,21 @@ class Detector(SingleComponent):
     def add_to_sim(self):
         pass
 
-class Loss(SingleComponent):
+class Loss(Component):
     def __init__(self, window):
         super().__init__(window)
 
         # Style
         self.shape_scale = 0.5
-        self.shape_type = "diagonal line"
+        self.shape_type = ["diagonal line"]
 
         # Properties
         self.eta = 1
         self.create_property_manager()
+
+    @property
+    def length(self):
+        return 1
 
     def create_property_manager(self):
         self.property_manager.add_property("eta", self.update_eta, self.eta, QDoubleValidator(0, 1, 2))
@@ -453,115 +492,21 @@ class Loss(SingleComponent):
     def add_to_sim(self):
         print("adding loss (placeholder code)")
 
-
-class DoubleComponent(Component):
-    def __init__(self, window):
-        super().__init__(window)
-        self.end_position = None
-        self.end_shape_type = "square"
-        self.hide_start = False
-        self.hide_end = False
-
-    def on_mouse_press(self, event: QMouseEvent):
-        pass
-
-    def on_mouse_move(self, event: QMouseEvent):
-        pass
-
-    def on_mouse_release(self, event: QMouseEvent):
-        pass
-
-    def place(self):
-        if not self.position:
-            self.position = copy(self.potential_placement)
-        elif not self.end_position:
-            self.end_position = copy(self.potential_placement)
-            self.window.canvas.active_tool = self.__class__(self.window)
-            if isinstance(self, Wire):
-                self.window.canvas.placed_components["wires"].append(self)
-            else:
-                self.window.canvas.placed_components["components"].append(self)
-            self.window.canvas.sort_components()
-            self.window.console.refresh()
-            self.window.control_panel.components_tab.refresh()
-
-            self.window.mark_unsaved_changes()
-    
-    def preview(self, painter):
-        if not self.position:
-            pen = QPen(self._transparent(QColor(*self.border_color)))
-            pen.setWidth(self.line_width)
-            painter.setPen(pen)
-
-            if self.placeable:
-                painter.setBrush(self._transparent(QColor(*self.color)))
-            else:
-                painter.setBrush(self._transparent(QColor(*self.error_color)))
-            self.draw_shape(painter, self.potential_placement, self.shape_type)
-
-        elif not self.end_position:
-            pen = QPen(QColor(*self.border_color))
-            pen.setWidth(self.line_width)
-            painter.setPen(pen)
-
-            # draw wire start
-            painter.setBrush(QColor(*self.color))
-            self.draw_shape(painter, self.position, self.shape_type)
-
-            pen = QPen(self._transparent(QColor(*self.border_color)))
-            pen.setWidth(self.line_width)
-            painter.setPen(pen)
-
-            # draw wire
-            painter.drawLine(QPointF(self.position[0], self.position[1]), QPointF(self.potential_placement[0], self.potential_placement[1]))
-
-            # draw wire end
-            if self.placeable:
-                painter.setBrush(self._transparent(QColor(*self.color)))
-            else:
-                painter.setBrush(self._transparent(QColor(*self.error_color)))
-            self.draw_shape(painter, self.potential_placement, self.end_shape_type)
-
-    def draw(self, painter):
-        if self.end_position:
-            # draw wire
-            pen = QPen(QColor(*self.border_color))
-            pen.setWidth(self.line_width)
-            painter.setPen(pen)
-            painter.drawLine(QPointF(self.position[0], self.position[1]), QPointF(self.end_position[0], self.end_position[1]))
-
-            if not self.hide_end:
-                # draw wire end
-                pen = QPen(QColor(*self.border_color))
-                pen.setWidth(self.line_width)
-                painter.setPen(pen)
-                painter.setBrush(QColor(*self.color))
-                self.draw_shape(painter, self.end_position, self.end_shape_type)
-
-            if not (self.is_selected and self.property_manager.properties):
-                self.property_manager.hide()
-
-        if self.position:
-            if not self.hide_start:
-                # draw wire start
-                pen = QPen(QColor(*self.border_color))
-                pen.setWidth(self.line_width)
-                painter.setPen(pen)
-                painter.setBrush(QColor(*self.color))
-                self.draw_shape(painter, self.position, self.shape_type)
-                self.draw_name(painter, self.position)
-
-class Wire(DoubleComponent):
+class Wire(Component):
     def __init__(self, window):
         super().__init__(window)
 
         # Style
         self.shape_scale = 0.75
-        self.end_shape_type = None
+        self.shape_type = ["square", None]
 
         # Properties
         self.n_photons = 0
         self.create_property_manager()
+
+    @property
+    def length(self):
+        return 2
 
     def create_property_manager(self):
         self.property_manager.add_property("n_photons", self.update_n_photons, self.n_photons, QIntValidator(0, 100))
@@ -581,18 +526,18 @@ class Wire(DoubleComponent):
             return False
         
         # Rules for the start point
-        if not self.position:
+        if not self.position[0]:
             # Can't place it on the point immediately to the left of another wire, which would leave no room for the end point
             for comp in self.window.canvas.placed_components["wires"]:
-                comp_start = self.window.canvas.grid.snap(comp.position)
+                comp_start = self.window.canvas.grid.snap(comp.position[0])
                 if self.potential_placement[1] == comp_start[1]:
                     if self.window.canvas.grid.snap((self.potential_placement[0] + self.window.canvas.grid.size, self.potential_placement[1])) == comp_start:
                         return False
         
         # Rules for the end point
-        if self.position:
+        if self.position[0] and not self.position[1]:
             # The end point must be to the right of the start point
-            if self.potential_placement[0] <= self.window.canvas.grid.snap(self.position)[0]:
+            if self.potential_placement[0] <= self.window.canvas.grid.snap(self.position[0])[0]:
                 return False
             
         if self.spans_a_wire(self.potential_placement):
@@ -605,18 +550,21 @@ class Wire(DoubleComponent):
     def add_to_sim(self):
         pass
     
-class BeamSplitter(DoubleComponent):
+class BeamSplitter(Component):
     def __init__(self, window):
         super().__init__(window)
 
         # Style
         self.shape_scale = 0.5
-        self.shape_type = "circle"
-        self.end_shape_type = "circle"
+        self.shape_type = ["circle", "circle"]
 
         # Properties
         self.theta = 90
         self.create_property_manager()
+
+    @property
+    def length(self):
+        return 2
 
     def create_property_manager(self):
         self.property_manager.add_property("angle", self.update_theta, self.theta, QDoubleValidator(0, 180, 2))
@@ -646,14 +594,17 @@ class BeamSplitter(DoubleComponent):
     def add_to_sim(self):
         print("add beamsplitter (placeholder code)")
 
-class Switch(DoubleComponent):
+class Switch(Component):
     def __init__(self, window):
         super().__init__(window)
 
         # Style
         self.shape_scale = 0.5
-        self.shape_type = "X"
-        self.end_shape_type = "X"
+        self.shape_type = ["X", "X"]
+
+    @property
+    def length(self):
+        return 2
 
     def create_property_manager(self):
         pass
