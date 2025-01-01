@@ -14,9 +14,9 @@ class Console(QTextEdit):
         self.code += "wires: "+str(self.window.canvas.n_wires)+", photons: "+str(self.window.canvas.n_photons)+"\n"
 
         for comp in self.window.canvas.placed_components["components"]:
-            comp.addToConsole()
+            comp.add_to_console()
 
         for comp in self.window.canvas.placed_components["detectors"]:
-            comp.addToConsole()
+            comp.add_to_console()
 
         self.setPlainText(self.code)

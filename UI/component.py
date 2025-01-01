@@ -37,10 +37,10 @@ class Component(ABC):
     # Interface
 
     @abstractmethod
-    def addToConsole(self):
+    def add_to_console(self):
         raise NotImplementedError
     
-    def addToSim(self):
+    def add_to_sim(self):
         raise NotImplementedError
 
     # Serialization
@@ -70,7 +70,7 @@ class Component(ABC):
     # Drawing
 
     @property
-    def snappedPosition(self):
+    def potential_placement(self):
         if not self.position:
             return self.window.canvas.grid.snap(self.window.canvas.current_mouse_position)
         elif hasattr(self, "end_position"):
@@ -340,15 +340,15 @@ class SingleComponent(Component):
         for comp_list in self.window.canvas.placed_components.values():
             for comp in comp_list:
                 if issubclass(comp.__class__, DoubleComponent):
-                    if self.snappedPosition == self.window.canvas.grid.snap(comp.position):
+                    if self.potential_placement == self.window.canvas.grid.snap(comp.position):
                         comp.hide_start = True
-                    if self.snappedPosition == self.window.canvas.grid.snap(comp.end_position):
+                    if self.potential_placement == self.window.canvas.grid.snap(comp.end_position):
                         comp.hide_end = True
                 elif issubclass(comp.__class__, SingleComponent):
-                    if self.snappedPosition == self.window.canvas.grid.snap(comp.position):
+                    if self.potential_placement == self.window.canvas.grid.snap(comp.position):
                         comp.hide = True
 
-        self.position = copy(self.snappedPosition)
+        self.position = copy(self.potential_placement)
         self.window.canvas.active_tool = self.__class__(self.window)
         if isinstance(self, Detector):
             self.window.canvas.placed_components["detectors"].append(self)
@@ -370,7 +370,7 @@ class SingleComponent(Component):
                 painter.setBrush(self._transparent(QColor(*self.color)))
             else:
                 painter.setBrush(self._transparent(QColor(*self.error_color)))
-            self.draw_shape(painter, self.snappedPosition, self.shape_type)
+            self.draw_shape(painter, self.potential_placement, self.shape_type)
 
     def draw(self, painter):
         if self.position and not self.hide:
@@ -408,14 +408,14 @@ class Detector(SingleComponent):
         # Can only be placed on top of a wire end
         for comp in self.window.canvas.placed_components["wires"]:
             allowed_point = self.window.canvas.grid.snap(comp.end_position)
-            if self.snappedPosition == allowed_point:
+            if self.potential_placement == allowed_point:
                 return True
         return False
     
-    def addToConsole(self):
+    def add_to_console(self):
         pass
     
-    def addToSim(self):
+    def add_to_sim(self):
         pass
 
 class Loss(SingleComponent):
@@ -439,18 +439,18 @@ class Loss(SingleComponent):
     
     @property
     def placeable(self):
-        if self.overlaps_a_component(self.snappedPosition):
+        if self.overlaps_a_component(self.potential_placement):
             return False
-        if self.overlaps_a_wire(self.snappedPosition):
+        if self.overlaps_a_wire(self.potential_placement):
             return True
         
-    def addToConsole(self):
+    def add_to_console(self):
         if self.eta == 1:
             self.window.console.code += "add loss on wire"+str(self.connected_wires[0])+"\n"
         else:
             self.window.console.code += "add loss on wire"+str(self.connected_wires[0])+"with eta"+str(self.eta)+"\n"
 
-    def addToSim(self):
+    def add_to_sim(self):
         print("adding loss (placeholder code)")
 
 
@@ -473,9 +473,9 @@ class DoubleComponent(Component):
 
     def place(self):
         if not self.position:
-            self.position = copy(self.snappedPosition)
+            self.position = copy(self.potential_placement)
         elif not self.end_position:
-            self.end_position = copy(self.snappedPosition)
+            self.end_position = copy(self.potential_placement)
             self.window.canvas.active_tool = self.__class__(self.window)
             if isinstance(self, Wire):
                 self.window.canvas.placed_components["wires"].append(self)
@@ -497,7 +497,7 @@ class DoubleComponent(Component):
                 painter.setBrush(self._transparent(QColor(*self.color)))
             else:
                 painter.setBrush(self._transparent(QColor(*self.error_color)))
-            self.draw_shape(painter, self.snappedPosition, self.shape_type)
+            self.draw_shape(painter, self.potential_placement, self.shape_type)
 
         elif not self.end_position:
             pen = QPen(QColor(*self.border_color))
@@ -513,14 +513,14 @@ class DoubleComponent(Component):
             painter.setPen(pen)
 
             # draw wire
-            painter.drawLine(QPointF(self.position[0], self.position[1]), QPointF(self.snappedPosition[0], self.snappedPosition[1]))
+            painter.drawLine(QPointF(self.position[0], self.position[1]), QPointF(self.potential_placement[0], self.potential_placement[1]))
 
             # draw wire end
             if self.placeable:
                 painter.setBrush(self._transparent(QColor(*self.color)))
             else:
                 painter.setBrush(self._transparent(QColor(*self.error_color)))
-            self.draw_shape(painter, self.snappedPosition, self.end_shape_type)
+            self.draw_shape(painter, self.potential_placement, self.end_shape_type)
 
     def draw(self, painter):
         if self.end_position:
@@ -573,11 +573,11 @@ class Wire(DoubleComponent):
 
     @property
     def placeable(self):
-        if self.overlaps_a_wire(self.snappedPosition):
+        if self.overlaps_a_wire(self.potential_placement):
             return False
-        if self.overlaps_a_wire_edge(self.snappedPosition):
+        if self.overlaps_a_wire_edge(self.potential_placement):
             return False
-        if self.overlaps_a_component(self.snappedPosition):
+        if self.overlaps_a_component(self.potential_placement):
             return False
         
         # Rules for the start point
@@ -585,24 +585,24 @@ class Wire(DoubleComponent):
             # Can't place it on the point immediately to the left of another wire, which would leave no room for the end point
             for comp in self.window.canvas.placed_components["wires"]:
                 comp_start = self.window.canvas.grid.snap(comp.position)
-                if self.snappedPosition[1] == comp_start[1]:
-                    if self.window.canvas.grid.snap((self.snappedPosition[0] + self.window.canvas.grid.size, self.snappedPosition[1])) == comp_start:
+                if self.potential_placement[1] == comp_start[1]:
+                    if self.window.canvas.grid.snap((self.potential_placement[0] + self.window.canvas.grid.size, self.potential_placement[1])) == comp_start:
                         return False
         
         # Rules for the end point
         if self.position:
             # The end point must be to the right of the start point
-            if self.snappedPosition[0] <= self.window.canvas.grid.snap(self.position)[0]:
+            if self.potential_placement[0] <= self.window.canvas.grid.snap(self.position)[0]:
                 return False
             
-        if self.spans_a_wire(self.snappedPosition):
+        if self.spans_a_wire(self.potential_placement):
             return False
         return True
     
-    def addToConsole(self):
+    def add_to_console(self):
         pass
 
-    def addToSim(self):
+    def add_to_sim(self):
         pass
     
 class BeamSplitter(DoubleComponent):
@@ -627,23 +627,23 @@ class BeamSplitter(DoubleComponent):
 
     @property
     def placeable(self):
-        if self.overlaps_a_component(self.snappedPosition):
+        if self.overlaps_a_component(self.potential_placement):
             return False
-        if self.overlaps_itself(self.snappedPosition):
+        if self.overlaps_itself(self.potential_placement):
             return False
-        if self.spans_a_component(self.snappedPosition):
+        if self.spans_a_component(self.potential_placement):
             return False
-        if self.overlaps_a_wire(self.snappedPosition):
+        if self.overlaps_a_wire(self.potential_placement):
             return True
         return False
     
-    def addToConsole(self):
+    def add_to_console(self):
         if self.theta == 90:
             self.window.console.code += "add beamsplitter on wires"+str(self.connected_wires)+"\n"
         else:
             self.window.console.code += "add beamsplitter on wires"+str(self.connected_wires)+"with theta"+str(self.theta)+"\n"
     
-    def addToSim(self):
+    def add_to_sim(self):
         print("add beamsplitter (placeholder code)")
 
 class Switch(DoubleComponent):
@@ -660,18 +660,18 @@ class Switch(DoubleComponent):
 
     @property
     def placeable(self):
-        if self.overlaps_a_component(self.snappedPosition):
+        if self.overlaps_a_component(self.potential_placement):
             return False
-        if self.overlaps_itself(self.snappedPosition):
+        if self.overlaps_itself(self.potential_placement):
             return False
-        if self.spans_a_component(self.snappedPosition):
+        if self.spans_a_component(self.potential_placement):
             return False
-        if self.overlaps_a_wire(self.snappedPosition):
+        if self.overlaps_a_wire(self.potential_placement):
             return True
         return False
     
-    def addToConsole(self):
+    def add_to_console(self):
         self.window.console.code += "add switch on wires"+str(self.connected_wires)+"\n"
 
-    def addToSim(self):
+    def add_to_sim(self):
         print("adding switch (placeholder code)")

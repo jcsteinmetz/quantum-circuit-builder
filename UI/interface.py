@@ -13,7 +13,7 @@ class Interface:
         self.circuit = Circuit(self.window.canvas.n_wires, self.window.canvas.n_photons)
 
         for comp in self.window.canvas.placed_components["components"]:
-            comp.addToSim()
+            comp.add_to_sim()
 
         self.add_detectors()
 
