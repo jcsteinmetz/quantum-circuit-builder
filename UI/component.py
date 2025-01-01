@@ -1,5 +1,5 @@
 from PySide6.QtCore import Qt, QPointF, QRectF
-from PySide6.QtGui import QColor, QPen, QIntValidator, QDoubleValidator, QMouseEvent
+from PySide6.QtGui import QColor, QPen, QIntValidator, QDoubleValidator
 from copy import copy
 from abc import ABC, abstractmethod
 from properties_manager import PropertiesManager
@@ -27,9 +27,8 @@ class Component(ABC):
 
     @property
     def position(self):
-        # Initialize position to the correct length
         if len(self._position) != self.length:
-            self._position = [0] * self.length
+            self._position = [None] * self.length
         return self._position
     
     @position.setter
@@ -51,15 +50,6 @@ class Component(ABC):
     @abstractmethod
     def placeable(self):
         raise NotImplementedError
-    
-    def on_mouse_press(self, event: QMouseEvent):
-        pass
-
-    def on_mouse_move(self, event: QMouseEvent):
-        pass
-
-    def on_mouse_release(self, event: QMouseEvent):
-        pass
 
     def place(self):
         for i, pos in enumerate(self.position):
@@ -170,13 +160,14 @@ class Component(ABC):
 
     @property
     def potential_placement(self):
+        self.snap()
         snapped_mouse_position = self.window.canvas.grid.snap(self.window.canvas.current_mouse_position)
         if len(self.position) == 1:
             if not self.position[0]:
                 return snapped_mouse_position
         if len(self.position) > 1:
             if self.position[0]:
-                start_position = self.window.canvas.grid.snap(self.position[0])
+                start_position = self.position[0]
                 if isinstance(self, Wire):
                     # enforce wire being horizontal
                     x = snapped_mouse_position[0]
@@ -343,9 +334,10 @@ class Component(ABC):
 
     def overlaps_a_wire(self, position_to_check):
         for wire in self.window.canvas.placed_components["wires"]:
-            wire_x_start = self.window.canvas.grid.snap(wire.position[0])[0]
-            wire_x_end = self.window.canvas.grid.snap(wire.position[1])[0]
-            wire_y = self.window.canvas.grid.snap(wire.position[0])[1]
+            wire.snap()
+            wire_x_start = wire.position[0][0]
+            wire_x_end = wire.position[1][0]
+            wire_y = wire.position[0][1]
             if position_to_check[1] == wire_y:
                 if wire_x_start < position_to_check[0] < wire_x_end:
                     return True
@@ -353,9 +345,10 @@ class Component(ABC):
     
     def overlaps_a_wire_edge(self, position_to_check):
         for wire in self.window.canvas.placed_components["wires"]:
-            wire_x_start = self.window.canvas.grid.snap(wire.position[0])[0]
-            wire_x_end = self.window.canvas.grid.snap(wire.position[1])[0]
-            wire_y = self.window.canvas.grid.snap(wire.position[0])[1]
+            wire.snap()
+            wire_x_start = wire.position[0][0]
+            wire_x_end = wire.position[1][0]
+            wire_y = wire.position[0][1]
             if position_to_check[1] == wire_y:
                 if wire_x_start == position_to_check[0] or wire_x_end == position_to_check[0]:
                     return True
@@ -363,14 +356,15 @@ class Component(ABC):
     
     def overlaps_a_component(self, position_to_check):
         for comp in self.window.canvas.placed_components["components"]:
+            comp.snap()
             if len(self.position) == 2:
-                comp_start = self.window.canvas.grid.snap(comp.position[0])
-                comp_end = self.window.canvas.grid.snap(comp.position[1])
+                comp_start = comp.position[0]
+                comp_end = comp.position[1]
                 if position_to_check[0] == comp_start[0]:
                     if min(comp_start[1], comp_end[1]) <= position_to_check[1] <= max(comp_start[1], comp_end[1]):
                         return True
             elif len(self.position) == 1:
-                if position_to_check == self.window.canvas.grid.snap(comp.position[0]):
+                if position_to_check == comp.position[0]:
                     return True
         return False
     
@@ -383,10 +377,11 @@ class Component(ABC):
             if self.position[0]:
                 for comp_list in self.window.canvas.placed_components.values():
                     for comp in comp_list:
-                        comp_start = self.window.canvas.grid.snap(comp.position[0])
+                        comp.snap()
+                        comp_start = comp.position[0]
                         if self.position[0][0] == comp_start[0]:
                             if len(self.position) > 1:
-                                comp_end = self.window.canvas.grid.snap(comp.position[1])
+                                comp_end = comp.position[1]
                                 if self.position[0][1] <= comp_start[1] and pos[1] >= comp_end[1]:
                                     return True
                                 if self.position[0][1] <= comp_end[1] and pos[1] >= comp_start[1]:
@@ -407,8 +402,9 @@ class Component(ABC):
             if self.position[0]:
                 # Can't be on the opposite side of a wire from the start point
                 for comp in self.window.canvas.placed_components["wires"]:
-                    comp_start = self.window.canvas.grid.snap(comp.position[0])
-                    comp_end = self.window.canvas.grid.snap(comp.position[1])
+                    comp.snap()
+                    comp_start = comp.position[0]
+                    comp_end = comp.position[1]
                     if self.position[0][1] == comp_start[1]:
                         if self.position[0][0] <= comp_start[0] and pos[0] >= comp_end[0]:
                             return True
@@ -441,8 +437,9 @@ class Detector(Component):
     @property
     def placeable(self):
         # Can only be placed on top of a wire end
-        for comp in self.window.canvas.placed_components["wires"]:
-            allowed_point = self.window.canvas.grid.snap(comp.position[1])
+        for wire in self.window.canvas.placed_components["wires"]:
+            wire.snap()
+            allowed_point = wire.position[1]
             if self.potential_placement == allowed_point:
                 return True
         return False
@@ -528,10 +525,11 @@ class Wire(Component):
         # Rules for the start point
         if not self.position[0]:
             # Can't place it on the point immediately to the left of another wire, which would leave no room for the end point
-            for comp in self.window.canvas.placed_components["wires"]:
-                comp_start = self.window.canvas.grid.snap(comp.position[0])
-                if self.potential_placement[1] == comp_start[1]:
-                    if self.window.canvas.grid.snap((self.potential_placement[0] + self.window.canvas.grid.size, self.potential_placement[1])) == comp_start:
+            for wire in self.window.canvas.placed_components["wires"]:
+                wire.snap()
+                wire_start = wire.position[0]
+                if self.potential_placement[1] == wire_start[1]:
+                    if self.window.canvas.grid.snap((self.potential_placement[0] + self.window.canvas.grid.size, self.potential_placement[1])) == wire_start:
                         return False
         
         # Rules for the end point
