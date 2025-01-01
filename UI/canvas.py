@@ -1,8 +1,8 @@
 from PySide6.QtWidgets import QWidget
-from PySide6.QtGui import QPainter
+from PySide6.QtGui import QPainter, QWheelEvent, QMouseEvent
+from PySide6.QtCore import QEvent, Qt
 from grid import Grid
-from component import Select, Grab
-from event_handler import EventHandler
+from canvas_tools import Select, Grab
 import numpy as np
 
 class Canvas(QWidget):
@@ -11,8 +11,9 @@ class Canvas(QWidget):
         self.window = window
         self.style_choice = "darkmode"
         self.grid = Grid(self)
-        self.event_handler = EventHandler(self)
         self.setMouseTracking(True)
+        self.current_mouse_position = None
+        self.mouse_pressed_position = None
         self.preview_enabled = False
         self.gram_matrix = np.ones((0, 0))
 
@@ -24,7 +25,29 @@ class Canvas(QWidget):
         self.gridline_color = None
         self.set_style()
 
-        self.active_tool = Select(window)
+        self.active_tool = None
+
+    def eventFilter(self, obj, event):
+        """
+        Calls the corresponding action when a mouse event occurs on the canvas.
+        """
+        if obj == self:
+            handlers = {
+                QEvent.MouseButtonPress: self.on_mouse_press,
+                QEvent.MouseMove: self.on_mouse_move,
+                QEvent.MouseButtonRelease: self.on_mouse_release,
+                QEvent.Enter: self.on_mouse_enter,
+                QEvent.Leave: self.on_mouse_leave,
+                QEvent.Wheel: self.on_mouse_wheel
+            }
+            handler = handlers.get(event.type())
+            if handler:
+                handler(event)
+        return super().eventFilter(obj, event)
+    
+    def initialize_active_tool(self):
+        self.active_tool = Select(self.window)
+        self.installEventFilter(self)
 
     @property
     def overlaps(self):
@@ -76,8 +99,7 @@ class Canvas(QWidget):
 
         # Draw tool preview
         if self.preview_enabled:
-            if not isinstance(self.active_tool, Select) and not isinstance(self.active_tool, Grab):
-                self.active_tool.preview(painter)
+            self.active_tool.preview(painter)
 
     def drag(self, delta):
         """
@@ -97,16 +119,16 @@ class Canvas(QWidget):
 
         if 5 <= new_grid_size <= 250: # make sure the canvas is a reasonable size
             # zoom the grid
-            self.grid.zoom(self.event_handler.current_mouse_position, new_grid_size)
+            self.grid.zoom(self.current_mouse_position, new_grid_size)
 
             # zoom placed components
             for comp_list in self.placed_components.values():
                 for comp in comp_list:
-                    comp.zoom(self.event_handler.current_mouse_position, new_grid_size)
+                    comp.zoom(self.current_mouse_position, new_grid_size)
 
             # zoom the active component preview
             if not isinstance(self.active_tool, Select) and not isinstance(self.active_tool, Grab):
-                self.active_tool.zoom(self.event_handler.current_mouse_position, new_grid_size)
+                self.active_tool.zoom(self.current_mouse_position, new_grid_size)
 
             self.grid.size = new_grid_size
 
@@ -115,3 +137,75 @@ class Canvas(QWidget):
 
     def disablePreview(self):
         self.preview_enabled = False
+
+    def on_mouse_press(self, event: QMouseEvent):
+        """
+        Action to perform when a mouse press occurs on the canvas.
+        """
+        self.active_tool.on_mouse_press(event)
+        if event.button() == Qt.LeftButton:
+            # Remember where the mouse press occured
+            self.mouse_pressed_position = event.position().toTuple()
+
+            if self.active_tool.placeable:
+                self.active_tool.place()
+
+            self.update()
+
+    def on_mouse_move(self, event: QMouseEvent):
+        """
+        Action to perform when the mouse is moved on the canvas.
+        """
+        self.active_tool.on_mouse_move(event)
+        # Update the mouse position
+        self.current_mouse_position = event.position().toTuple()
+        self.update()
+
+    def on_mouse_release(self, event: QMouseEvent):
+        """
+        Action to perform when the mouse button is released on the canvas.
+        """
+        self.active_tool.on_mouse_release(event)
+        if event.button() == Qt.LeftButton:
+            # Forget where the mouse press occured
+            self.mouse_pressed_position = None
+            self.update()
+
+    def on_mouse_enter(self, event):
+        """
+        Action to perform when the mouse enters the canvas.
+        """
+        # Begin tracking the mouse position
+        self.current_mouse_position = event.position().toTuple()
+
+        # Set the cursor depending on which tool is selected
+        self.setCursor(self.active_tool.cursor_type)
+
+        if not (isinstance(self.active_tool, Select) or isinstance(self.active_tool, Grab)):
+            self.enablePreview()
+
+        self.update()
+    
+    def on_mouse_leave(self, event):
+        """
+        Action to perform when the mouse leaves the canvas.
+        """
+        # Stop tracking the mouse position
+        self.current_mouse_position = None
+
+        # Reset the cursor
+        self.setCursor(Qt.ArrowCursor)
+
+        if not(isinstance(self.active_tool, Select) or isinstance(self.active_tool, Grab)):
+            self.disablePreview()
+
+        self.update()
+
+    def on_mouse_wheel(self, event: QWheelEvent):
+        """
+        Action to perform when the mouse wheel scrolls on the canvas.
+        """
+        # Zoom the canvas
+        zoom_delta = event.angleDelta().y() / 120
+        self.zoom(zoom_delta)
+        self.update()

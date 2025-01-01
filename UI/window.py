@@ -35,6 +35,7 @@ class MainWindow(QMainWindow):
         self.console_label = QLabel("Console")
         self.console = Console(self)
         self.canvas = Canvas(self)
+        self.canvas.initialize_active_tool()
         toolbar = ToolBar(self)
 
         # Progress bar
@@ -77,6 +78,7 @@ class MainWindow(QMainWindow):
         self.undo_stack.append(current_state)
 
     def undo(self):
+        print("undo")
         if len(self.undo_stack) > 1:
             current_state = self.undo_stack.pop()
             self.redo_stack.append(current_state)

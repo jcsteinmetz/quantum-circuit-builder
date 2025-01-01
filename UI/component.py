@@ -1,34 +1,15 @@
-from PySide6.QtCore import Qt, QPointF, QRectF
-from PySide6.QtGui import QColor, QPen, QIntValidator, QDoubleValidator
+from PySide6.QtCore import Qt, QPointF, QRectF, QRect, QSize, QPoint
+from PySide6.QtGui import QColor, QPen, QIntValidator, QDoubleValidator, QMouseEvent, QWheelEvent
+from PySide6.QtWidgets import QRubberBand
 from copy import copy
 from abc import ABC, abstractmethod
 from properties_manager import PropertiesManager
-
-class Select:
-    def __init__(self, window):
-        self.window = window
-        self.placeable = False
-
-    def set_cursor(self):
-        self.window.canvas.setCursor(Qt.ArrowCursor)
-
-class Grab:
-    def __init__(self, window):
-        self.window = window
-        self.placeable = False
-        self.cursor = Qt.OpenHandCursor
-
-    def set_dragging_cursor(self):
-        self.window.canvas.setCursor(Qt.ClosedHandCursor)
-
-    def set_cursor(self):
-        self.window.canvas.setCursor(Qt.OpenHandCursor)
 
 class Component(ABC):
     def __init__(self, window):
         self.window = window
         self.position = None
-        self.cursor = Qt.CrossCursor
+        self.cursor_type = Qt.CrossCursor
         self.is_selected = False
 
         # Property manager
@@ -53,9 +34,6 @@ class Component(ABC):
     @abstractmethod
     def placeable(self):
         raise NotImplementedError
-    
-    def set_cursor(self):
-        self.window.canvas.setCursor(self.cursor)
 
     # Interface
 
@@ -95,17 +73,17 @@ class Component(ABC):
     @property
     def snappedPosition(self):
         if not self.position:
-            return self.window.canvas.grid.snap(self.window.canvas.event_handler.current_mouse_position)
+            return self.window.canvas.grid.snap(self.window.canvas.current_mouse_position)
         elif hasattr(self, "end_position"):
             if self.position and not self.end_position:
                 # Wires are horizontal
                 if isinstance(self, Wire):
-                    x = self.window.canvas.grid.snap(self.window.canvas.event_handler.current_mouse_position)[0]
+                    x = self.window.canvas.grid.snap(self.window.canvas.current_mouse_position)[0]
                     y = self.window.canvas.grid.snap(self.position)[1]
                     return (x, y)
                 # Other double components are vertical
                 x = self.window.canvas.grid.snap(self.position)[0]
-                y = self.window.canvas.grid.snap(self.window.canvas.event_handler.current_mouse_position)[1]
+                y = self.window.canvas.grid.snap(self.window.canvas.current_mouse_position)[1]
                 return (x, y)
             
     def set_style(self):
@@ -267,33 +245,31 @@ class Component(ABC):
 
     def overlaps_a_wire(self, pos):
         for comp in self.window.canvas.placed_components["wires"]:
-            snapped_wire_start_point = self.window.canvas.grid.snap(comp.position)
-            snapped_wire_end_point = self.window.canvas.grid.snap(comp.end_position)
-            if pos[1] == snapped_wire_start_point[1]:
-                if snapped_wire_start_point[0] < pos[0] < snapped_wire_end_point[0]:
+            wire_start = self.window.canvas.grid.snap(comp.position)
+            wire_end = self.window.canvas.grid.snap(comp.end_position)
+            if pos[1] == wire_start[1]:
+                if wire_start[0] < pos[0] < wire_end[0]:
                     return True
         return False
     
     def overlaps_a_wire_edge(self, pos):
-        for comp in self.window.canvas.placed_components["wires"]:
-            snapped_wire_start_point = self.window.canvas.grid.snap(comp.position)
-            snapped_wire_end_point = self.window.canvas.grid.snap(comp.end_position)
-            if pos[1] == snapped_wire_start_point[1]:
-                if snapped_wire_start_point[0] == pos[0]:
-                    return True
-                if snapped_wire_end_point[0] == pos[0]:
+        for wire in self.window.canvas.placed_components["wires"]:
+            wire_start = self.window.canvas.grid.snap(wire.position)
+            wire_end = self.window.canvas.grid.snap(wire.end_position)
+            if pos[1] == wire_start[1]:
+                if wire_start[0] == pos[0] or wire_end[0] == pos[0]:
                     return True
         return False
     
     def overlaps_a_component(self, pos):
         for comp in self.window.canvas.placed_components["components"]:
             if issubclass(comp.__class__, DoubleComponent):
-                snapped_comp_start_point = self.window.canvas.grid.snap(comp.position)
-                snapped_comp_end_point = self.window.canvas.grid.snap(comp.end_position)
-                if pos[0] == snapped_comp_start_point[0]:
-                    if snapped_comp_start_point[1] <= pos[1] <= snapped_comp_end_point[1]:
+                comp_start = self.window.canvas.grid.snap(comp.position)
+                comp_end = self.window.canvas.grid.snap(comp.end_position)
+                if pos[0] == comp_start[0]:
+                    if comp_start[1] <= pos[1] <= comp_end[1]:
                         return True
-                    if snapped_comp_end_point[1] <= pos[1] <= snapped_comp_start_point[1]:
+                    if comp_end[1] <= pos[1] <= comp_start[1]:
                         return True
             elif issubclass(comp.__class__, SingleComponent):
                 if pos == self.window.canvas.grid.snap(comp.position):
@@ -310,22 +286,22 @@ class Component(ABC):
         if self.position:
             for comp_list in self.window.canvas.placed_components.values():
                 for comp in comp_list:
-                    snapped_comp_start_point = self.window.canvas.grid.snap(comp.position)
-                    if self.position[0] == snapped_comp_start_point[0]:
+                    comp_start = self.window.canvas.grid.snap(comp.position)
+                    if self.position[0] == comp_start[0]:
                         if hasattr(comp, "end_position"):
-                            snapped_comp_end_point = self.window.canvas.grid.snap(comp.end_position)
-                            if self.position[1] <= snapped_comp_start_point[1] and pos[1] >= snapped_comp_end_point[1]:
+                            comp_end = self.window.canvas.grid.snap(comp.end_position)
+                            if self.position[1] <= comp_start[1] and pos[1] >= comp_end[1]:
                                 return True
-                            if self.position[1] <= snapped_comp_end_point[1] and pos[1] >= snapped_comp_start_point[1]:
+                            if self.position[1] <= comp_end[1] and pos[1] >= comp_start[1]:
                                 return True
-                            if self.position[1] >= snapped_comp_start_point[1] and pos[1] <= snapped_comp_end_point[1]:
+                            if self.position[1] >= comp_start[1] and pos[1] <= comp_end[1]:
                                 return True
-                            if self.position[1] >= snapped_comp_end_point[1] and pos[1] <= snapped_comp_start_point[1]:
+                            if self.position[1] >= comp_end[1] and pos[1] <= comp_start[1]:
                                 return True
                         else:
-                            if self.position[1] <= snapped_comp_start_point[1] and pos[1] >= snapped_comp_start_point[1]:
+                            if self.position[1] <= comp_start[1] and pos[1] >= comp_start[1]:
                                 return True
-                            if pos[1] <= snapped_comp_start_point[1] and self.position[1] >= snapped_comp_start_point[1]:
+                            if pos[1] <= comp_start[1] and self.position[1] >= comp_start[1]:
                                 return True
         return False
     
@@ -333,12 +309,12 @@ class Component(ABC):
         if self.position:
             # Can't be on the opposite side of a wire from the start point
             for comp in self.window.canvas.placed_components["wires"]:
-                snapped_comp_start_point = self.window.canvas.grid.snap(comp.position)
-                snapped_comp_end_point = self.window.canvas.grid.snap(comp.end_position)
-                if self.position[1] == snapped_comp_start_point[1]:
-                    if self.position[0] <= snapped_comp_start_point[0] and pos[0] >= snapped_comp_end_point[0]:
+                comp_start = self.window.canvas.grid.snap(comp.position)
+                comp_end = self.window.canvas.grid.snap(comp.end_position)
+                if self.position[1] == comp_start[1]:
+                    if self.position[0] <= comp_start[0] and pos[0] >= comp_end[0]:
                         return True
-                    if self.position[0] >= snapped_comp_end_point[0] and pos[0] <= snapped_comp_start_point[0]:
+                    if self.position[0] >= comp_end[0] and pos[0] <= comp_start[0]:
                         return True
         return False
     
@@ -346,6 +322,15 @@ class SingleComponent(Component):
     def __init__(self, window):
         super().__init__(window)
         self.hide = False
+
+    def on_mouse_press(self, event: QMouseEvent):
+        pass
+
+    def on_mouse_move(self, event: QMouseEvent):
+       pass
+
+    def on_mouse_release(self, event: QMouseEvent):
+        pass
 
     def place(self):
         # hide the component underneath where this component is placed
@@ -474,6 +459,15 @@ class DoubleComponent(Component):
         self.hide_start = False
         self.hide_end = False
 
+    def on_mouse_press(self, event: QMouseEvent):
+        pass
+
+    def on_mouse_move(self, event: QMouseEvent):
+        pass
+
+    def on_mouse_release(self, event: QMouseEvent):
+        pass
+
     def place(self):
         if not self.position:
             self.position = copy(self.snappedPosition)
@@ -587,9 +581,9 @@ class Wire(DoubleComponent):
         if not self.position:
             # Can't place it on the point immediately to the left of another wire, which would leave no room for the end point
             for comp in self.window.canvas.placed_components["wires"]:
-                snapped_comp_start_point = self.window.canvas.grid.snap(comp.position)
-                if self.snappedPosition[1] == snapped_comp_start_point[1]:
-                    if self.window.canvas.grid.snap((self.snappedPosition[0] + self.window.canvas.grid.size, self.snappedPosition[1])) == snapped_comp_start_point:
+                comp_start = self.window.canvas.grid.snap(comp.position)
+                if self.snappedPosition[1] == comp_start[1]:
+                    if self.window.canvas.grid.snap((self.snappedPosition[0] + self.window.canvas.grid.size, self.snappedPosition[1])) == comp_start:
                         return False
         
         # Rules for the end point

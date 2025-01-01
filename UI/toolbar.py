@@ -5,7 +5,8 @@ Contains the ToolBar class.
 from copy import copy
 from PySide6.QtWidgets import QSizePolicy, QWidget, QToolBar, QApplication, QComboBox, QStyle
 from PySide6.QtGui import QAction, QActionGroup
-from component import Select, Grab, Wire, BeamSplitter, Switch, Loss, Detector
+from component import Wire, BeamSplitter, Switch, Loss, Detector
+from canvas_tools import Select, Grab
 
 class ToolBar(QToolBar):
     """
@@ -48,8 +49,8 @@ class ToolBar(QToolBar):
         # Buttons
         self.add_button("Open", self.open_trigger, open_icon)
         self.add_button("Save", self.save_trigger, save_icon)
-        self.add_button("Undo", self.window.undo(), undo_icon)
-        self.add_button("Redo", self.window.redo(), redo_icon)
+        self.add_button("Undo", self.window.undo, undo_icon)
+        self.add_button("Redo", self.window.redo, redo_icon)
         self.addSeparator()
         self.add_tools(tools)
         self.add_button("Delete", self.delete_trigger, delete_icon)
