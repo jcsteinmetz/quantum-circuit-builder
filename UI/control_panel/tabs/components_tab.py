@@ -12,12 +12,11 @@ class ComponentsTab(QTreeWidget):
 
     def on_item_clicked(self, item, column):
         comp_to_select = self.find_component_from_item(item)
-        for comp_list in self.window.canvas.placed_components.values():
-            for comp in comp_list:
-                if comp == comp_to_select:
-                    comp.set_selected(True)
-                else:
-                    comp.set_selected(False)
+        for comp in self.window.canvas.all_placed_components():
+            if comp == comp_to_select:
+                comp.set_selected(True)
+            else:
+                comp.set_selected(False)
         self.window.canvas.repaint()
 
     @property
@@ -29,11 +28,10 @@ class ComponentsTab(QTreeWidget):
         self.component_types = []
 
     def find_component_from_item(self, item):
-        for comp_list in self.window.canvas.placed_components.values():
-            for comp in comp_list:
-                parent_index, child_index = self.find_item_from_component(comp)
-                if self.topLevelItem(parent_index).child(child_index) == item:
-                    return comp
+        for comp in self.window.canvas.all_placed_components():
+            parent_index, child_index = self.find_item_from_component(comp)
+            if self.topLevelItem(parent_index).child(child_index) == item:
+                return comp
                 
     def find_item_from_component(self, comp):
         # Get component name
@@ -84,9 +82,8 @@ class ComponentsTab(QTreeWidget):
             self.save_expansion_state(self.topLevelItem(i), state)
 
         self.clear_components()
-        for comp_list in self.window.canvas.placed_components.values():
-            for comp in comp_list:
-                self.add_component(comp)
+        for comp in self.window.canvas.all_placed_components():
+            self.add_component(comp)
         
         for i in range(self.topLevelItemCount()):
             self.restore_expansion_state(self.topLevelItem(i), state)

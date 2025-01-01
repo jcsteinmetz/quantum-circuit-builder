@@ -10,6 +10,7 @@ class Component(ABC):
         self._position = []
         self.cursor_type = Qt.CrossCursor
         self.is_selected = False
+        self.direction = None
 
         # Property manager
         self.property_manager = PropertiesManager(self, self.window.canvas)
@@ -255,16 +256,15 @@ class Component(ABC):
             self.window.canvas.placed_components["wires"].remove(self)
 
             # delete components attached to the wire
-            for comp_list in self.window.canvas.placed_components.values():
-                for comp in comp_list[:]:
-                    comp.snap()
-                    self.snap()
-                    if len(comp.position) > 0:
-                        if comp.position[0][1] == self.position[0][1] and (self.position[0][0] <= comp.position[0][0] <= self.position[1][0]):
-                            comp_list.remove(comp)
-                    if len(comp.position) > 1:
-                        if comp.position[1][1] == self.position[0][1] and (self.position[0][0] <= comp.position[1][0] <= self.position[1][0]):
-                            comp_list.remove(comp)
+            for comp in self.window.canvas.all_placed_components():
+                comp.snap()
+                self.snap()
+                if len(comp.position) > 0:
+                    if comp.position[0][1] == self.position[0][1] and (self.position[0][0] <= comp.position[0][0] <= self.position[1][0]):
+                        comp.delete()
+                if len(comp.position) > 1:
+                    if comp.position[1][1] == self.position[0][1] and (self.position[0][0] <= comp.position[1][0] <= self.position[1][0]):
+                        comp.delete()
 
         elif self in self.window.canvas.placed_components["components"]:
             self.window.canvas.placed_components["components"].remove(self)
@@ -331,17 +331,6 @@ class Component(ABC):
                         if wire_x_start <= pos[0] <= wire_x_end:
                             comp_wires.append(w+1)
         return comp_wires
-
-    def overlaps_a_wire(self, position_to_check):
-        for wire in self.window.canvas.placed_components["wires"]:
-            wire.snap()
-            wire_x_start = wire.position[0][0]
-            wire_x_end = wire.position[1][0]
-            wire_y = wire.position[0][1]
-            if position_to_check[1] == wire_y:
-                if wire_x_start < position_to_check[0] < wire_x_end:
-                    return True
-        return False
     
     def overlaps_a_wire_edge(self, position_to_check):
         for wire in self.window.canvas.placed_components["wires"]:
@@ -354,47 +343,44 @@ class Component(ABC):
                     return True
         return False
     
-    def overlaps_a_component(self, position_to_check):
-        for comp in self.window.canvas.placed_components["components"]:
+    def _check_overlap(self, position_to_check, component_group):
+        for comp in self.window.canvas.placed_components[component_group]:
             comp.snap()
-            if len(self.position) == 2:
-                comp_start = comp.position[0]
-                comp_end = comp.position[1]
-                if position_to_check[0] == comp_start[0]:
-                    if min(comp_start[1], comp_end[1]) <= position_to_check[1] <= max(comp_start[1], comp_end[1]):
-                        return True
-            elif len(self.position) == 1:
-                if position_to_check == comp.position[0]:
-                    return True
+            if comp.direction == "H":
+                on_axis = position_to_check[1] == comp.position[0][1]
+                comp_range = [pos[0] for pos in comp.position]
+                in_range = min(comp_range) < position_to_check[0] < max(comp_range)
+            else:
+                on_axis = position_to_check[0] == comp.position[0][0]
+                comp_range = [pos[1] for pos in comp.position]
+                in_range = min(comp_range) <= position_to_check[1] <= max(comp_range)
+            if on_axis and in_range:
+                return True
         return False
+    
+    def overlaps_a_wire(self, position_to_check):
+        self.snap()
+        return self._check_overlap(position_to_check, "wires")
+    
+    def overlaps_a_component(self, position_to_check):
+        self.snap()
+        return self._check_overlap(position_to_check, "components")
     
     def overlaps_itself(self, position_to_check):
         self.snap()
         return any([position_to_check == pos for pos in self.position])
     
-    def spans_a_component(self, pos):
+    def spans_a_component(self, position_to_check):
         if len(self.position) > 0:
             if self.position[0]:
-                for comp_list in self.window.canvas.placed_components.values():
-                    for comp in comp_list:
-                        comp.snap()
-                        comp_start = comp.position[0]
-                        if self.position[0][0] == comp_start[0]:
-                            if len(self.position) > 1:
-                                comp_end = comp.position[1]
-                                if self.position[0][1] <= comp_start[1] and pos[1] >= comp_end[1]:
-                                    return True
-                                if self.position[0][1] <= comp_end[1] and pos[1] >= comp_start[1]:
-                                    return True
-                                if self.position[0][1] >= comp_start[1] and pos[1] <= comp_end[1]:
-                                    return True
-                                if self.position[0][1] >= comp_end[1] and pos[1] <= comp_start[1]:
-                                    return True
-                            else:
-                                if self.position[0][1] <= comp_start[1] and pos[1] >= comp_start[1]:
-                                    return True
-                                if pos[1] <= comp_start[1] and self.position[0][1] >= comp_start[1]:
-                                    return True
+                for comp in self.window.canvas.all_placed_components():
+                    comp.snap()
+                    comp_range = [pos[1] for pos in comp.position]
+                    if self.position[0][0] == comp.position[0][0]:
+                        if self.position[0][1] <= min(comp_range) and position_to_check[1] >= max(comp_range):
+                            return True
+                        if self.position[0][1] >= max(comp_range) and position_to_check[1] <= min(comp_range):
+                            return True
         return False
     
     def spans_a_wire(self, pos):
@@ -500,6 +486,7 @@ class Wire(Component):
         # Properties
         self.n_photons = 0
         self.create_property_manager()
+        self.direction = "H"
 
     @property
     def length(self):
@@ -559,6 +546,7 @@ class BeamSplitter(Component):
         # Properties
         self.theta = 90
         self.create_property_manager()
+        self.direction = "V"
 
     @property
     def length(self):
@@ -599,6 +587,7 @@ class Switch(Component):
         # Style
         self.shape_scale = 0.5
         self.shape_type = ["X", "X"]
+        self.direction = "V"
 
     @property
     def length(self):

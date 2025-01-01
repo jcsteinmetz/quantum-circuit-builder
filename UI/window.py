@@ -88,9 +88,8 @@ class MainWindow(QMainWindow):
             ) = self.undo_stack[-1]
 
         # Set unserializable attributes
-        for comp_list in self.canvas.placed_components.values():
-            for comp in comp_list:
-                comp.set_unserializable_attributes(self)
+        for comp in self.canvas.all_placed_components():
+            comp.set_unserializable_attributes(self)
 
         # Recreate circuit
         self.control_panel.components_tab.refresh()
@@ -107,9 +106,8 @@ class MainWindow(QMainWindow):
             ) = self.redo_stack.pop()
 
         # Set unserializable attributes
-        for comp_list in self.canvas.placed_components.values():
-            for comp in comp_list:
-                comp.set_unserializable_attributes(self)
+        for comp in self.canvas.all_placed_components():
+            comp.set_unserializable_attributes(self)
 
         # Recreate circuit
         self.control_panel.components_tab.refresh()
@@ -139,9 +137,8 @@ class MainWindow(QMainWindow):
         return compound_widget
     
     def clear(self):
-        for comp_list in self.canvas.placed_components.values():
-            for comp in comp_list[:]:
-                comp.delete()
+        for comp in self.canvas.all_placed_components():
+            comp.delete()
         self.console.refresh()
         self.control_panel.components_tab.clear_components()
         self.control_panel.gram_matrix_tab.update_gram_matrix()
@@ -186,9 +183,8 @@ class MainWindow(QMainWindow):
             ) = load_data
 
             # Set unserializable attributes
-            for comp_list in self.canvas.placed_components.values():
-                for comp in comp_list:
-                    comp.set_unserializable_attributes(self)
+            for comp in self.canvas.all_placed_components():
+                comp.set_unserializable_attributes(self)
 
             # Recreate circuit
             self.control_panel.components_tab.refresh()

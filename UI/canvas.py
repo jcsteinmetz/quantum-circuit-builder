@@ -27,6 +27,11 @@ class Canvas(QWidget):
 
         self.active_tool = None
 
+    def all_placed_components(self):
+        for comp_list in self.placed_components.values():
+            for comp in comp_list[:]:
+                yield comp
+
     def eventFilter(self, obj, event):
         """
         Calls the corresponding action when a mouse event occurs on the canvas.
@@ -81,9 +86,8 @@ class Canvas(QWidget):
             self.gridline_color = (50, 50, 50)
 
     def deselect_all(self):
-        for comp_list in self.placed_components.values():
-            for comp in comp_list:
-                comp.is_selected = False
+        for comp in self.all_placed_components():
+            comp.is_selected = False
         self.update()
 
     def paintEvent(self, event):
@@ -93,9 +97,8 @@ class Canvas(QWidget):
         self.grid.draw(painter)
 
         # Draw placed components
-        for comp_list in self.placed_components.values():
-            for comp in comp_list:
-                comp.draw(painter)
+        for comp in self.all_placed_components():
+            comp.draw(painter)
 
         # Draw tool preview
         if self.preview_enabled:
@@ -109,9 +112,8 @@ class Canvas(QWidget):
         self.grid.offset = (self.grid.offset[0] - delta[0], self.grid.offset[1] - delta[1])
 
         # Move placed components
-        for comp_list in self.placed_components.values():
-            for comp in comp_list:
-                comp.move(delta)
+        for comp in self.all_placed_components():
+            comp.move(delta)
 
     def zoom(self, zoom_delta):
         zoom_step = 0.1
@@ -122,9 +124,8 @@ class Canvas(QWidget):
             self.grid.zoom(self.current_mouse_position, new_grid_size)
 
             # zoom placed components
-            for comp_list in self.placed_components.values():
-                for comp in comp_list:
-                    comp.zoom(self.current_mouse_position, new_grid_size)
+            for comp in self.all_placed_components():
+                comp.zoom(self.current_mouse_position, new_grid_size)
 
             # zoom the active component preview
             if not isinstance(self.active_tool, CanvasTool):

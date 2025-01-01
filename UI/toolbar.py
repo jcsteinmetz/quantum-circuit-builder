@@ -128,9 +128,8 @@ class ToolBar(QToolBar):
             new_style = "basic"
         self.window.canvas.style_choice = new_style
         self.window.canvas.set_style()
-        for comp_list in self.window.canvas.placed_components.values():
-            for comp in comp_list:
-                comp.set_style()
+        for comp in self.window.canvas.all_placed_components():
+            comp.set_style()
 
         # Recreate active tool so it updates the style
         self.window.canvas.active_tool = self.window.canvas.active_tool.__class__(self.window)
@@ -141,10 +140,9 @@ class ToolBar(QToolBar):
         self.window.canvas.repaint()
 
     def delete_trigger(self):
-        for comp_list in self.window.canvas.placed_components.values():
-            for comp in comp_list[:]:
-                if comp.is_selected:
-                    comp.delete()
+        for comp in self.window.canvas.all_placed_components():
+            if comp.is_selected:
+                comp.delete()
         self.window.control_panel.components_tab.refresh()
         self.window.canvas.repaint()
 
