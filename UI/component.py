@@ -1,6 +1,5 @@
-from PySide6.QtCore import Qt, QPointF, QRectF, QRect, QSize, QPoint
-from PySide6.QtGui import QColor, QPen, QIntValidator, QDoubleValidator, QMouseEvent, QWheelEvent
-from PySide6.QtWidgets import QRubberBand
+from PySide6.QtCore import Qt, QPointF, QRectF
+from PySide6.QtGui import QColor, QPen, QIntValidator, QDoubleValidator, QMouseEvent
 from copy import copy
 from abc import ABC, abstractmethod
 from properties_manager import PropertiesManager
@@ -162,16 +161,18 @@ class Component(ABC):
         self.property_manager.hide()
         if self in self.window.canvas.placed_components["wires"]:
             self.window.canvas.placed_components["wires"].remove(self)
+
             # delete components attached to the wire
             for comp_list in self.window.canvas.placed_components.values():
                 for comp in comp_list[:]:
                     comp.snap()
                     self.snap()
                     if comp.position[1] == self.position[1]:
-                        comp.delete()
+                        comp_list.remove(comp)
                     elif hasattr(comp, "end_position"):
                         if comp.end_position[1] == self.position[1]:
-                            comp.delete()
+                            comp_list.remove(comp)
+
         elif self in self.window.canvas.placed_components["components"]:
             self.window.canvas.placed_components["components"].remove(self)
         elif self in self.window.canvas.placed_components["detectors"]:
@@ -179,21 +180,25 @@ class Component(ABC):
 
     def move(self, delta):
         if self.position:
-            self.position = (self.position[0] + delta[0], self.position[1] + delta[1])
+            self.position = self._move_endpoint(self.position, delta)
         if hasattr(self, "end_position"):
             if self.end_position:
-                self.end_position = (self.end_position[0] + delta[0], self.end_position[1] + delta[1])
+                self.end_position = self._move_endpoint(self.end_position, delta)
+
+    def _move_endpoint(self, endpoint, delta):
+        return (endpoint[0] + delta[0], endpoint[1] + delta[1])
 
     def zoom(self, mouse_pos, new_grid_size):
         if self.position:
-            distance_to_mouse = (self.position[0] - mouse_pos[0], self.position[1] - mouse_pos[1])
-            new_distance_to_mouse = (distance_to_mouse[0] * (new_grid_size / self.window.canvas.grid.size), distance_to_mouse[1] * (new_grid_size / self.window.canvas.grid.size))
-            self.position = (mouse_pos[0] + new_distance_to_mouse[0], mouse_pos[1] + new_distance_to_mouse[1])
+            self.position = self._zoom_endpoint(self.position, mouse_pos, new_grid_size)
         if hasattr(self, "end_position"):
             if self.end_position:
-                distance_to_mouse = (self.end_position[0] - mouse_pos[0], self.end_position[1] - mouse_pos[1])
-                new_distance_to_mouse = (distance_to_mouse[0] * (new_grid_size / self.window.canvas.grid.size), distance_to_mouse[1] * (new_grid_size / self.window.canvas.grid.size))
-                self.end_position = (mouse_pos[0] + new_distance_to_mouse[0], mouse_pos[1] + new_distance_to_mouse[1])
+                self.end_position = self._zoom_endpoint(self.end_position, mouse_pos, new_grid_size)
+
+    def _zoom_endpoint(self, endpoint, mouse_pos, new_grid_size):
+        distance_to_mouse = (endpoint[0] - mouse_pos[0], endpoint[1] - mouse_pos[1])
+        new_distance_to_mouse = (distance_to_mouse[0] * (new_grid_size / self.window.canvas.grid.size), distance_to_mouse[1] * (new_grid_size / self.window.canvas.grid.size))
+        return (mouse_pos[0] + new_distance_to_mouse[0], mouse_pos[1] + new_distance_to_mouse[1])
 
     # Selecting
 
@@ -267,9 +272,7 @@ class Component(ABC):
                 comp_start = self.window.canvas.grid.snap(comp.position)
                 comp_end = self.window.canvas.grid.snap(comp.end_position)
                 if pos[0] == comp_start[0]:
-                    if comp_start[1] <= pos[1] <= comp_end[1]:
-                        return True
-                    if comp_end[1] <= pos[1] <= comp_start[1]:
+                    if min(comp_start[1], comp_end[1]) <= pos[1] <= max(comp_start[1], comp_end[1]):
                         return True
             elif issubclass(comp.__class__, SingleComponent):
                 if pos == self.window.canvas.grid.snap(comp.position):

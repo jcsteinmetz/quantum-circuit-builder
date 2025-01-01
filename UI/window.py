@@ -78,7 +78,6 @@ class MainWindow(QMainWindow):
         self.undo_stack.append(current_state)
 
     def undo(self):
-        print("undo")
         if len(self.undo_stack) > 1:
             current_state = self.undo_stack.pop()
             self.redo_stack.append(current_state)

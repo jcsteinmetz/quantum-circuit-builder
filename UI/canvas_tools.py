@@ -6,11 +6,16 @@ from abc import ABC, abstractmethod
 class CanvasTool(ABC):
     def __init__(self, window):
         self.window = window
-        self.placeable = False
         self.cursor_type = Qt.ArrowCursor
 
-    def update_canvas(self):
-        self.window.canvas.update()
+    def on_mouse_press(self, event: QMouseEvent):
+        pass
+
+    def on_mouse_move(self, event: QMouseEvent):
+        pass
+
+    def on_mouse_release(self, event: QMouseEvent):
+        pass
 
 class Select(CanvasTool):
     def __init__(self, window):
@@ -73,7 +78,7 @@ class Grab(CanvasTool):
         if event.button() == Qt.LeftButton:
             self.dragging_enabled = True
             self.cursor_type = Qt.ClosedHandCursor
-            # self.window.canvas.setCursor(self.cursor_type)
+            self.window.canvas.setCursor(self.cursor_type)
 
     def on_mouse_move(self, event: QMouseEvent):
         """
@@ -92,4 +97,4 @@ class Grab(CanvasTool):
         if event.button() == Qt.LeftButton:
             self.dragging_enabled = False
             self.cursor_type = Qt.OpenHandCursor
-            # self.window.canvas.setCursor(self.cursor_type)
+            self.window.canvas.setCursor(self.cursor_type)
