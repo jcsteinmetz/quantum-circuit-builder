@@ -1,19 +1,18 @@
 from PySide6.QtCore import Qt, QPointF, QRectF
 from PySide6.QtGui import QColor, QPen, QIntValidator, QDoubleValidator
-from copy import copy
 from abc import ABC, abstractmethod
 from properties_manager import PropertiesManager
 
 class ComponentRenderer:
 
     SHAPE_METHODS = {
-            "square": "draw_square",
-            "circle": "draw_ellipse",
-            "half circle": "draw_half_circle",
-            "X": "draw_X",
-            "diagonal line": "draw_diagonal_line",
-            "arrow": "draw_arrow",
-        }
+        "square": "draw_square",
+        "circle": "draw_ellipse",
+        "half circle": "draw_half_circle",
+        "X": "draw_X",
+        "diagonal line": "draw_diagonal_line",
+        "arrow": "draw_arrow",
+    }
 
     def __init__(self, window):
         self.window = window
@@ -34,11 +33,12 @@ class ComponentRenderer:
         return (col[0], col[1], col[2], 128)
     
     def update_styles(self):
-        self.face_color = self.window.style_manager.get_style("face_color")
-        self.border_color = self.window.style_manager.get_style("border_color")
-        self.selected_border_color = self.window.style_manager.get_style("selected_border_color")
-        self.error_color = self.window.style_manager.get_style("error_color")
-        self.name_color = self.window.style_manager.get_style("name_color")
+        styles = self.window.style_manager.get_styles()
+        self.face_color = styles["face_color"]
+        self.border_color = styles["border_color"]
+        self.selected_border_color = styles["selected_border_color"]
+        self.error_color = styles["error_color"]
+        self.name_color = styles["name_color"]
 
     def set_painter_style(self, painter, pen_color = None, brush_color = None, transparent = False):
         if not pen_color:
@@ -144,14 +144,8 @@ class ComponentRenderer:
                 self.draw_node(painter, comp, pos, comp.shape_type[i])
         self.draw_name(painter, comp)
 
-        if comp.is_selected and self.is_only_selected_component(comp):
+        if comp.is_selected and comp.is_only_selected_component():
             self.draw_property_manager(comp)
-
-    def is_only_selected_component(self, comp):
-        selected_components = [comp for comp in self.window.canvas.all_placed_components() if comp.is_selected]
-        if len(selected_components) == 1 and selected_components[0] == comp:
-            return True
-        return False
 
     def preview(self, painter, comp):
         for i, pos in enumerate(comp.node_positions):
@@ -211,19 +205,55 @@ class Component(ABC):
     @abstractmethod
     def placeable(self):
         raise NotImplementedError
+    
+    @property
+    def connected_wires(self):
+        wires_connected_to_component = []
+        self.snap()
+        for wire in self.window.canvas.placed_components["wires"]:
+            if self._is_connected_to_wire(wire):
+                wires_connected_to_component.append(wire)
+        return wires_connected_to_component
+    
+    @property
+    def connected_components(self):
+        components_connected_to_wire = []
+        self.snap()
+        for comp in self.window.canvas.all_placed_components():
+            comp.snap()
+            if comp._is_connected_to_wire(self):
+                components_connected_to_wire.append(comp)
+        return components_connected_to_wire
+    
+    def _is_connected_to_wire(self, wire):
+        wire.snap()
+        wire_y = wire.node_positions[0][1]
+        wire_range = [pos[0] for pos in self.node_positions]
+        for pos in self.node_positions:
+            on_axis = pos[1] == wire_y
+            in_range = min(wire_range) <= pos[0] <= max(wire_range)
+            if on_axis and in_range:
+                return True
+        return False
 
     def place(self):
         for i, pos in enumerate(self.node_positions):
 
             # Fill in the earliest unplaced node
             if not pos:
-                self.node_positions[i] = copy(self.potential_placement)
+                self.node_positions[i] = self.potential_placement
 
                 # If that was the last node, log the component
                 if i == len(self.node_positions) - 1:
                     self.window.canvas.place(self)
 
                 break
+
+    def is_only_selected_component(self):
+        selected_components = [comp for comp in self.window.canvas.all_placed_components() if comp.is_selected]
+        if len(selected_components) == 1 and selected_components[0] == self:
+            return True
+        return False
 
     # Interface
 
@@ -288,16 +318,8 @@ class Component(ABC):
         if self in self.window.canvas.placed_components["wires"]:
             self.window.canvas.placed_components["wires"].remove(self)
 
-            # delete components attached to the wire
-            for comp in self.window.canvas.all_placed_components():
-                comp.snap()
-                self.snap()
-                if len(comp.node_positions) > 0:
-                    if comp.node_positions[0][1] == self.node_positions[0][1] and (self.node_positions[0][0] <= comp.node_positions[0][0] <= self.node_positions[1][0]):
-                        comp.delete()
-                if len(comp.node_positions) > 1:
-                    if comp.node_positions[1][1] == self.node_positions[0][1] and (self.node_positions[0][0] <= comp.node_positions[1][0] <= self.node_positions[1][0]):
-                        comp.delete()
+            for comp in self.connected_components:
+                comp.delete()
 
         elif self in self.window.canvas.placed_components["components"]:
             self.window.canvas.placed_components["components"].remove(self)
@@ -324,19 +346,11 @@ class Component(ABC):
 
     # Selecting
 
-    def set_selected(self, check):
-        self.is_selected = check
-        if check:
-            self.select_item_in_ui()
-        else:
-            self.deselect_item_in_ui()
-
-    def select_item_in_ui(self):
-        self.window.control_panel.components_tab.select_item(self)
-
-    def deselect_item_in_ui(self):
-        self.window.control_panel.components_tab.deselect_item(self)
-        self.property_manager.hide()
+    def toggle_selection(self, selected):
+        self.is_selected = selected
+        self.window.control_panel.components_tab.toggle_selection(self, selected)
+        if not selected:
+            self.property_manager.hide()
 
     def contains(self, position_to_check):
         return any([self._node_contains(pos, position_to_check) for pos in self.node_positions])    
@@ -353,22 +367,6 @@ class Component(ABC):
             return True
 
     # Placeable checks
-
-    @property
-    def connected_wires(self):
-        wires_connected_to_component = []
-        self.snap()
-        for w, wire in enumerate(self.window.canvas.placed_components["wires"]):
-            wire.snap()
-            wire_y = wire.node_positions[0][1]
-            wire_x_start = wire.node_positions[0][0]
-            wire_x_end = wire.node_positions[1][0]
-            for pos in self.node_positions:
-                if pos:
-                    if pos[1] == wire_y:
-                        if wire_x_start <= pos[0] <= wire_x_end:
-                            wires_connected_to_component.append(w+1)
-        return wires_connected_to_component
     
     def overlaps_a_wire_edge(self, position_to_check):
         for wire in self.window.canvas.placed_components["wires"]:
@@ -382,6 +380,7 @@ class Component(ABC):
         return False
     
     def _check_overlap(self, position_to_check, component_group):
+        self.snap()
         for comp in self.window.canvas.placed_components[component_group]:
             comp.snap()
             if comp.direction == "H":
@@ -397,11 +396,9 @@ class Component(ABC):
         return False
     
     def overlaps_a_wire(self, position_to_check):
-        self.snap()
         return self._check_overlap(position_to_check, "wires")
     
     def overlaps_a_component(self, position_to_check):
-        self.snap()
         return self._check_overlap(position_to_check, "components")
     
     def overlaps_itself(self, position_to_check):
@@ -414,11 +411,11 @@ class Component(ABC):
                 for comp in self.window.canvas.all_placed_components():
                     comp.snap()
                     comp_range = [pos[1] for pos in comp.node_positions]
-                    if self.node_positions[0][0] == comp.node_positions[0][0]:
-                        if self.node_positions[0][1] <= min(comp_range) and position_to_check[1] >= max(comp_range):
-                            return True
-                        if self.node_positions[0][1] >= max(comp_range) and position_to_check[1] <= min(comp_range):
-                            return True
+                    on_axis = self.node_positions[0][0] == comp.node_positions[0][0]
+                    self_range = [pos[1] for pos in self.node_positions if pos] + [position_to_check[1]]
+                    in_range = min(self_range) <= min(comp_range) and max(comp_range) <= max(self_range)
+                    if on_axis and in_range:
+                        return True
         return False
     
     def spans_a_wire(self, pos):
@@ -435,6 +432,13 @@ class Component(ABC):
                         if self.node_positions[0][0] >= comp_end[0] and pos[0] <= comp_start[0]:
                             return True
         return False
+    
+    def get_wire_index(self, wire_to_find):
+        wire_index = None
+        for w, wire in enumerate(self.window.canvas.placed_components["wires"]):
+            if wire == wire_to_find:
+                wire_index = w+1
+        return wire_index
 
 class Detector(Component):
     def __init__(self, window):
@@ -505,10 +509,11 @@ class Loss(Component):
             return True
         
     def add_to_console(self):
+        wire_index = self.get_wire_index(self.connected_wires[0])
         if self.eta == 1:
-            self.window.console.code += "add loss on wire"+str(self.connected_wires[0])+"\n"
+            self.window.console.code += "add loss on wire"+str(wire_index)+"\n"
         else:
-            self.window.console.code += "add loss on wire"+str(self.connected_wires[0])+"with eta"+str(self.eta)+"\n"
+            self.window.console.code += "add loss on wire"+str(wire_index)+"with eta"+str(self.eta)+"\n"
 
     def add_to_sim(self):
         print("adding loss (placeholder code)")
@@ -610,10 +615,11 @@ class BeamSplitter(Component):
         return False
     
     def add_to_console(self):
+        wire_indices = [self.get_wire_index(wire) for wire in self.connected_wires]
         if self.theta == 90:
-            self.window.console.code += "add beamsplitter on wires"+str(self.connected_wires)+"\n"
+            self.window.console.code += "add beamsplitter on wires"+str(wire_indices)+"\n"
         else:
-            self.window.console.code += "add beamsplitter on wires"+str(self.connected_wires)+"with theta"+str(self.theta)+"\n"
+            self.window.console.code += "add beamsplitter on wires"+str(wire_indices)+"with theta"+str(self.theta)+"\n"
     
     def add_to_sim(self):
         print("add beamsplitter (placeholder code)")
@@ -647,7 +653,8 @@ class Switch(Component):
         return False
     
     def add_to_console(self):
-        self.window.console.code += "add switch on wires"+str(self.connected_wires)+"\n"
+        wire_indices = [self.get_wire_index(wire) for wire in self.connected_wires]
+        self.window.console.code += "add switch on wires"+str(wire_indices)+"\n"
 
     def add_to_sim(self):
         print("adding switch (placeholder code)")

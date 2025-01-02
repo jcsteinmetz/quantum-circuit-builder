@@ -14,9 +14,9 @@ class ComponentsTab(QTreeWidget):
         comp_to_select = self.find_component_from_item(item)
         for comp in self.window.canvas.all_placed_components():
             if comp == comp_to_select:
-                comp.set_selected(True)
+                comp.toggle_selection(True)
             else:
-                comp.set_selected(False)
+                comp.toggle_selection(False)
         self.window.canvas.repaint()
 
     @property
@@ -54,15 +54,10 @@ class ComponentsTab(QTreeWidget):
         
         return parent_index, child_index
 
-    def select_item(self, comp):
+    def toggle_selection(self, comp, selected):
         parent_index, child_index = self.find_item_from_component(comp)
         item = self.topLevelItem(parent_index).child(child_index)
-        item.setSelected(True)
-
-    def deselect_item(self, comp):
-        parent_index, child_index = self.find_item_from_component(comp)
-        item = self.topLevelItem(parent_index).child(child_index)
-        item.setSelected(False)
+        item.setSelected(selected)
 
     def save_expansion_state(self, item, state):
         key = item.text(0)

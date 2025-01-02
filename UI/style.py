@@ -28,13 +28,25 @@ class StyleManager:
             }
         }
 
+    def get_styles(self):
+        return {
+            "face_color": self.get_style("face_color"),
+            "border_color": self.get_style("border_color"),
+            "selected_border_color": self.get_style("selected_border_color"),
+            "error_color": self.get_style("error_color"),
+            "name_color": self.get_style("name_color"),
+        }
+
     def set_theme(self, theme):
         if theme in self.styles:
             self.current_theme = theme
-            self.window.canvas.update_styles()
-            self.window.canvas.component_renderer.update_styles()
+            self.update_styles()
         else:
             raise ValueError(f"Theme '{theme}' not found.")
 
     def get_style(self, key):
         return self.styles[self.current_theme].get(key)
+    
+    def update_styles(self):
+        self.window.canvas.update_styles()
+        self.window.canvas.component_renderer.update_styles()
