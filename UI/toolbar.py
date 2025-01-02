@@ -2,7 +2,7 @@
 Contains the ToolBar class.
 """
 
-from copy import copy
+from functools import partial
 from PySide6.QtWidgets import QSizePolicy, QWidget, QToolBar, QApplication, QComboBox, QStyle
 from PySide6.QtGui import QAction, QActionGroup
 from component import Wire, BeamSplitter, Switch, Loss, Detector

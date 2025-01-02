@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import QFormLayout, QLineEdit, QFrame
 from PySide6.QtGui import QValidator
 
-class PropertiesManager(QFrame):
+class PropertyBox(QFrame):
     def __init__(self, component, parent=None):
         super().__init__(parent)
 

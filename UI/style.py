@@ -14,7 +14,7 @@ class StyleManager:
                 "gridline_color": (0, 0, 0),
                 "error_color": (255, 0, 0),
                 "name_color": (255, 255, 255),
-                "property_manager_color": f"background-color: {QColor(*(0, 0, 0)).name()}; color: {QColor(*(255, 255, 255)).name()}",
+                "property_box_color": f"background-color: {QColor(*(0, 0, 0)).name()}; color: {QColor(*(255, 255, 255)).name()}",
             },
             "darkmode": {
                 "face_color": (255, 255, 255),
@@ -24,7 +24,7 @@ class StyleManager:
                 "gridline_color": (50, 50, 50),
                 "error_color": (255, 0, 0),
                 "name_color": (0, 0, 0),
-                "property_manager_color": f"background-color: {QColor(*(255, 255, 255)).name()}; color: {QColor(*(0, 0, 0)).name()}",
+                "property_box_color": f"background-color: {QColor(*(255, 255, 255)).name()}; color: {QColor(*(0, 0, 0)).name()}",
             }
         }
 

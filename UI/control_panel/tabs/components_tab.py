@@ -102,7 +102,7 @@ class ComponentsTab(QTreeWidget):
         parent_item.addChild(child_item)
 
         # Add its properties
-        for key, prop in comp.property_manager.properties.items():
+        for key, prop in comp.property_box.properties.items():
             grandchild_item = QTreeWidgetItem([key, prop.text()])
             child_item.addChild(grandchild_item)
 

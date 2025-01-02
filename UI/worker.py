@@ -52,7 +52,7 @@ class WorkerThread(QThread):
     @Slot()
     def start_task(self):
         for comp in self.window.canvas.all_placed_components():
-            comp.property_manager.hide()
+            comp.property_box.hide()
         self.window.running = True
         self.window.update_title()
 

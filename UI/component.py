@@ -1,7 +1,7 @@
 from PySide6.QtCore import Qt, QPointF, QRectF
 from PySide6.QtGui import QColor, QPen, QIntValidator, QDoubleValidator
 from abc import ABC, abstractmethod
-from properties_manager import PropertiesManager
+from property_box import PropertyBox
 
 class ComponentRenderer:
 
@@ -63,16 +63,16 @@ class ComponentRenderer:
         rectangle = QRectF(name_position[0] - 0.5*scale, name_position[1] - 0.5*scale, scale, scale)
         painter.drawText(rectangle, Qt.AlignCenter, comp.name)
 
-    def draw_property_manager(self, comp):
+    def draw_property_box(self, comp):
 
-        comp.property_manager.move(int(comp.node_positions[0][0] + comp.property_manager.offset[0]), int(comp.node_positions[0][1]+comp.property_manager.offset[1]))
+        comp.property_box.move(int(comp.node_positions[0][0] + comp.property_box.offset[0]), int(comp.node_positions[0][1]+comp.property_box.offset[1]))
 
         # Property manager style
-        style = self.window.style_manager.get_style("property_manager_color")
-        comp.property_manager.setStyleSheet(style)
+        style = self.window.style_manager.get_style("property_box_color")
+        comp.property_box.setStyleSheet(style)
         
-        if not comp.property_manager.isVisible():
-            comp.property_manager.show()
+        if not comp.property_box.isVisible():
+            comp.property_box.show()
 
     def draw_square(self, painter, pos, scale):
         bottom_left = QPointF(pos.x() - 0.5*scale, pos.y() - 0.5*scale)
@@ -145,7 +145,7 @@ class ComponentRenderer:
         self.draw_name(painter, comp)
 
         if comp.is_selected and comp.is_only_selected_component():
-            self.draw_property_manager(comp)
+            self.draw_property_box(comp)
 
     def preview(self, painter, comp):
         for i, pos in enumerate(comp.node_positions):
@@ -176,7 +176,7 @@ class Component(ABC):
         self.shape_scale = 1
 
         # Property manager
-        self.property_manager = PropertiesManager(self, self.window.canvas)
+        self.property_box = PropertyBox(self, self.window.canvas)
 
     # Setup
 
@@ -198,7 +198,7 @@ class Component(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def create_property_manager(self):
+    def create_property_box(self):
         raise NotImplementedError
 
     @property
@@ -269,13 +269,13 @@ class Component(ABC):
     def __getstate__(self):
         state = self.__dict__.copy()
         del state["window"]
-        del state["property_manager"]
+        del state["property_box"]
         return state
     
     def set_unserializable_attributes(self, window):
         self.window = window
-        self.property_manager = PropertiesManager(self, self.window.canvas)
-        self.create_property_manager()
+        self.property_box = PropertyBox(self, self.window.canvas)
+        self.create_property_box()
     
     # Drawing
 
@@ -314,7 +314,7 @@ class Component(ABC):
         self.node_positions = [self.window.canvas.grid.snap(pos) if pos else None for pos in self.node_positions]
 
     def delete(self):
-        self.property_manager.hide()
+        self.property_box.hide()
         if self in self.window.canvas.placed_components["wires"]:
             self.window.canvas.placed_components["wires"].remove(self)
 
@@ -350,7 +350,7 @@ class Component(ABC):
         self.is_selected = selected
         self.window.control_panel.components_tab.toggle_selection(self, selected)
         if not selected:
-            self.property_manager.hide()
+            self.property_box.hide()
 
     def contains(self, position_to_check):
         return any([self._node_contains(pos, position_to_check) for pos in self.node_positions])    
@@ -441,17 +441,17 @@ class Detector(Component):
 
         # Properties
         self.herald = 0
-        self.create_property_manager()
+        self.create_property_box()
 
     @property
     def length(self):
         return 1
 
-    def create_property_manager(self):
-        self.property_manager.add_property("herald", self.update_herald, self.herald, QIntValidator(0, 100))
+    def create_property_box(self):
+        self.property_box.add_property("herald", self.update_herald, self.herald, QIntValidator(0, 100))
 
     def update_herald(self):
-        self.herald = int(self.property_manager.properties["herald"].text())
+        self.herald = int(self.property_box.properties["herald"].text())
         self.window.console.refresh()
     
     @property
@@ -480,17 +480,17 @@ class Loss(Component):
 
         # Properties
         self.eta = 1
-        self.create_property_manager()
+        self.create_property_box()
 
     @property
     def length(self):
         return 1
 
-    def create_property_manager(self):
-        self.property_manager.add_property("eta", self.update_eta, self.eta, QDoubleValidator(0, 1, 2))
+    def create_property_box(self):
+        self.property_box.add_property("eta", self.update_eta, self.eta, QDoubleValidator(0, 1, 2))
 
     def update_eta(self):
-        self.eta = float(self.property_manager.properties["eta"].text())
+        self.eta = float(self.property_box.properties["eta"].text())
         self.window.console.refresh()
     
     @property
@@ -520,18 +520,18 @@ class Wire(Component):
 
         # Properties
         self.n_photons = 0
-        self.create_property_manager()
+        self.create_property_box()
         self.direction = "H"
 
     @property
     def length(self):
         return 2
 
-    def create_property_manager(self):
-        self.property_manager.add_property("n_photons", self.update_n_photons, self.n_photons, QIntValidator(0, 100))
+    def create_property_box(self):
+        self.property_box.add_property("n_photons", self.update_n_photons, self.n_photons, QIntValidator(0, 100))
 
     def update_n_photons(self):
-        self.n_photons = int(self.property_manager.properties["n_photons"].text())
+        self.n_photons = int(self.property_box.properties["n_photons"].text())
         self.window.control_panel.gram_matrix_tab.update_gram_matrix()
         self.window.console.refresh()
 
@@ -580,18 +580,18 @@ class BeamSplitter(Component):
 
         # Properties
         self.theta = 90
-        self.create_property_manager()
+        self.create_property_box()
         self.direction = "V"
 
     @property
     def length(self):
         return 2
 
-    def create_property_manager(self):
-        self.property_manager.add_property("angle", self.update_theta, self.theta, QDoubleValidator(0, 180, 2))
+    def create_property_box(self):
+        self.property_box.add_property("angle", self.update_theta, self.theta, QDoubleValidator(0, 180, 2))
 
     def update_theta(self):
-        self.theta = float(self.property_manager.properties["angle"].text())
+        self.theta = float(self.property_box.properties["angle"].text())
         self.window.console.refresh()
 
     @property
@@ -629,7 +629,7 @@ class Switch(Component):
     def length(self):
         return 2
 
-    def create_property_manager(self):
+    def create_property_box(self):
         pass
 
     @property
