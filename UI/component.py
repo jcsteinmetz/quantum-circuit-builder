@@ -371,22 +371,18 @@ class Component(ABC):
     def overlaps_a_wire_edge(self, position_to_check):
         for wire in self.window.canvas.placed_components["wires"]:
             wire.snap()
-            wire_x_start = wire.node_positions[0][0]
-            wire_x_end = wire.node_positions[1][0]
-            wire_y = wire.node_positions[0][1]
-            if position_to_check[1] == wire_y:
-                if wire_x_start == position_to_check[0] or wire_x_end == position_to_check[0]:
+            for pos in wire.node_positions:
+                if position_to_check == pos:
                     return True
         return False
     
     def _check_overlap(self, position_to_check, component_group):
-        self.snap()
         for comp in self.window.canvas.placed_components[component_group]:
             comp.snap()
             if comp.direction == "H":
                 on_axis = position_to_check[1] == comp.node_positions[0][1]
                 comp_range = [pos[0] for pos in comp.node_positions]
-                in_range = min(comp_range) < position_to_check[0] < max(comp_range)
+                in_range = min(comp_range) <= position_to_check[0] <= max(comp_range)
             else: # case with neither H nor V could be handled by either H or V logic
                 on_axis = position_to_check[0] == comp.node_positions[0][0]
                 comp_range = [pos[1] for pos in comp.node_positions]
@@ -601,6 +597,8 @@ class BeamSplitter(Component):
         if self.overlaps_itself(self.potential_placement):
             return False
         if self.spans_a_component(self.potential_placement):
+            return False
+        if self.overlaps_a_wire_edge(self.potential_placement):
             return False
         if self.overlaps_a_wire(self.potential_placement):
             return True
