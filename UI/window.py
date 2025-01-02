@@ -30,7 +30,7 @@ class MainWindow(QMainWindow):
         self.worker_thread = WorkerThread(self)
 
         # Style manager
-        self.style_manager = StyleManager()
+        self.style_manager = StyleManager(self)
 
         # Main widgets
         self.control_panel = ControlPanel(self)

@@ -8,24 +8,14 @@ class ComponentRenderer:
     def __init__(self, window):
         self.window = window
 
-        # Default style
-        self.face_color = None
-        self.border_color = None
-        self.selected_border_color = None
-        self.error_color = None
-
-        self.line_width = 3
-        self.shape_type = ["square"]
-
         # Style
-        self.set_style()
-
-    def set_style(self):
-        # Component style
         self.face_color = self.window.style_manager.get_style("face_color")
         self.border_color = self.window.style_manager.get_style("border_color")
         self.selected_border_color = self.window.style_manager.get_style("selected_border_color")
         self.error_color = self.window.style_manager.get_style("error_color")
+
+        self.line_width = 3
+        self.shape_type = ["square"]
 
     # Colors
 
@@ -34,6 +24,12 @@ class ComponentRenderer:
     
     def _invert(self, col):
         return (255-col[0], 255-col[1], 255-col[2])
+    
+    def update_styles(self):
+        self.face_color = self.window.style_manager.get_style("face_color")
+        self.border_color = self.window.style_manager.get_style("border_color")
+        self.selected_border_color = self.window.style_manager.get_style("selected_border_color")
+        self.error_color = self.window.style_manager.get_style("error_color")
 
     def set_painter_style(self, painter, pen_color = None, brush_color = None):
         if not pen_color:
@@ -143,8 +139,14 @@ class ComponentRenderer:
                 self.draw_node(painter, comp, pos, comp.shape_type[i])
         self.draw_name(painter, comp)
 
-        if comp.is_selected:
+        if comp.is_selected and self.is_only_selected_component(comp):
             self.draw_property_manager(comp)
+
+    def is_only_selected_component(self, comp):
+        selected_components = [comp for comp in self.window.canvas.all_placed_components() if comp.is_selected]
+        if len(selected_components) == 1 and selected_components[0] == comp:
+            return True
+        return False
 
     def preview(self, painter, comp):
         for i, pos in enumerate(comp.node_positions):

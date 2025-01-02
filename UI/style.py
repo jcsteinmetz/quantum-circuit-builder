@@ -1,5 +1,7 @@
 class StyleManager:
-    def __init__(self):
+    def __init__(self, window):
+        self.window = window
+
         self.current_theme = "darkmode"
         self.styles = {
             "basic": {
@@ -23,6 +25,8 @@ class StyleManager:
     def set_theme(self, theme):
         if theme in self.styles:
             self.current_theme = theme
+            self.window.canvas.update_styles()
+            self.window.canvas.component_renderer.update_styles()
         else:
             raise ValueError(f"Theme '{theme}' not found.")
 

@@ -23,11 +23,28 @@ class Canvas(QWidget):
         self.placed_components = {"wires": [], "components": [], "detectors": []}
 
         # Style
-        self.bg_color = None
-        self.gridline_color = None
-        self.set_style()
+        self.bg_color = self.window.style_manager.get_style("bg_color")
+        self.gridline_color = self.window.style_manager.get_style("gridline_color")
 
         self.active_tool = None
+
+    def update_styles(self):
+        self.bg_color = self.window.style_manager.get_style("bg_color")
+        self.gridline_color = self.window.style_manager.get_style("gridline_color")
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+
+        # Draw the grid
+        self.grid.draw(painter)
+
+        # Draw placed components
+        for comp in self.all_placed_components():
+            self.component_renderer.draw(painter, comp)
+
+        # Draw tool preview
+        if self.preview_enabled:
+            self.component_renderer.preview(painter, self.active_tool)
 
     def all_placed_components(self):
         for comp_list in self.placed_components.values():
@@ -79,28 +96,10 @@ class Canvas(QWidget):
         self.placed_components["components"] = sorted(self.placed_components["components"], key = lambda comp: (comp.node_positions[0][0], comp.node_positions[0][1]))
         self.placed_components["detectors"] = sorted(self.placed_components["detectors"], key = lambda comp: (comp.node_positions[0][1], comp.node_positions[0][0]))
 
-    def set_style(self):
-        self.bg_color = self.window.style_manager.get_style("bg_color")
-        self.gridline_color = self.window.style_manager.get_style("gridline_color")
-
     def deselect_all(self):
         for comp in self.all_placed_components():
             comp.is_selected = False
         self.update()
-
-    def paintEvent(self, event):
-        painter = QPainter(self)
-
-        # Draw the grid
-        self.grid.draw(painter)
-
-        # Draw placed components
-        for comp in self.all_placed_components():
-            self.component_renderer.draw(painter, comp)
-
-        # Draw tool preview
-        if self.preview_enabled:
-            self.component_renderer.preview(painter, self.active_tool)
 
     def drag(self, delta):
         """
