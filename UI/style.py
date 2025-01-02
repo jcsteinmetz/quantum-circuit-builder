@@ -50,3 +50,10 @@ class StyleManager:
     def update_styles(self):
         self.window.canvas.update_styles()
         self.window.canvas.component_renderer.update_styles()
+
+    def darkmode_toggle(self):
+        if self.current_theme == "basic":
+            self.set_theme("darkmode")
+        elif self.current_theme == "darkmode":
+            self.set_theme("basic")
+        self.window.canvas.repaint()

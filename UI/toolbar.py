@@ -86,7 +86,10 @@ class ToolBar(QToolBar):
 
             self.addAction(action)
             action_group.addAction(action)
-            action.triggered.connect(lambda checked, t=tool_type: self.set_active_tool(t))
+            action.triggered.connect(partial(self.set_active_tool, tool_type))
+
+    def on_tool_triggered(self, tool_type):
+        self.set_active_tool(tool_type)
 
     def add_dropdown(self, dropdown_trigger, options):
         """
@@ -121,15 +124,10 @@ class ToolBar(QToolBar):
             self.window.control_panel.gram_matrix_tab.unlock_gram_matrix()
 
     def darkmode_trigger(self):
-        if self.window.style_manager.current_theme == "basic":
-            self.window.style_manager.set_theme("darkmode")
-        elif self.window.style_manager.current_theme == "darkmode":
-            self.window.style_manager.set_theme("basic")
-        self.window.canvas.repaint()
+        self.window.style_manager.darkmode_toggle()
 
     def recenter_trigger(self):
-        self.window.canvas.drag(copy(self.window.canvas.grid.offset))
-        self.window.canvas.repaint()
+        self.window.canvas.recenter()
 
     def delete_trigger(self):
         for comp in self.window.canvas.all_placed_components():

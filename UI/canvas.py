@@ -112,6 +112,10 @@ class Canvas(QWidget):
         for comp in self.all_placed_components():
             comp.move(delta)
 
+    def recenter(self):
+        self.drag(self.grid.offset)
+        self.repaint()
+
     def zoom(self, zoom_delta):
         zoom_step = 0.1
         new_grid_size = self.grid.size * (1 + zoom_step * zoom_delta)
