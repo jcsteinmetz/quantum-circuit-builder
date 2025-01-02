@@ -162,6 +162,7 @@ class Canvas(QWidget):
             self.mouse_pressed_position = event.position().toTuple()
 
             if not isinstance(self.active_tool, CanvasTool):
+                print(self.active_tool.placeable, self.active_tool)
                 if self.active_tool.placeable:
                     self.active_tool.place()
 

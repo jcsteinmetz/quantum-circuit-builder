@@ -410,27 +410,19 @@ class Component(ABC):
             if self.node_positions[0]:
                 for comp in self.window.canvas.all_placed_components():
                     comp.snap()
-                    comp_range = [pos[1] for pos in comp.node_positions]
-                    on_axis = self.node_positions[0][0] == comp.node_positions[0][0]
-                    self_range = [pos[1] for pos in self.node_positions if pos] + [position_to_check[1]]
+                    if comp.direction == "H":
+                        range_idx = 0
+                        axis_idx = 1
+                    elif comp.direction == "V":
+                        range_idx = 1
+                        axis_idx = 0
+                    
+                    comp_range = [pos[range_idx] for pos in comp.node_positions]
+                    self_range = [pos[range_idx] for pos in self.node_positions if pos] + [position_to_check[range_idx]]
+                    on_axis = self.node_positions[0][axis_idx] == comp.node_positions[0][axis_idx]
                     in_range = min(self_range) <= min(comp_range) and max(comp_range) <= max(self_range)
                     if on_axis and in_range:
                         return True
-        return False
-    
-    def spans_a_wire(self, pos):
-        if len(self.node_positions) > 0:
-            if self.node_positions[0]:
-                # Can't be on the opposite side of a wire from the start point
-                for comp in self.window.canvas.placed_components["wires"]:
-                    comp.snap()
-                    comp_start = comp.node_positions[0]
-                    comp_end = comp.node_positions[1]
-                    if self.node_positions[0][1] == comp_start[1]:
-                        if self.node_positions[0][0] <= comp_start[0] and pos[0] >= comp_end[0]:
-                            return True
-                        if self.node_positions[0][0] >= comp_end[0] and pos[0] <= comp_start[0]:
-                            return True
         return False
     
     def get_wire_index(self, wire_to_find):
@@ -551,6 +543,8 @@ class Wire(Component):
             return False
         if self.overlaps_a_component(self.potential_placement):
             return False
+        if self.spans_a_component(self.potential_placement):
+            return False
         
         # Rules for the start point
         if not self.node_positions[0]:
@@ -567,9 +561,7 @@ class Wire(Component):
             # The end point must be to the right of the start point
             if self.potential_placement[0] <= self.window.canvas.grid.snap(self.node_positions[0])[0]:
                 return False
-            
-        if self.spans_a_wire(self.potential_placement):
-            return False
+
         return True
     
     def add_to_console(self):
