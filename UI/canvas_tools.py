@@ -61,8 +61,6 @@ class Select(CanvasTool):
                 # If the user clicked on a component without moving the mouse, then select that component
                 if self.window.canvas.current_mouse_position == self.window.canvas.mouse_pressed_position:
                     is_selected = comp.contains(event.position().toTuple())
-                    if is_selected:
-                        comp.property_manager.draw(comp.node_positions[0])
                     comp.set_selected(is_selected)
 
 class Grab(CanvasTool):

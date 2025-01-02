@@ -25,11 +25,6 @@ class PropertiesManager(QFrame):
         self.layout.addRow(property_name, line_edit)
         self.properties[property_name] = line_edit
 
-    def draw(self, component_position):
-        self.move(int(component_position[0] + self.offset[0]), int(component_position[1]+self.offset[1]))
-        if not self.isVisible():
-            self.show()
-
     def showEvent(self, event):
         if self.properties:
             first_property = next(iter(self.properties.values()))

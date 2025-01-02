@@ -4,6 +4,167 @@ from copy import copy
 from abc import ABC, abstractmethod
 from properties_manager import PropertiesManager
 
+class ComponentRenderer:
+    def __init__(self, window):
+        self.window = window
+
+        # Default style
+        self.color = None
+        self.border_color = None
+        self.selected_border_color = None
+        self.error_color = None
+
+        self.line_width = 3
+        self.shape_type = ["square"]
+
+        # Style
+        self.set_style()
+
+    def set_style(self):
+        # Component style
+        self.color = self.window.style_manager.get_style("color")
+        self.border_color = self.window.style_manager.get_style("border_color")
+        self.selected_border_color = self.window.style_manager.get_style("selected_border_color")
+        self.error_color = self.window.style_manager.get_style("error_color")
+
+    # Colors
+
+    def _transparent(self, col):
+        return (col[0], col[1], col[2], 128)
+    
+    def _invert(self, col):
+        return (255-col[0], 255-col[1], 255-col[2])
+
+    def set_painter_style(self, painter, pen_color = None, brush_color = None):
+        if not pen_color:
+            pen_color = self.border_color
+        if not brush_color:
+            brush_color = self.color
+
+        pen = QPen(QColor(*pen_color))
+        pen.setWidth(self.line_width)
+        painter.setPen(pen)
+
+        painter.setBrush(QColor(*brush_color))
+
+    def draw_name(self, painter, comp):
+        name_position = comp.node_positions[0]
+        self.set_painter_style(painter, pen_color = self._invert(self.color))
+        scale = comp.shape_scale * self.window.canvas.grid.size
+        rectangle = QRectF(name_position[0] - 0.5*scale, name_position[1] - 0.5*scale, scale, scale)
+        painter.drawText(rectangle, Qt.AlignCenter, comp.name)
+
+    def draw_property_manager(self, comp):
+
+        # Property manager style
+        inverse_color = self._invert(self.window.canvas.bg_color)
+        comp.property_manager.setStyleSheet(f"background-color: {QColor(*inverse_color).name()}; color: {QColor(*self.window.canvas.bg_color).name()}")
+
+        comp.property_manager.move(int(comp.node_positions[0][0] + comp.property_manager.offset[0]), int(comp.node_positions[0][1]+comp.property_manager.offset[1]))
+        if not comp.property_manager.isVisible():
+            comp.property_manager.show()
+
+    def draw_square(self, painter, pos, scale):
+        bottom_left = QPointF(pos.x() - 0.5*scale, pos.y() - 0.5*scale)
+        painter.drawRect(bottom_left.x(), bottom_left.y(), scale, scale)
+
+    def draw_ellipse(self, painter, pos, scale):
+        painter.drawEllipse(pos, 0.5*scale, 0.5*scale)
+
+    def draw_half_circle(self, painter, pos, scale):
+        rectangle = QRectF(pos.x() - 0.75*scale, pos.y() - 0.5*scale, scale, scale)
+        start_angle = -90 * 16 # in 16ths of a degree
+        span_angle = 180 * 16
+        painter.drawPie(rectangle, start_angle, span_angle)
+
+    def draw_X(self, painter, pos, scale):
+        bottom_left = QPointF(pos.x() - 0.5*scale, pos.y() - 0.5*scale)
+        top_left = QPointF(pos.x() - 0.5*scale, pos.y() + 0.5*scale)
+        bottom_right = QPointF(pos.x() + 0.5*scale, pos.y() - 0.5*scale)
+        top_right = QPointF(pos.x() + 0.5*scale, pos.y() + 0.5*scale)
+
+        painter.drawLine(bottom_left, top_right)
+        painter.drawLine(top_left, bottom_right)
+        painter.drawEllipse(pos, 0.25*scale, 0.25*scale)
+    
+    def draw_diagonal_line(self, painter, pos, scale):
+        bottom_left = QPointF(pos.x() - 0.5*scale, pos.y() - 0.5*scale)
+        top_right = QPointF(pos.x() + 0.5*scale, pos.y() + 0.5*scale)
+        painter.drawLine(bottom_left, top_right)
+        painter.drawEllipse(pos, 0.25*scale, 0.25*scale)
+
+    def draw_arrow(self, painter, pos, scale):
+        bottom_left = QPointF(pos.x() - 0.5*scale, pos.y() - 0.5*scale)
+        top_left = QPointF(pos.x() - 0.5*scale, pos.y() + 0.5*scale)
+
+        painter.drawLine(bottom_left, pos)
+        painter.drawLine(top_left, pos)
+
+    def draw_shape(self, painter, comp, pos, shape_type):
+        scale = comp.shape_scale * self.window.canvas.grid.size
+
+        pos = QPointF(pos[0], pos[1])
+
+        shape_methods = {
+            "square": self.draw_square,
+            "circle": self.draw_ellipse,
+            "half circle": self.draw_half_circle,
+            "X": self.draw_X,
+            "diagonal line": self.draw_diagonal_line,
+            "arrow": self.draw_arrow,
+        }
+
+        draw_method = shape_methods.get(shape_type)
+        
+        if draw_method:
+            draw_method(painter, pos, scale)
+
+    def draw_wire(self, painter, comp, start_position, end_position):
+        if comp.is_selected:
+            self.set_painter_style(painter, pen_color = self.selected_border_color)
+        else:
+            self.set_painter_style(painter)
+        painter.drawLine(QPointF(start_position[0], start_position[1]), QPointF(end_position[0], end_position[1]))
+
+    def draw_node(self, painter, comp, position, shape_type):
+        if comp.is_selected:
+            self.set_painter_style(painter, pen_color = self.selected_border_color)
+        else:
+            self.set_painter_style(painter)
+        self.draw_shape(painter, comp, position, shape_type)
+
+    def draw(self, painter, comp):
+        # draw in reverse order so that wires are underneath nodes
+        for j, pos in enumerate(reversed(comp.node_positions)):
+            i = len(comp.node_positions) - 1 - j
+            if pos:
+                if i != 0:
+                    self.draw_wire(painter, comp, comp.node_positions[i-1], pos)
+                self.draw_node(painter, comp, pos, comp.shape_type[i])
+        self.draw_name(painter, comp)
+
+        if comp.is_selected:
+            self.draw_property_manager(comp)
+
+    def preview(self, painter, comp):
+        for i, pos in enumerate(comp.node_positions):
+            if pos:
+                # draw node
+                self.set_painter_style(painter)
+                self.draw_shape(painter, comp, pos, comp.shape_type[i])
+            else:
+                if comp.placeable:
+                    self.set_painter_style(painter, pen_color = self._transparent(self.border_color), brush_color = self._transparent(self.color))
+                else:
+                    self.set_painter_style(painter, pen_color = self._transparent(self.border_color), brush_color = self._transparent(self.error_color))
+                self.draw_shape(painter, comp, comp.potential_placement, comp.shape_type[i])
+
+                # draw wire
+                if i != 0:
+                    previous_pos = comp.node_positions[i-1]
+                    painter.drawLine(QPointF(previous_pos[0], previous_pos[1]), QPointF(comp.potential_placement[0], comp.potential_placement[1]))
+                break
+
 class Component(ABC):
     def __init__(self, window):
         self.window = window
@@ -11,19 +172,10 @@ class Component(ABC):
         self.cursor_type = Qt.CrossCursor
         self.is_selected = False
         self.direction = None
+        self.shape_scale = 1
 
         # Property manager
         self.property_manager = PropertiesManager(self, self.window.canvas)
-
-        # Default style
-        self.color = None
-        self.border_color = None
-        self.error_color = None
-
-        self.line_width = 3
-        self.shape_scale = 1
-        self.shape_type = ["square"]
-        self.set_style()
 
     # Setup
 
@@ -53,20 +205,6 @@ class Component(ABC):
     def placeable(self):
         raise NotImplementedError
 
-    def log(self):
-        self.window.canvas.active_tool = self.__class__(self.window)
-        if isinstance(self, Wire):
-            self.window.canvas.placed_components["wires"].append(self)
-        elif isinstance(self, Detector):
-            self.window.canvas.placed_components["detectors"].append(self)
-        else:
-            self.window.canvas.placed_components["components"].append(self)
-
-        self.window.canvas.sort_components()
-        self.window.console.refresh()
-        self.window.control_panel.components_tab.refresh()
-        self.window.mark_unsaved_changes()
-
     def place(self):
         for i, pos in enumerate(self.node_positions):
 
@@ -76,45 +214,8 @@ class Component(ABC):
 
                 # If that was the last node, log the component
                 if i == len(self.node_positions) - 1:
-                    self.log()
+                    self.window.canvas.place(self)
 
-                break
-
-    def draw(self, painter):
-        # draw in reverse order so that wires are underneath nodes
-        for j, pos in enumerate(reversed(self.node_positions)):
-            i = len(self.node_positions) - 1 - j
-            if pos:
-                if i != 0:
-                    self.draw_wire(painter, self.node_positions[i-1], pos)
-                self.draw_node(painter, pos, self.shape_type[i])
-        self.draw_name(painter, self.node_positions[0])
-
-    def draw_wire(self, painter, start_position, end_position):
-        self.set_painter_style(painter)
-        painter.drawLine(QPointF(start_position[0], start_position[1]), QPointF(end_position[0], end_position[1]))
-
-    def draw_node(self, painter, position, shape_type):
-        self.set_painter_style(painter)
-        self.draw_shape(painter, position, shape_type)
-
-    def preview(self, painter):
-        for i, pos in enumerate(self.node_positions):
-            if pos:
-                # draw node
-                self.set_painter_style(painter)
-                self.draw_shape(painter, pos, self.shape_type[i])
-            else:
-                if self.placeable:
-                    self.set_painter_style(painter, pen_color = self._transparent(self.border_color), brush_color = self._transparent(self.color))
-                else:
-                    self.set_painter_style(painter, pen_color = self._transparent(self.border_color), brush_color = self._transparent(self.error_color))
-                self.draw_shape(painter, self.potential_placement, self.shape_type[i])
-
-                # draw wire
-                if i != 0:
-                    previous_pos = self.node_positions[i-1]
-                    painter.drawLine(QPointF(previous_pos[0], previous_pos[1]), QPointF(self.potential_placement[0], self.potential_placement[1]))
                 break
 
     # Interface
@@ -138,15 +239,6 @@ class Component(ABC):
         self.window = window
         self.property_manager = PropertiesManager(self, self.window.canvas)
         self.create_property_manager()
-        self.set_style()
-
-    # Colors
-
-    def _transparent(self, col):
-        return (col[0], col[1], col[2], 128)
-    
-    def _invert(self, col):
-        return (255-col[0], 255-col[1], 255-col[2])
     
     # Drawing
 
@@ -170,49 +262,6 @@ class Component(ABC):
                 y = snapped_mouse_position[1]
                 return (x, y)
         return snapped_mouse_position
-    
-    def set_painter_style(self, painter, pen_color = None, brush_color = None):
-        if not pen_color:
-            pen_color = self.border_color
-        if not brush_color:
-            brush_color = self.color
-
-        pen = QPen(QColor(*pen_color))
-        pen.setWidth(self.line_width)
-        painter.setPen(pen)
-
-        painter.setBrush(QColor(*brush_color))
-
-    def set_style(self):
-        # Component style
-        self.color = self.window.style_manager.get_style("color")
-        if self.is_selected:
-            self.border_color = self.window.style_manager.get_style("selected_border_color")
-        else:
-            self.border_color = self.window.style_manager.get_style("border_color")
-        self.error_color = self.window.style_manager.get_style("error_color")
-
-        # Property manager style
-        inverse_color = self._invert(self.color)
-        self.property_manager.setStyleSheet(f"background-color: {QColor(*self.color).name()}; color: {QColor(*inverse_color).name()}")
-            
-    # def set_style(self):
-    #     if self.window.canvas.style_choice == "basic":
-    #         self.color = (0, 0, 0)
-    #         if not self.is_selected:
-    #             self.border_color = (0, 0, 0)
-    #         else:
-    #             self.border_color = (219, 197, 119)
-    #             # self.border_color = (0, 128, 255)
-    #     elif self.window.canvas.style_choice == "darkmode":
-    #         self.color = (255, 255, 255)
-    #         if not self.is_selected:
-    #             self.border_color = (255, 255, 255)
-    #         else:
-    #             self.border_color = (219, 197, 119)
-    #             # self.border_color = (0, 128, 255)
-    #     inverse_color = self._invert(self.color)
-    #     self.property_manager.setStyleSheet(f"background-color: {QColor(*self.color).name()}; color: {QColor(*inverse_color).name()}")
 
     @property
     def name(self):
@@ -221,42 +270,6 @@ class Component(ABC):
         type_index = sum(isinstance(i, self.__class__) for i in all_components[:overall_index])
         child_name = type(self).__name__[0] + str(type_index+1)
         return child_name
-
-    def draw_name(self, painter, pos):
-        self.set_painter_style(painter, pen_color = self._invert(self.color))
-        scale = self.shape_scale * self.window.canvas.grid.size
-        rectangle = QRectF(pos[0] - 0.5*scale, pos[1] - 0.5*scale, scale, scale)
-        painter.drawText(rectangle, Qt.AlignCenter, self.name)
-
-    def draw_shape(self, painter, pos, shape_type):
-        scale = self.shape_scale * self.window.canvas.grid.size
-
-        pos = QPointF(pos[0], pos[1])
-
-        bottom_left = QPointF(pos.x() - 0.5*scale, pos.y() - 0.5*scale)
-        top_left = QPointF(pos.x() - 0.5*scale, pos.y() + 0.5*scale)
-        bottom_right = QPointF(pos.x() + 0.5*scale, pos.y() - 0.5*scale)
-        top_right = QPointF(pos.x() + 0.5*scale, pos.y() + 0.5*scale)
-
-        if shape_type == "square":
-            painter.drawRect(bottom_left.x(), bottom_left.y(), scale, scale)
-        elif shape_type == "circle":
-            painter.drawEllipse(pos, 0.5*scale, 0.5*scale)
-        elif shape_type == "half circle":
-            rectangle = QRectF(pos.x() - 0.75*scale, pos.y() - 0.5*scale, scale, scale)
-            start_angle = -90 * 16 # in 16ths of a degree
-            span_angle = 180 * 16
-            painter.drawPie(rectangle, start_angle, span_angle)
-        elif shape_type == "X":
-            painter.drawLine(bottom_left, top_right)
-            painter.drawLine(top_left, bottom_right)
-            painter.drawEllipse(pos, 0.25*scale, 0.25*scale)
-        elif shape_type == "diagonal line":
-            painter.drawLine(bottom_left, top_right)
-            painter.drawEllipse(pos, 0.25*scale, 0.25*scale)
-        elif shape_type == "arrow":
-            painter.drawLine(bottom_left, pos)
-            painter.drawLine(top_left, pos)
 
     # Transformations
 
@@ -313,12 +326,10 @@ class Component(ABC):
 
     def select_item_in_ui(self):
         self.window.control_panel.components_tab.select_item(self)
-        self.set_style()
 
     def deselect_item_in_ui(self):
         self.window.control_panel.components_tab.deselect_item(self)
         self.property_manager.hide()
-        self.set_style()
 
     def contains(self, position_to_check):
         return any([self._node_contains(pos, position_to_check) for pos in self.node_positions])    

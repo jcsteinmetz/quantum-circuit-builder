@@ -3,6 +3,7 @@ from PySide6.QtGui import QPainter, QWheelEvent, QMouseEvent
 from PySide6.QtCore import QEvent, Qt
 from grid import Grid
 from canvas_tools import Select, CanvasTool
+from component import Wire, Detector, ComponentRenderer
 import numpy as np
 
 class Canvas(QWidget):
@@ -15,6 +16,8 @@ class Canvas(QWidget):
         self.mouse_pressed_position = None
         self.preview_enabled = False
         self.gram_matrix = np.ones((0, 0))
+
+        self.component_renderer = ComponentRenderer(self.window)
 
         # Placed components
         self.placed_components = {"wires": [], "components": [], "detectors": []}
@@ -93,11 +96,11 @@ class Canvas(QWidget):
 
         # Draw placed components
         for comp in self.all_placed_components():
-            comp.draw(painter)
+            self.component_renderer.draw(painter, comp)
 
         # Draw tool preview
         if self.preview_enabled:
-            self.active_tool.preview(painter)
+            self.component_renderer.preview(painter, self.active_tool)
 
     def drag(self, delta):
         """
@@ -134,12 +137,27 @@ class Canvas(QWidget):
     def disablePreview(self):
         self.preview_enabled = False
 
+    def place(self, comp):
+        self.active_tool = comp.__class__(self.window)
+        if isinstance(comp, Wire):
+            self.placed_components["wires"].append(comp)
+        elif isinstance(comp, Detector):
+            self.placed_components["detectors"].append(comp)
+        else:
+            self.placed_components["components"].append(comp)
+
+        self.sort_components()
+        self.window.console.refresh()
+        self.window.control_panel.components_tab.refresh()
+        self.window.mark_unsaved_changes()
+
     def on_mouse_press(self, event: QMouseEvent):
         """
         Action to perform when a mouse press occurs on the canvas.
         """
         if isinstance(self.active_tool, CanvasTool):
             self.active_tool.on_mouse_press(event)
+
         if event.button() == Qt.LeftButton:
             # Remember where the mouse press occured
             self.mouse_pressed_position = event.position().toTuple()

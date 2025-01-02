@@ -126,10 +126,9 @@ class ToolBar(QToolBar):
             new_style = "darkmode"
         elif self.window.style_manager.current_theme == "darkmode":
             new_style = "basic"
-        self.window.style_manager.current_theme = new_style
+        self.window.style_manager.set_theme(new_style)
         self.window.canvas.set_style()
-        for comp in self.window.canvas.all_placed_components():
-            comp.set_style()
+        self.window.canvas.component_renderer.set_style()
 
         # Recreate active tool so it updates the style
         self.window.canvas.active_tool = self.window.canvas.active_tool.__class__(self.window)
