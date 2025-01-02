@@ -7,12 +7,11 @@ from control_panel.control_panel import ControlPanel
 from worker import ProgressBar, WorkerThread
 from interface import Interface
 from toolbar import ToolBar
+from style import StyleManager
 from copy import deepcopy
 import os
 import pickle
 import numpy as np
-
-
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -29,6 +28,9 @@ class MainWindow(QMainWindow):
 
         # Worker thread
         self.worker_thread = WorkerThread(self)
+
+        # Style manager
+        self.style_manager = StyleManager()
 
         # Main widgets
         self.control_panel = ControlPanel(self)

@@ -7,7 +7,7 @@ from properties_manager import PropertiesManager
 class Component(ABC):
     def __init__(self, window):
         self.window = window
-        self._position = []
+        self._node_positions = []
         self.cursor_type = Qt.CrossCursor
         self.is_selected = False
         self.direction = None
@@ -18,30 +18,31 @@ class Component(ABC):
         # Default style
         self.color = None
         self.border_color = None
+        self.error_color = None
+
         self.line_width = 3
         self.shape_scale = 1
         self.shape_type = ["square"]
-        self.error_color = (255, 0, 0)
         self.set_style()
 
     # Setup
 
     @property
-    def position(self):
-        if len(self._position) != self.length:
-            self._position = [None] * self.length
-        return self._position
+    def node_positions(self):
+        if len(self._node_positions) != self.length:
+            self._node_positions = [None] * self.length
+        return self._node_positions
     
-    @position.setter
-    def position(self, value):
+    @node_positions.setter
+    def node_positions(self, value):
         if len(value) != self.length:
             raise ValueError(f"Position must have {self.length} elements.")
-        self._position = value
+        self._node_positions = value
 
     @property
     @abstractmethod
     def length(self):
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def create_property_manager(self):
@@ -51,18 +52,6 @@ class Component(ABC):
     @abstractmethod
     def placeable(self):
         raise NotImplementedError
-
-    def place(self):
-        for i, pos in enumerate(self.position):
-            # Place the earliest unplaced node
-            if not pos:
-                self.position[i] = copy(self.potential_placement)
-
-                # If all nodes are placed, log the component
-                if i == len(self.position) - 1:
-                    self.log()
-
-                break
 
     def log(self):
         self.window.canvas.active_tool = self.__class__(self.window)
@@ -76,51 +65,55 @@ class Component(ABC):
         self.window.canvas.sort_components()
         self.window.console.refresh()
         self.window.control_panel.components_tab.refresh()
-
         self.window.mark_unsaved_changes()
 
-    def draw(self, painter):
-        for i, pos in enumerate(self.position):
-            if pos:
-                # draw connecting wire
-                if i != 0:
-                    pen = QPen(QColor(*self.border_color))
-                    pen.setWidth(self.line_width)
-                    painter.setPen(pen)
-                    previous_pos = self.position[i-1]
-                    painter.drawLine(QPointF(previous_pos[0], previous_pos[1]), QPointF(pos[0], pos[1]))
+    def place(self):
+        for i, pos in enumerate(self.node_positions):
 
-                # draw node
-                pen = QPen(QColor(*self.border_color))
-                pen.setWidth(self.line_width)
-                painter.setPen(pen)
-                painter.setBrush(QColor(*self.color))
-                self.draw_shape(painter, pos, self.shape_type[i])
-        self.draw_name(painter, self.position[0])
+            # Fill in the earliest unplaced node
+            if not pos:
+                self.node_positions[i] = copy(self.potential_placement)
+
+                # If that was the last node, log the component
+                if i == len(self.node_positions) - 1:
+                    self.log()
+
+                break
+
+    def draw(self, painter):
+        # draw in reverse order so that wires are underneath nodes
+        for j, pos in enumerate(reversed(self.node_positions)):
+            i = len(self.node_positions) - 1 - j
+            if pos:
+                if i != 0:
+                    self.draw_wire(painter, self.node_positions[i-1], pos)
+                self.draw_node(painter, pos, self.shape_type[i])
+        self.draw_name(painter, self.node_positions[0])
+
+    def draw_wire(self, painter, start_position, end_position):
+        self.set_painter_style(painter)
+        painter.drawLine(QPointF(start_position[0], start_position[1]), QPointF(end_position[0], end_position[1]))
+
+    def draw_node(self, painter, position, shape_type):
+        self.set_painter_style(painter)
+        self.draw_shape(painter, position, shape_type)
 
     def preview(self, painter):
-        for i, pos in enumerate(self.position):
+        for i, pos in enumerate(self.node_positions):
             if pos:
-                pen = QPen(QColor(*self.border_color))
-                pen.setWidth(self.line_width)
-                painter.setPen(pen)
-
                 # draw node
-                painter.setBrush(QColor(*self.color))
+                self.set_painter_style(painter)
                 self.draw_shape(painter, pos, self.shape_type[i])
             else:
-                pen = QPen(self._transparent(QColor(*self.border_color)))
-                pen.setWidth(self.line_width)
-                painter.setPen(pen)
                 if self.placeable:
-                    painter.setBrush(self._transparent(QColor(*self.color)))
+                    self.set_painter_style(painter, pen_color = self._transparent(self.border_color), brush_color = self._transparent(self.color))
                 else:
-                    painter.setBrush(self._transparent(QColor(*self.error_color)))
+                    self.set_painter_style(painter, pen_color = self._transparent(self.border_color), brush_color = self._transparent(self.error_color))
                 self.draw_shape(painter, self.potential_placement, self.shape_type[i])
 
                 # draw wire
                 if i != 0:
-                    previous_pos = self.position[i-1]
+                    previous_pos = self.node_positions[i-1]
                     painter.drawLine(QPointF(previous_pos[0], previous_pos[1]), QPointF(self.potential_placement[0], self.potential_placement[1]))
                 break
 
@@ -150,9 +143,7 @@ class Component(ABC):
     # Colors
 
     def _transparent(self, col):
-        transparent_col = copy(col)
-        transparent_col.setAlpha(0.5*col.alpha())
-        return transparent_col
+        return (col[0], col[1], col[2], 128)
     
     def _invert(self, col):
         return (255-col[0], 255-col[1], 255-col[2])
@@ -163,12 +154,12 @@ class Component(ABC):
     def potential_placement(self):
         self.snap()
         snapped_mouse_position = self.window.canvas.grid.snap(self.window.canvas.current_mouse_position)
-        if len(self.position) == 1:
-            if not self.position[0]:
+        if len(self.node_positions) == 1:
+            if not self.node_positions[0]:
                 return snapped_mouse_position
-        if len(self.position) > 1:
-            if self.position[0]:
-                start_position = self.position[0]
+        if len(self.node_positions) > 1:
+            if self.node_positions[0]:
+                start_position = self.node_positions[0]
                 if isinstance(self, Wire):
                     # enforce wire being horizontal
                     x = snapped_mouse_position[0]
@@ -179,24 +170,49 @@ class Component(ABC):
                 y = snapped_mouse_position[1]
                 return (x, y)
         return snapped_mouse_position
-            
+    
+    def set_painter_style(self, painter, pen_color = None, brush_color = None):
+        if not pen_color:
+            pen_color = self.border_color
+        if not brush_color:
+            brush_color = self.color
+
+        pen = QPen(QColor(*pen_color))
+        pen.setWidth(self.line_width)
+        painter.setPen(pen)
+
+        painter.setBrush(QColor(*brush_color))
+
     def set_style(self):
-        if self.window.canvas.style_choice == "basic":
-            self.color = (0, 0, 0)
-            if not self.is_selected:
-                self.border_color = (0, 0, 0)
-            else:
-                self.border_color = (219, 197, 119)
-                # self.border_color = (0, 128, 255)
-        elif self.window.canvas.style_choice == "darkmode":
-            self.color = (255, 255, 255)
-            if not self.is_selected:
-                self.border_color = (255, 255, 255)
-            else:
-                self.border_color = (219, 197, 119)
-                # self.border_color = (0, 128, 255)
+        # Component style
+        self.color = self.window.style_manager.get_style("color")
+        if self.is_selected:
+            self.border_color = self.window.style_manager.get_style("selected_border_color")
+        else:
+            self.border_color = self.window.style_manager.get_style("border_color")
+        self.error_color = self.window.style_manager.get_style("error_color")
+
+        # Property manager style
         inverse_color = self._invert(self.color)
         self.property_manager.setStyleSheet(f"background-color: {QColor(*self.color).name()}; color: {QColor(*inverse_color).name()}")
+            
+    # def set_style(self):
+    #     if self.window.canvas.style_choice == "basic":
+    #         self.color = (0, 0, 0)
+    #         if not self.is_selected:
+    #             self.border_color = (0, 0, 0)
+    #         else:
+    #             self.border_color = (219, 197, 119)
+    #             # self.border_color = (0, 128, 255)
+    #     elif self.window.canvas.style_choice == "darkmode":
+    #         self.color = (255, 255, 255)
+    #         if not self.is_selected:
+    #             self.border_color = (255, 255, 255)
+    #         else:
+    #             self.border_color = (219, 197, 119)
+    #             # self.border_color = (0, 128, 255)
+    #     inverse_color = self._invert(self.color)
+    #     self.property_manager.setStyleSheet(f"background-color: {QColor(*self.color).name()}; color: {QColor(*inverse_color).name()}")
 
     @property
     def name(self):
@@ -207,10 +223,7 @@ class Component(ABC):
         return child_name
 
     def draw_name(self, painter, pos):
-        inverse_color = self._invert(self.color)
-        pen = QPen(QColor(*inverse_color))
-        pen.setWidth(self.line_width)
-        painter.setPen(pen)
+        self.set_painter_style(painter, pen_color = self._invert(self.color))
         scale = self.shape_scale * self.window.canvas.grid.size
         rectangle = QRectF(pos[0] - 0.5*scale, pos[1] - 0.5*scale, scale, scale)
         painter.drawText(rectangle, Qt.AlignCenter, self.name)
@@ -248,7 +261,7 @@ class Component(ABC):
     # Transformations
 
     def snap(self):
-        self.position = [self.window.canvas.grid.snap(pos) if pos else None for pos in self.position]
+        self.node_positions = [self.window.canvas.grid.snap(pos) if pos else None for pos in self.node_positions]
 
     def delete(self):
         self.property_manager.hide()
@@ -259,11 +272,11 @@ class Component(ABC):
             for comp in self.window.canvas.all_placed_components():
                 comp.snap()
                 self.snap()
-                if len(comp.position) > 0:
-                    if comp.position[0][1] == self.position[0][1] and (self.position[0][0] <= comp.position[0][0] <= self.position[1][0]):
+                if len(comp.node_positions) > 0:
+                    if comp.node_positions[0][1] == self.node_positions[0][1] and (self.node_positions[0][0] <= comp.node_positions[0][0] <= self.node_positions[1][0]):
                         comp.delete()
-                if len(comp.position) > 1:
-                    if comp.position[1][1] == self.position[0][1] and (self.position[0][0] <= comp.position[1][0] <= self.position[1][0]):
+                if len(comp.node_positions) > 1:
+                    if comp.node_positions[1][1] == self.node_positions[0][1] and (self.node_positions[0][0] <= comp.node_positions[1][0] <= self.node_positions[1][0]):
                         comp.delete()
 
         elif self in self.window.canvas.placed_components["components"]:
@@ -272,7 +285,7 @@ class Component(ABC):
             self.window.canvas.placed_components["detectors"].remove(self)
 
     def move(self, delta):
-        self.position = [self._move_node(pos, delta) for pos in self.position]
+        self.node_positions = [self._move_node(pos, delta) for pos in self.node_positions]
 
     def _move_node(self, node, delta):
         if not node:
@@ -280,7 +293,7 @@ class Component(ABC):
         return (node[0] + delta[0], node[1] + delta[1])
 
     def zoom(self, mouse_pos, new_grid_size):
-        self.position = [self._zoom_node(pos, mouse_pos, new_grid_size) for pos in self.position]
+        self.node_positions = [self._zoom_node(pos, mouse_pos, new_grid_size) for pos in self.node_positions]
 
     def _zoom_node(self, node, mouse_pos, new_grid_size):
         if not node:
@@ -292,16 +305,23 @@ class Component(ABC):
     # Selecting
 
     def set_selected(self, check):
+        self.is_selected = check
         if check:
-            self.is_selected = True
-            self.window.control_panel.components_tab.select_item(self)
+            self.select_item_in_ui()
         else:
-            self.is_selected = False
-            self.window.control_panel.components_tab.deselect_item(self)
+            self.deselect_item_in_ui()
+
+    def select_item_in_ui(self):
+        self.window.control_panel.components_tab.select_item(self)
+        self.set_style()
+
+    def deselect_item_in_ui(self):
+        self.window.control_panel.components_tab.deselect_item(self)
+        self.property_manager.hide()
         self.set_style()
 
     def contains(self, position_to_check):
-        return any([self._node_contains(pos, position_to_check) for pos in self.position])    
+        return any([self._node_contains(pos, position_to_check) for pos in self.node_positions])    
 
     def _node_contains(self, node, position_to_check):
         if not node:
@@ -318,26 +338,26 @@ class Component(ABC):
 
     @property
     def connected_wires(self):
-        comp_wires = []
+        wires_connected_to_component = []
         self.snap()
         for w, wire in enumerate(self.window.canvas.placed_components["wires"]):
             wire.snap()
-            wire_y = wire.position[0][1]
-            wire_x_start = wire.position[0][0]
-            wire_x_end = wire.position[1][0]
-            for pos in self.position:
+            wire_y = wire.node_positions[0][1]
+            wire_x_start = wire.node_positions[0][0]
+            wire_x_end = wire.node_positions[1][0]
+            for pos in self.node_positions:
                 if pos:
                     if pos[1] == wire_y:
                         if wire_x_start <= pos[0] <= wire_x_end:
-                            comp_wires.append(w+1)
-        return comp_wires
+                            wires_connected_to_component.append(w+1)
+        return wires_connected_to_component
     
     def overlaps_a_wire_edge(self, position_to_check):
         for wire in self.window.canvas.placed_components["wires"]:
             wire.snap()
-            wire_x_start = wire.position[0][0]
-            wire_x_end = wire.position[1][0]
-            wire_y = wire.position[0][1]
+            wire_x_start = wire.node_positions[0][0]
+            wire_x_end = wire.node_positions[1][0]
+            wire_y = wire.node_positions[0][1]
             if position_to_check[1] == wire_y:
                 if wire_x_start == position_to_check[0] or wire_x_end == position_to_check[0]:
                     return True
@@ -347,12 +367,12 @@ class Component(ABC):
         for comp in self.window.canvas.placed_components[component_group]:
             comp.snap()
             if comp.direction == "H":
-                on_axis = position_to_check[1] == comp.position[0][1]
-                comp_range = [pos[0] for pos in comp.position]
+                on_axis = position_to_check[1] == comp.node_positions[0][1]
+                comp_range = [pos[0] for pos in comp.node_positions]
                 in_range = min(comp_range) < position_to_check[0] < max(comp_range)
             else:
-                on_axis = position_to_check[0] == comp.position[0][0]
-                comp_range = [pos[1] for pos in comp.position]
+                on_axis = position_to_check[0] == comp.node_positions[0][0]
+                comp_range = [pos[1] for pos in comp.node_positions]
                 in_range = min(comp_range) <= position_to_check[1] <= max(comp_range)
             if on_axis and in_range:
                 return True
@@ -368,33 +388,33 @@ class Component(ABC):
     
     def overlaps_itself(self, position_to_check):
         self.snap()
-        return any([position_to_check == pos for pos in self.position])
+        return any([position_to_check == pos for pos in self.node_positions])
     
     def spans_a_component(self, position_to_check):
-        if len(self.position) > 0:
-            if self.position[0]:
+        if len(self.node_positions) > 0:
+            if self.node_positions[0]:
                 for comp in self.window.canvas.all_placed_components():
                     comp.snap()
-                    comp_range = [pos[1] for pos in comp.position]
-                    if self.position[0][0] == comp.position[0][0]:
-                        if self.position[0][1] <= min(comp_range) and position_to_check[1] >= max(comp_range):
+                    comp_range = [pos[1] for pos in comp.node_positions]
+                    if self.node_positions[0][0] == comp.node_positions[0][0]:
+                        if self.node_positions[0][1] <= min(comp_range) and position_to_check[1] >= max(comp_range):
                             return True
-                        if self.position[0][1] >= max(comp_range) and position_to_check[1] <= min(comp_range):
+                        if self.node_positions[0][1] >= max(comp_range) and position_to_check[1] <= min(comp_range):
                             return True
         return False
     
     def spans_a_wire(self, pos):
-        if len(self.position) > 0:
-            if self.position[0]:
+        if len(self.node_positions) > 0:
+            if self.node_positions[0]:
                 # Can't be on the opposite side of a wire from the start point
                 for comp in self.window.canvas.placed_components["wires"]:
                     comp.snap()
-                    comp_start = comp.position[0]
-                    comp_end = comp.position[1]
-                    if self.position[0][1] == comp_start[1]:
-                        if self.position[0][0] <= comp_start[0] and pos[0] >= comp_end[0]:
+                    comp_start = comp.node_positions[0]
+                    comp_end = comp.node_positions[1]
+                    if self.node_positions[0][1] == comp_start[1]:
+                        if self.node_positions[0][0] <= comp_start[0] and pos[0] >= comp_end[0]:
                             return True
-                        if self.position[0][0] >= comp_end[0] and pos[0] <= comp_start[0]:
+                        if self.node_positions[0][0] >= comp_end[0] and pos[0] <= comp_start[0]:
                             return True
         return False
 
@@ -425,7 +445,7 @@ class Detector(Component):
         # Can only be placed on top of a wire end
         for wire in self.window.canvas.placed_components["wires"]:
             wire.snap()
-            allowed_point = wire.position[1]
+            allowed_point = wire.node_positions[1]
             if self.potential_placement == allowed_point:
                 return True
         return False
@@ -510,19 +530,19 @@ class Wire(Component):
             return False
         
         # Rules for the start point
-        if not self.position[0]:
+        if not self.node_positions[0]:
             # Can't place it on the point immediately to the left of another wire, which would leave no room for the end point
             for wire in self.window.canvas.placed_components["wires"]:
                 wire.snap()
-                wire_start = wire.position[0]
+                wire_start = wire.node_positions[0]
                 if self.potential_placement[1] == wire_start[1]:
                     if self.window.canvas.grid.snap((self.potential_placement[0] + self.window.canvas.grid.size, self.potential_placement[1])) == wire_start:
                         return False
         
         # Rules for the end point
-        if self.position[0] and not self.position[1]:
+        if self.node_positions[0] and not self.node_positions[1]:
             # The end point must be to the right of the start point
-            if self.potential_placement[0] <= self.window.canvas.grid.snap(self.position[0])[0]:
+            if self.potential_placement[0] <= self.window.canvas.grid.snap(self.node_positions[0])[0]:
                 return False
             
         if self.spans_a_wire(self.potential_placement):

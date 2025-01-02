@@ -1,0 +1,30 @@
+class StyleManager:
+    def __init__(self):
+        self.current_theme = "darkmode"
+        self.styles = {
+            "basic": {
+                "color": (0, 0, 0),
+                "border_color": (0, 0, 0),
+                "selected_border_color": (219, 197, 119),
+                "bg_color": (255, 255, 255),
+                "gridline_color": (0, 0, 0),
+                "error_color": (255, 0, 0),
+            },
+            "darkmode": {
+                "color": (255, 255, 255),
+                "border_color": (255, 255, 255),
+                "selected_border_color": (219, 197, 119),
+                "bg_color": (0, 0, 0),
+                "gridline_color": (50, 50, 50),
+                "error_color": (255, 0, 0),
+            }
+        }
+
+    def set_theme(self, theme):
+        if theme in self.styles:
+            self.current_theme = theme
+        else:
+            raise ValueError(f"Theme '{theme}' not found.")
+
+    def get_style(self, key):
+        return self.styles[self.current_theme].get(key)

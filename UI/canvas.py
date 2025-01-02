@@ -9,7 +9,6 @@ class Canvas(QWidget):
     def __init__(self, window):
         super().__init__()
         self.window = window
-        self.style_choice = "darkmode"
         self.grid = Grid(self)
         self.setMouseTracking(True)
         self.current_mouse_position = None
@@ -73,17 +72,13 @@ class Canvas(QWidget):
         return n_photons
 
     def sort_components(self):
-        self.placed_components["wires"] = sorted(self.placed_components["wires"], key = lambda comp: (comp.position[0][1], comp.position[0][0]))
-        self.placed_components["components"] = sorted(self.placed_components["components"], key = lambda comp: (comp.position[0][0], comp.position[0][1]))
-        self.placed_components["detectors"] = sorted(self.placed_components["detectors"], key = lambda comp: (comp.position[0][1], comp.position[0][0]))
+        self.placed_components["wires"] = sorted(self.placed_components["wires"], key = lambda comp: (comp.node_positions[0][1], comp.node_positions[0][0]))
+        self.placed_components["components"] = sorted(self.placed_components["components"], key = lambda comp: (comp.node_positions[0][0], comp.node_positions[0][1]))
+        self.placed_components["detectors"] = sorted(self.placed_components["detectors"], key = lambda comp: (comp.node_positions[0][1], comp.node_positions[0][0]))
 
     def set_style(self):
-        if self.style_choice == "basic":
-            self.bg_color = (255, 255, 255)
-            self.gridline_color = (0, 0, 0)
-        elif self.style_choice == "darkmode":
-            self.bg_color = (0, 0, 0)
-            self.gridline_color = (50, 50, 50)
+        self.bg_color = self.window.style_manager.get_style("bg_color")
+        self.gridline_color = self.window.style_manager.get_style("gridline_color")
 
     def deselect_all(self):
         for comp in self.all_placed_components():
@@ -154,6 +149,7 @@ class Canvas(QWidget):
                     self.active_tool.place()
 
             self.update()
+            self.deselect_all()
 
     def on_mouse_move(self, event: QMouseEvent):
         """

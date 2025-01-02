@@ -122,11 +122,11 @@ class ToolBar(QToolBar):
 
     def darkmode_trigger(self):
         new_style = None
-        if self.window.canvas.style_choice == "basic":
+        if self.window.style_manager.current_theme == "basic":
             new_style = "darkmode"
-        elif self.window.canvas.style_choice == "darkmode":
+        elif self.window.style_manager.current_theme == "darkmode":
             new_style = "basic"
-        self.window.canvas.style_choice = new_style
+        self.window.style_manager.current_theme = new_style
         self.window.canvas.set_style()
         for comp in self.window.canvas.all_placed_components():
             comp.set_style()
