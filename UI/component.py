@@ -9,7 +9,7 @@ class ComponentRenderer:
         self.window = window
 
         # Default style
-        self.color = None
+        self.face_color = None
         self.border_color = None
         self.selected_border_color = None
         self.error_color = None
@@ -22,7 +22,7 @@ class ComponentRenderer:
 
     def set_style(self):
         # Component style
-        self.color = self.window.style_manager.get_style("color")
+        self.face_color = self.window.style_manager.get_style("face_color")
         self.border_color = self.window.style_manager.get_style("border_color")
         self.selected_border_color = self.window.style_manager.get_style("selected_border_color")
         self.error_color = self.window.style_manager.get_style("error_color")
@@ -39,7 +39,7 @@ class ComponentRenderer:
         if not pen_color:
             pen_color = self.border_color
         if not brush_color:
-            brush_color = self.color
+            brush_color = self.face_color
 
         pen = QPen(QColor(*pen_color))
         pen.setWidth(self.line_width)
@@ -49,7 +49,7 @@ class ComponentRenderer:
 
     def draw_name(self, painter, comp):
         name_position = comp.node_positions[0]
-        self.set_painter_style(painter, pen_color = self._invert(self.color))
+        self.set_painter_style(painter, pen_color = self._invert(self.face_color))
         scale = comp.shape_scale * self.window.canvas.grid.size
         rectangle = QRectF(name_position[0] - 0.5*scale, name_position[1] - 0.5*scale, scale, scale)
         painter.drawText(rectangle, Qt.AlignCenter, comp.name)
@@ -154,7 +154,7 @@ class ComponentRenderer:
                 self.draw_shape(painter, comp, pos, comp.shape_type[i])
             else:
                 if comp.placeable:
-                    self.set_painter_style(painter, pen_color = self._transparent(self.border_color), brush_color = self._transparent(self.color))
+                    self.set_painter_style(painter, pen_color = self._transparent(self.border_color), brush_color = self._transparent(self.face_color))
                 else:
                     self.set_painter_style(painter, pen_color = self._transparent(self.border_color), brush_color = self._transparent(self.error_color))
                 self.draw_shape(painter, comp, comp.potential_placement, comp.shape_type[i])

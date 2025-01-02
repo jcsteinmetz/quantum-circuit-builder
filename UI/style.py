@@ -3,7 +3,7 @@ class StyleManager:
         self.current_theme = "darkmode"
         self.styles = {
             "basic": {
-                "color": (0, 0, 0),
+                "face_color": (0, 0, 0),
                 "border_color": (0, 0, 0),
                 "selected_border_color": (219, 197, 119),
                 "bg_color": (255, 255, 255),
@@ -11,7 +11,7 @@ class StyleManager:
                 "error_color": (255, 0, 0),
             },
             "darkmode": {
-                "color": (255, 255, 255),
+                "face_color": (255, 255, 255),
                 "border_color": (255, 255, 255),
                 "selected_border_color": (219, 197, 119),
                 "bg_color": (0, 0, 0),
