@@ -387,7 +387,7 @@ class Component(ABC):
                 on_axis = position_to_check[1] == comp.node_positions[0][1]
                 comp_range = [pos[0] for pos in comp.node_positions]
                 in_range = min(comp_range) < position_to_check[0] < max(comp_range)
-            else:
+            else: # case with neither H nor V could be handled by either H or V logic
                 on_axis = position_to_check[0] == comp.node_positions[0][0]
                 comp_range = [pos[1] for pos in comp.node_positions]
                 in_range = min(comp_range) <= position_to_check[1] <= max(comp_range)
@@ -410,10 +410,10 @@ class Component(ABC):
             if self.node_positions[0]:
                 for comp in self.window.canvas.all_placed_components():
                     comp.snap()
-                    if comp.direction == "H":
+                    if self.direction == "H":
                         range_idx = 0
                         axis_idx = 1
-                    elif comp.direction == "V":
+                    elif self.direction == "V":
                         range_idx = 1
                         axis_idx = 0
                     
