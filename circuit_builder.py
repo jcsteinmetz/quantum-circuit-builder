@@ -1,6 +1,6 @@
 import sys
 from PySide6.QtWidgets import QApplication
-from window import MainWindow
+from UI.window import MainWindow
 import qdarktheme
 
 if __name__ == "__main__":

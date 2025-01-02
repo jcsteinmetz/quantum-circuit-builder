@@ -1,5 +1,6 @@
 from PySide6.QtWidgets import QFormLayout, QLineEdit, QFrame
 from PySide6.QtGui import QValidator
+from PySide6.QtCore import QEvent
 
 class PropertyBox(QFrame):
     def __init__(self, component, parent=None):
@@ -14,18 +15,27 @@ class PropertyBox(QFrame):
 
     @property
     def offset(self):
-        return (-self.width()/2, -2* self.component.shape_scale * self.component.window.canvas.grid.size)
+        """Offset the property box from the component position to avoid overlapping."""
+        return (-self.width()/2, -2 * self.component.shape_scale * self.component.window.canvas.grid.size)
     
-    def add_property(self, property_name, update_property, initial_value, validator: QValidator):
-        line_edit = QLineEdit(str(initial_value))
+    def add_property(self, property_name, default_value, validator: QValidator):
+        """"
+        Add a new property to the property box.
+        
+        property_name: name of the new property
+        default_value: value to show by default when the property appears
+        validator: which QValidator to use on any new input to this property
+        """
+        line_edit = QLineEdit(str(default_value))
+        self.properties[property_name] = line_edit
         line_edit.setValidator(validator)
-        line_edit.editingFinished.connect(update_property)
         line_edit.returnPressed.connect(line_edit.clearFocus)
+        line_edit.editingFinished.connect(lambda: self.component.update_property(property_name))
         line_edit.editingFinished.connect(lambda: self.component.window.control_panel.components_tab.update_property(self.component, property_name, line_edit.text()))
         self.layout.addRow(property_name, line_edit)
-        self.properties[property_name] = line_edit
 
     def showEvent(self, event):
+        """Show the property box and default to editing the first property."""
         if self.properties:
             first_property = next(iter(self.properties.values()))
             first_property.setFocus()

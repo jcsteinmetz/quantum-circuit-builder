@@ -1,13 +1,13 @@
 from PySide6.QtWidgets import QFileDialog, QLabel, QMainWindow, QWidget, QVBoxLayout, QSplitter
 from PySide6.QtGui import QIcon
 from PySide6.QtCore import Qt
-from canvas import Canvas
-from console import Console
-from control_panel.control_panel import ControlPanel
-from worker import ProgressBar, WorkerThread
-from interface import Interface
-from toolbar import ToolBar
-from style import StyleManager
+from UI.canvas import Canvas
+from UI.console import Console
+from UI.control_panel.control_panel import ControlPanel
+from UI.worker import ProgressBar, WorkerThread
+from UI.interface import Interface
+from UI.toolbar import ToolBar
+from UI.style import StyleManager
 from copy import deepcopy
 import os
 import pickle

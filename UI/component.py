@@ -1,7 +1,7 @@
 from PySide6.QtCore import Qt, QPointF, QRectF
 from PySide6.QtGui import QColor, QPen, QIntValidator, QDoubleValidator
 from abc import ABC, abstractmethod
-from property_box import PropertyBox
+from UI.property_box import PropertyBox
 
 class ComponentRenderer:
 
@@ -444,11 +444,12 @@ class Detector(Component):
         return 1
 
     def create_property_box(self):
-        self.property_box.add_property("herald", self.update_herald, self.herald, QIntValidator(0, 100))
+        self.property_box.add_property("herald", self.herald, QIntValidator(0, 100))
 
-    def update_herald(self):
-        self.herald = int(self.property_box.properties["herald"].text())
-        self.window.console.refresh()
+    def update_property(self, property_name):
+        if property_name == "herald":
+            self.herald = int(self.property_box.properties["herald"].text())
+            self.window.console.refresh()
     
     @property
     def placeable(self):
@@ -483,11 +484,12 @@ class Loss(Component):
         return 1
 
     def create_property_box(self):
-        self.property_box.add_property("eta", self.update_eta, self.eta, QDoubleValidator(0, 1, 2))
+        self.property_box.add_property("eta", self.eta, QDoubleValidator(0, 1, 2))
 
-    def update_eta(self):
-        self.eta = float(self.property_box.properties["eta"].text())
-        self.window.console.refresh()
+    def update_property(self, property_name):
+        if property_name == "eta":
+            self.eta = float(self.property_box.properties["eta"].text())
+            self.window.console.refresh()
     
     @property
     def placeable(self):
@@ -524,12 +526,13 @@ class Wire(Component):
         return 2
 
     def create_property_box(self):
-        self.property_box.add_property("n_photons", self.update_n_photons, self.n_photons, QIntValidator(0, 100))
+        self.property_box.add_property("n_photons", self.n_photons, QIntValidator(0, 100))
 
-    def update_n_photons(self):
-        self.n_photons = int(self.property_box.properties["n_photons"].text())
-        self.window.control_panel.gram_matrix_tab.update_gram_matrix()
-        self.window.console.refresh()
+    def update_property(self, property_name):
+        if property_name == "n_photons":
+            self.n_photons = int(self.property_box.properties["n_photons"].text())
+            self.window.control_panel.gram_matrix_tab.update_gram_matrix()
+            self.window.console.refresh()
 
     @property
     def placeable(self):
@@ -584,11 +587,12 @@ class BeamSplitter(Component):
         return 2
 
     def create_property_box(self):
-        self.property_box.add_property("angle", self.update_theta, self.theta, QDoubleValidator(0, 180, 2))
+        self.property_box.add_property("angle", self.theta, QDoubleValidator(0, 180, 2))
 
-    def update_theta(self):
-        self.theta = float(self.property_box.properties["angle"].text())
-        self.window.console.refresh()
+    def update_property(self, property_name):
+        if property_name == "angle":
+            self.theta = float(self.property_box.properties["angle"].text())
+            self.window.console.refresh()
 
     @property
     def placeable(self):
@@ -612,7 +616,7 @@ class BeamSplitter(Component):
             self.window.console.code += "add beamsplitter on wires"+str(wire_indices)+"with theta"+str(self.theta)+"\n"
     
     def add_to_sim(self):
-        print("add beamsplitter (placeholder code)")
+        self.window.interface.circuit.add_beamsplitter(wires = self.connected_wires, theta = self.theta)
 
 class Switch(Component):
     def __init__(self, window):

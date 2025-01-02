@@ -5,8 +5,8 @@ Contains the ToolBar class.
 from functools import partial
 from PySide6.QtWidgets import QSizePolicy, QWidget, QToolBar, QApplication, QComboBox, QStyle
 from PySide6.QtGui import QAction, QActionGroup
-from component import Wire, BeamSplitter, Switch, Loss, Detector
-from canvas_tools import Select, Grab
+from UI.component import Wire, BeamSplitter, Switch, Loss, Detector
+from UI.canvas_tools import Select, Grab
 
 class ToolBar(QToolBar):
     """

@@ -1,7 +1,7 @@
-import sys
-sys.path.append('./backends/fock')
+# import sys
+# sys.path.append('./backends/fock')
 
-from circuit import Circuit
+from backends.fock.circuit import Circuit
 
 class Interface:
     def __init__(self, window):
@@ -31,4 +31,5 @@ class Interface:
             self.circuit.add_detector(wires = wires, herald = herald)
 
     def run_circuit(self):
+        print("running circuit")
         self.circuit.run()

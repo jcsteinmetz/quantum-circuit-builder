@@ -1,9 +1,9 @@
 from PySide6.QtWidgets import QWidget
 from PySide6.QtGui import QPainter, QWheelEvent, QMouseEvent
 from PySide6.QtCore import QEvent, Qt
-from grid import Grid
-from canvas_tools import Select, CanvasTool
-from component import Wire, Detector, ComponentRenderer
+from UI.grid import Grid
+from UI.canvas_tools import Select, CanvasTool
+from UI.component import Wire, Detector, ComponentRenderer
 import numpy as np
 
 class Canvas(QWidget):

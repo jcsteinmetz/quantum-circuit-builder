@@ -1,6 +1,5 @@
-from PySide6.QtWidgets import QProgressBar, QLabel, QWidget, QVBoxLayout, QSizePolicy
+from PySide6.QtWidgets import QProgressBar, QWidget, QVBoxLayout
 from PySide6.QtCore import QThread, Signal, Slot, QTimer
-import random
 
 class ProgressBar(QWidget):
     """
@@ -36,18 +35,19 @@ class WorkerThread(QThread):
         self.finished.connect(self.on_task_finished)
         self.error_occurred.connect(self.print_error)
 
+        self.error_flag = 0
+
     def print_error(self, message):
         self.window.control_panel.output_tab.print_exception(message)
+        self.error_flag = 1
 
     def run(self):
+        self.error_flag = 0
         try:
             self.window.interface.build_circuit()
             self.window.interface.run_circuit()
-            self.window.control_panel.output_tab.print_output()
         except Exception as e:
             self.error_occurred.emit(str(e))
-
-        self.finished.emit()
 
     @Slot()
     def start_task(self):
@@ -63,11 +63,17 @@ class WorkerThread(QThread):
 
     @Slot()
     def on_task_finished(self):
-        self.window.progress_bar.progress_bar.setRange(0, 100)
-        self.window.progress_bar.progress_bar.setValue(100)
-        self.window.progress_bar.timer.stop()
-        self.window.progress_bar.hide()
+        self.hide_progress_bar()
 
         self.window.control_panel.setCurrentWidget(self.window.control_panel.output_tab)
         self.window.running = False
         self.window.update_title()
+
+        if not self.error_flag:
+            self.window.control_panel.output_tab.print_output()
+
+    def hide_progress_bar(self):
+        self.window.progress_bar.progress_bar.setRange(0, 100)
+        self.window.progress_bar.progress_bar.setValue(100)
+        self.window.progress_bar.timer.stop()
+        self.window.progress_bar.hide()
