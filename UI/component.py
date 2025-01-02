@@ -5,6 +5,16 @@ from abc import ABC, abstractmethod
 from properties_manager import PropertiesManager
 
 class ComponentRenderer:
+
+    SHAPE_METHODS = {
+            "square": "draw_square",
+            "circle": "draw_ellipse",
+            "half circle": "draw_half_circle",
+            "X": "draw_X",
+            "diagonal line": "draw_diagonal_line",
+            "arrow": "draw_arrow",
+        }
+
     def __init__(self, window):
         self.window = window
 
@@ -13,6 +23,7 @@ class ComponentRenderer:
         self.border_color = self.window.style_manager.get_style("border_color")
         self.selected_border_color = self.window.style_manager.get_style("selected_border_color")
         self.error_color = self.window.style_manager.get_style("error_color")
+        self.name_color = self.window.style_manager.get_style("name_color")
 
         self.line_width = 3
         self.shape_type = ["square"]
@@ -22,20 +33,22 @@ class ComponentRenderer:
     def _transparent(self, col):
         return (col[0], col[1], col[2], 128)
     
-    def _invert(self, col):
-        return (255-col[0], 255-col[1], 255-col[2])
-    
     def update_styles(self):
         self.face_color = self.window.style_manager.get_style("face_color")
         self.border_color = self.window.style_manager.get_style("border_color")
         self.selected_border_color = self.window.style_manager.get_style("selected_border_color")
         self.error_color = self.window.style_manager.get_style("error_color")
+        self.name_color = self.window.style_manager.get_style("name_color")
 
-    def set_painter_style(self, painter, pen_color = None, brush_color = None):
+    def set_painter_style(self, painter, pen_color = None, brush_color = None, transparent = False):
         if not pen_color:
             pen_color = self.border_color
         if not brush_color:
             brush_color = self.face_color
+
+        if transparent:
+            pen_color = self._transparent(pen_color)
+            brush_color = self._transparent(brush_color)
 
         pen = QPen(QColor(*pen_color))
         pen.setWidth(self.line_width)
@@ -45,18 +58,19 @@ class ComponentRenderer:
 
     def draw_name(self, painter, comp):
         name_position = comp.node_positions[0]
-        self.set_painter_style(painter, pen_color = self._invert(self.face_color))
+        self.set_painter_style(painter, pen_color = self.name_color)
         scale = comp.shape_scale * self.window.canvas.grid.size
         rectangle = QRectF(name_position[0] - 0.5*scale, name_position[1] - 0.5*scale, scale, scale)
         painter.drawText(rectangle, Qt.AlignCenter, comp.name)
 
     def draw_property_manager(self, comp):
 
-        # Property manager style
-        inverse_color = self._invert(self.window.canvas.bg_color)
-        comp.property_manager.setStyleSheet(f"background-color: {QColor(*inverse_color).name()}; color: {QColor(*self.window.canvas.bg_color).name()}")
-
         comp.property_manager.move(int(comp.node_positions[0][0] + comp.property_manager.offset[0]), int(comp.node_positions[0][1]+comp.property_manager.offset[1]))
+
+        # Property manager style
+        style = self.window.style_manager.get_style("property_manager_color")
+        comp.property_manager.setStyleSheet(style)
+        
         if not comp.property_manager.isVisible():
             comp.property_manager.show()
 
@@ -101,18 +115,9 @@ class ComponentRenderer:
 
         pos = QPointF(pos[0], pos[1])
 
-        shape_methods = {
-            "square": self.draw_square,
-            "circle": self.draw_ellipse,
-            "half circle": self.draw_half_circle,
-            "X": self.draw_X,
-            "diagonal line": self.draw_diagonal_line,
-            "arrow": self.draw_arrow,
-        }
-
-        draw_method = shape_methods.get(shape_type)
-        
-        if draw_method:
+        draw_method_name = self.SHAPE_METHODS.get(shape_type)
+        if draw_method_name:
+            draw_method = getattr(self, draw_method_name)
             draw_method(painter, pos, scale)
 
     def draw_wire(self, painter, comp, start_position, end_position):
@@ -156,9 +161,9 @@ class ComponentRenderer:
                 self.draw_shape(painter, comp, pos, comp.shape_type[i])
             else:
                 if comp.placeable:
-                    self.set_painter_style(painter, pen_color = self._transparent(self.border_color), brush_color = self._transparent(self.face_color))
+                    self.set_painter_style(painter, transparent = True)
                 else:
-                    self.set_painter_style(painter, pen_color = self._transparent(self.border_color), brush_color = self._transparent(self.error_color))
+                    self.set_painter_style(painter, brush_color = self.error_color, transparent = True)
                 self.draw_shape(painter, comp, comp.potential_placement, comp.shape_type[i])
 
                 # draw wire

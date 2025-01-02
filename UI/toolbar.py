@@ -121,17 +121,10 @@ class ToolBar(QToolBar):
             self.window.control_panel.gram_matrix_tab.unlock_gram_matrix()
 
     def darkmode_trigger(self):
-        new_style = None
         if self.window.style_manager.current_theme == "basic":
-            new_style = "darkmode"
+            self.window.style_manager.set_theme("darkmode")
         elif self.window.style_manager.current_theme == "darkmode":
-            new_style = "basic"
-        self.window.style_manager.set_theme(new_style)
-        # self.window.canvas.set_style()
-        # self.window.canvas.component_renderer.set_style()
-
-        # Recreate active tool so it updates the style
-        self.window.canvas.active_tool = self.window.canvas.active_tool.__class__(self.window)
+            self.window.style_manager.set_theme("basic")
         self.window.canvas.repaint()
 
     def recenter_trigger(self):

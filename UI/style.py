@@ -1,3 +1,5 @@
+from PySide6.QtGui import QColor
+
 class StyleManager:
     def __init__(self, window):
         self.window = window
@@ -11,6 +13,8 @@ class StyleManager:
                 "bg_color": (255, 255, 255),
                 "gridline_color": (0, 0, 0),
                 "error_color": (255, 0, 0),
+                "name_color": (255, 255, 255),
+                "property_manager_color": f"background-color: {QColor(*(0, 0, 0)).name()}; color: {QColor(*(255, 255, 255)).name()}",
             },
             "darkmode": {
                 "face_color": (255, 255, 255),
@@ -19,6 +23,8 @@ class StyleManager:
                 "bg_color": (0, 0, 0),
                 "gridline_color": (50, 50, 50),
                 "error_color": (255, 0, 0),
+                "name_color": (0, 0, 0),
+                "property_manager_color": f"background-color: {QColor(*(255, 255, 255)).name()}; color: {QColor(*(0, 0, 0)).name()}",
             }
         }
 
