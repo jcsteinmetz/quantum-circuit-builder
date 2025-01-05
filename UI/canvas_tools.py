@@ -1,7 +1,7 @@
 from PySide6.QtCore import Qt, QRect, QSize, QPoint
-from PySide6.QtGui import QMouseEvent, QWheelEvent
+from PySide6.QtGui import QMouseEvent
 from PySide6.QtWidgets import QRubberBand
-from abc import ABC, abstractmethod
+from abc import ABC
 
 class CanvasTool(ABC):
     def __init__(self, window):

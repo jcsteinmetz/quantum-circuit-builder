@@ -28,12 +28,16 @@ class BeamSplitter(Component):
         self.reindexed_wires = [wire - 1 for wire in self.wires]
         self.theta = degrees_to_radians(theta)
 
-        self.photon_count_per_rank = self.log_entering_photons()
-        self.two_wire_unitaries = {n_photons: self.two_wire_unitary(n_photons) for n_photons in set(self.photon_count_per_rank.values())}
+        self.photon_count_per_rank = {}
+
+        # self.two_wire_unitaries = {n_photons: self.two_wire_unitary(n_photons) for n_photons in set(self.photon_count_per_rank.values())}
+        self.two_wire_unitaries = {n_photons: self.two_wire_unitary(n_photons) for n_photons in range(self.state.n_photons+1)}
 
     def unitary(self):
         """Unitary operator in the full Fock space."""
         unitary = np.eye(self.state.hilbert_dimension, dtype=complex)
+
+        self.photon_count_per_rank = self.log_entering_photons()
 
         used_ranks = []
         for rank, photons in self.photon_count_per_rank.items():

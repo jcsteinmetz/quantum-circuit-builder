@@ -1,5 +1,6 @@
 import numpy as np
 from backends.fock.component import Component
+from backends.utils import basis_to_rank, rank_to_basis
 
 class Switch(Component):
     """
@@ -23,11 +24,11 @@ class Switch(Component):
         unitary = np.zeros((hilbert, hilbert), dtype=complex)
 
         for rank in self.state.occupied_ranks:
-            switched_basis_element = list(self.state.basis_element(rank))
+            switched_basis_element = list(rank_to_basis(self.state.n_wires, self.state.n_photons, rank))
             i, j = self.reindexed_wires
             switched_basis_element[i], switched_basis_element[j] = switched_basis_element[j], switched_basis_element[i]
             switched_basis_element = tuple(switched_basis_element)
-            switched_rank = self.state.basis_rank(switched_basis_element)
+            switched_rank = basis_to_rank(switched_basis_element)
             unitary[switched_rank, rank] = 1
 
         return unitary

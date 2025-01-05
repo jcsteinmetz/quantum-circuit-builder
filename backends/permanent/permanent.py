@@ -34,7 +34,9 @@ class Permanent(Backend):
 
     def output_probability(self, circuit_unitary, output_basis_element):
         circuit_submatrix = self.submatrix(circuit_unitary, output_basis_element)
-        return (self.matrix_permanent(circuit_submatrix))**2/np.prod([math.factorial(n) for n in output_basis_element])
+        norm_input = np.prod([math.factorial(n) for n in output_basis_element])
+        norm_output = np.prod([math.factorial(n) for n in self.state.input_basis_element])
+        return (self.matrix_permanent(circuit_submatrix))**2/(norm_input * norm_output)
 
     def submatrix(self, circuit_unitary, output_basis_element):
         UT = np.zeros((self.n_wires, self.n_photons), dtype=complex)
@@ -80,7 +82,24 @@ class Permanent(Backend):
     
     @property
     def output_data(self):
-        return self.state.output_probabilities
+        prob_vector = self.state.output_probabilities
+
+        table_length = np.count_nonzero(prob_vector)
+        table_data = np.zeros((table_length, 2), dtype=object)
+        for row, rank in enumerate(np.nonzero(prob_vector)[0]):
+            basis_element_string = str(rank_to_basis(self.n_wires, self.n_photons, rank))
+            basis_element_string = basis_element_string.replace("(", "")
+            basis_element_string = basis_element_string.replace(")", "")
+            basis_element_string = basis_element_string.replace(" ", "")
+            basis_element_string = basis_element_string.replace(",", "")
+            table_data[row, 0] = "".join(basis_element_string)
+            table_data[row, 1] = prob_vector[rank]
+
+        for row in range(len(table_data[:, 1])):
+            print(table_data[row, 1])
+            print(f"{table_data[row, 1]:.4g}")
+            table_data[row, 1] = f'{float(f"{table_data[row, 1]:.4g}"):g}'
+        return table_data
     
 class State:
     def __init__(self, n_wires, n_photons):

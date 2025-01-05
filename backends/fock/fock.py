@@ -6,7 +6,7 @@ import numpy as np
 from backends.backend import Backend
 from backends.fock.beamsplitter import BeamSplitter
 from backends.fock.switch import Switch
-from backends.utils import calculate_hilbert_dimension, basis_to_rank
+from backends.utils import calculate_hilbert_dimension, basis_to_rank, rank_to_basis
 
 class Fock(Backend):
     def __init__(self, n_wires, n_photons):
@@ -40,7 +40,23 @@ class Fock(Backend):
     
     @property
     def output_data(self):
-        return self.state.density_matrix
+        prob_vector = np.real(self.state.density_matrix.diagonal())
+        table_length = np.count_nonzero(prob_vector)
+        table_data = np.zeros((table_length, 2), dtype=object)
+        for row, rank in enumerate(self.state.occupied_ranks):
+            basis_element_string = str(rank_to_basis(self.n_wires, self.n_photons, rank))
+            basis_element_string = basis_element_string.replace("(", "")
+            basis_element_string = basis_element_string.replace(")", "")
+            basis_element_string = basis_element_string.replace(" ", "")
+            basis_element_string = basis_element_string.replace(",", "")
+            table_data[row, 0] = "".join(basis_element_string)
+            table_data[row, 1] = prob_vector[rank]
+
+        for row in range(len(table_data[:, 1])):
+            print(table_data[row, 1])
+            print(f"{table_data[row, 1]:.4g}")
+            table_data[row, 1] = f'{float(f"{table_data[row, 1]:.4g}"):g}'
+        return table_data
         
 class State:
     def __init__(self, n_wires, n_photons):
