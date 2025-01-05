@@ -44,7 +44,7 @@ class Permanent(Backend):
         return (self.matrix_permanent(circuit_submatrix))**2/np.prod([math.factorial(n) for n in output_basis_element])
 
     def submatrix(self, circuit_unitary, output_basis_element):
-        UT = np.zeros((self.n_wires, self.n_photons))
+        UT = np.zeros((self.n_wires, self.n_photons), dtype=complex)
         used_photons = 0
         for j, tj in enumerate(self.input_basis_element):
             for n in range(used_photons, used_photons + tj):
@@ -52,7 +52,7 @@ class Permanent(Backend):
             used_photons += tj
 
         used_photons = 0
-        UST = np.zeros((2, 2))
+        UST = np.zeros((self.n_photons, self.n_photons), dtype=complex)
         for i, si in enumerate(output_basis_element):
             for n in range(used_photons, used_photons + si):
                 UST[n, :] = UT[i, :]
