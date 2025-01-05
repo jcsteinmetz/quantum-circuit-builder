@@ -1,6 +1,7 @@
 import numpy as np
 from backends.fock.fock import Fock
 from backends.permanent.permanent import Permanent
+from backends.xanadu.xanadu import Xanadu
 
 class Interface:
     def __init__(self, window):
@@ -13,6 +14,8 @@ class Interface:
             self.circuit = Fock(self.window.canvas.n_wires, self.window.canvas.n_photons)
         elif self.backend == "permanent":
             self.circuit = Permanent(self.window.canvas.n_wires, self.window.canvas.n_photons)
+        elif self.backend == "xanadu":
+            self.circuit = Xanadu(self.window.canvas.n_wires, self.window.canvas.n_photons)
         elif self.backend == None:
             raise ValueError("Please select a backend.")
         else:

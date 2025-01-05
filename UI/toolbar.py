@@ -31,7 +31,8 @@ class ToolBar(QToolBar):
         backend_options = {
             "Select backend": None,
             "Fock backend": "fock",
-            "Permanent backend": "permanent"
+            "Permanent backend": "permanent",
+            "Xanadu": "xanadu"
         }
         
         # Button icons

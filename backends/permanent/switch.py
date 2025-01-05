@@ -3,7 +3,7 @@ from backends.permanent.component import Component
 
 class Switch(Component):
     """
-    Switch in Fock space.
+    Switch in the permanent backend.
 
     Attributes:
     wires (list): list of wires connected to the beam splitter (1-indexed)

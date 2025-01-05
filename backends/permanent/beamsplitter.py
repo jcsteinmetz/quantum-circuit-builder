@@ -9,7 +9,7 @@ from backends.utils import degrees_to_radians, spin_y_matrix
 
 class BeamSplitter(Component):
     """
-    Beam splitter in Fock space.
+    Beam splitter in the permanent backend.
 
     Attributes:
     wires (list): list of wires connected to the beam splitter (1-indexed)

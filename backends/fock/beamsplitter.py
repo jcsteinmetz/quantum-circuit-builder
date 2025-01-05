@@ -5,7 +5,7 @@ Contains the beam splitter class in Fock space.
 import numpy as np
 import scipy
 from backends.fock.component import Component
-from backends.utils import rank_to_basis, calculate_hilbert_dimension, spin_y_matrix, degrees_to_radians
+from backends.utils import calculate_hilbert_dimension, spin_y_matrix, degrees_to_radians, rank_to_basis, basis_to_rank
 
 class BeamSplitter(Component):
     """
@@ -15,8 +15,8 @@ class BeamSplitter(Component):
     wires (list): list of wires connected to the beam splitter (1-indexed)
     theta (float): beam splitter angle in degrees, where 90 is a balanced splitter
     """
-    def __init__(self, circuit, *, wires, theta = 90):
-        super().__init__(circuit)
+    def __init__(self, state, *, wires, theta = 90):
+        super().__init__(state)
 
         if len(wires) != 2:
             raise ValueError("Beam splitter requires exactly 2 wires.")
@@ -33,7 +33,7 @@ class BeamSplitter(Component):
 
     def unitary(self):
         """Unitary operator in the full Fock space."""
-        unitary = np.eye(self.circuit.state.hilbert_dimension, dtype=complex)
+        unitary = np.eye(self.state.hilbert_dimension, dtype=complex)
 
         used_ranks = []
         for rank, photons in self.photon_count_per_rank.items():
@@ -61,15 +61,14 @@ class BeamSplitter(Component):
         photon_count_per_rank = {}
 
         # For each rank, count the photons in self.wires
-        print("occupied ranks:",self.circuit.state.occupied_ranks)
-        for rank in self.circuit.state.occupied_ranks:
-            basis_element = np.array(self.circuit.state.basis_element(rank))
+        for rank in self.state.occupied_ranks:
+            basis_element = np.array(rank_to_basis(self.state.n_wires, self.state.n_photons, rank))
             photon_count_per_rank[rank] = int(sum(basis_element[self.reindexed_wires]))
         return photon_count_per_rank
     
     def connected_ranks(self, rank):
         """Finds all other ranks in the Fock space connected to the given rank by the beam splitting operation."""
-        basis_element = np.array(self.circuit.state.basis_element(rank))
+        basis_element = np.array(rank_to_basis(self.state.n_wires, self.state.n_photons, rank))
 
         # Generate all possible combinations of occupation numbers within self.wires
         photons = self.photon_count_per_rank[rank]
@@ -79,5 +78,5 @@ class BeamSplitter(Component):
         connected_ranks = []
         for combination in wire_combinations:
             basis_element[self.reindexed_wires] = combination
-            connected_ranks.append(self.circuit.state.basis_rank(tuple(basis_element)))
+            connected_ranks.append(basis_to_rank(tuple(basis_element)))
         return connected_ranks

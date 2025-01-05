@@ -10,6 +10,15 @@ def rank_to_basis(n_wires, n_photons, rank):
         element[mode] += 1
     return tuple(element)
 
+def basis_to_rank(element):
+    n_photons = int(sum(element))
+    n_wires = len(element)
+    rank = 0
+    for remaining_modes, used_photons in zip(reversed(range(1, n_wires)), itertools.accumulate(element)):
+        remaining_photons = n_photons - used_photons
+        rank += sum(math.comb(n_pp + remaining_modes - 1, n_pp) for n_pp in range(int(remaining_photons)))
+    return rank
+
 def calculate_hilbert_dimension(n_wires, n_photons):
     return math.comb(n_photons + n_wires - 1, n_photons)
 

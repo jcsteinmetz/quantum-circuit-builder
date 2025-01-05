@@ -5,7 +5,6 @@ Basic simulation based on matrix permanents
 import itertools
 import math
 import numpy as np
-from backends.permanent.state import State
 from backends.backend import Backend
 from backends.permanent.beamsplitter import BeamSplitter
 from backends.permanent.switch import Switch
@@ -13,20 +12,14 @@ from backends.utils import calculate_hilbert_dimension, rank_to_basis
 
 class Permanent(Backend):
     def __init__(self, n_wires, n_photons):
+        super().__init__(n_wires, n_photons)
 
-        self.n_wires = n_wires
-        self.n_photons = n_photons
-
-        self.state = State(self)
-        self.input_basis_element = ()
-
-        if self.n_wires < 1:
-            raise ValueError("No wires in the circuit.")
+        self.state = State(self.n_wires, self.n_photons)
 
         self.component_list = []
 
     def set_input_state(self, input_basis_element):
-        self.input_basis_element = input_basis_element
+        self.state.input_basis_element = input_basis_element
 
     def run(self):
         circuit_unitary = np.eye(self.n_wires)
@@ -34,8 +27,8 @@ class Permanent(Backend):
             unitary = comp.unitary()
             circuit_unitary = unitary @ circuit_unitary
 
-        for rank in range(self.hilbert_dimension):
-            output_basis_element = self.basis_element(rank)
+        for rank in range(self.state.hilbert_dimension):
+            output_basis_element = rank_to_basis(self.n_wires, self.n_photons, rank)
             self.state.output_probabilities[rank] = self.output_probability(circuit_unitary, output_basis_element)
         self.state.eliminate_tolerance()
 
@@ -46,7 +39,7 @@ class Permanent(Backend):
     def submatrix(self, circuit_unitary, output_basis_element):
         UT = np.zeros((self.n_wires, self.n_photons), dtype=complex)
         used_photons = 0
-        for j, tj in enumerate(self.input_basis_element):
+        for j, tj in enumerate(self.state.input_basis_element):
             for n in range(used_photons, used_photons + tj):
                 UT[:, n] = circuit_unitary[:, j]
             used_photons += tj
@@ -60,17 +53,6 @@ class Permanent(Backend):
 
         return UST
 
-    def basis_element(self, rank):
-        return rank_to_basis(self.n_wires, self.n_photons, rank)
-    
-    def basis_rank(self, element):
-        n_photons = int(sum(element))
-        rank = 0
-        for remaining_modes, used_photons in zip(reversed(range(1, self.n_wires)), itertools.accumulate(element)):
-            remaining_photons = n_photons - used_photons
-            rank += sum(math.comb(n_pp + remaining_modes - 1, n_pp) for n_pp in range(int(remaining_photons)))
-        return rank
-
     def add_beamsplitter(self, **kwargs):
         comp = BeamSplitter(self, **kwargs)
         self.component_list.append(comp)
@@ -80,14 +62,10 @@ class Permanent(Backend):
         self.component_list.append(comp)
 
     def add_loss(self, **kwargs):
-        raise ValueError("Loss is not implemented in the Fock backend.")
+        raise ValueError("Loss is not implemented yet in the permanent backend.")
 
     def add_detector(self, **kwargs):
-        raise ValueError("Detectors are not implemented in the Fock backend.")
-    
-    @property
-    def hilbert_dimension(self):
-        return calculate_hilbert_dimension(self.n_wires, self.n_photons)
+        raise ValueError("Detectors are not implemented yet in the permanent backend.")
         
     def matrix_permanent(self, matrix):
         n = len(matrix)
@@ -99,3 +77,20 @@ class Permanent(Backend):
                 product *= matrix[i, perm[i]]
             total += product
         return total
+    
+    @property
+    def output_data(self):
+        return self.state.output_probabilities
+    
+class State:
+    def __init__(self, n_wires, n_photons):
+        self.n_wires = n_wires
+        self.n_photons = n_photons
+
+        self.hilbert_dimension = calculate_hilbert_dimension(self.n_wires, self.n_photons)
+
+        self.input_basis_element = ()
+        self.output_probabilities = np.zeros(self.hilbert_dimension)
+    
+    def eliminate_tolerance(self, tol=1E-10):
+        self.output_probabilities[np.abs(self.output_probabilities) < tol] = 0
