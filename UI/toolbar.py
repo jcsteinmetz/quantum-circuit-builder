@@ -119,10 +119,10 @@ class ToolBar(QToolBar):
 
     def set_backend(self, backend_choice):
         self.window.interface.backend = backend_choice
-        if backend_choice == "fock":
-            self.window.control_panel.gram_matrix_tab.lock_gram_matrix()
+        if backend_choice in ["fock", "permanent", "xanadu", None]:
+            self.window.control_panel.input_state_tab.lock_gram_matrix()
         else:
-            self.window.control_panel.gram_matrix_tab.unlock_gram_matrix()
+            self.window.control_panel.input_state_tab.unlock_gram_matrix()
 
     def darkmode_trigger(self):
         self.window.style_manager.darkmode_toggle()

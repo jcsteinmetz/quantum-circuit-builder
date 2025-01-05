@@ -5,5 +5,5 @@ class Component(ABC):
         self.state = state
 
     @abstractmethod
-    def unitary(self):
+    def apply(self):
         raise NotImplementedError

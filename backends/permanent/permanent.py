@@ -96,8 +96,6 @@ class Permanent(Backend):
             table_data[row, 1] = prob_vector[rank]
 
         for row in range(len(table_data[:, 1])):
-            print(table_data[row, 1])
-            print(f"{table_data[row, 1]:.4g}")
             table_data[row, 1] = f'{float(f"{table_data[row, 1]:.4g}"):g}'
         return table_data
     

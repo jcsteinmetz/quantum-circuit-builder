@@ -505,7 +505,7 @@ class Loss(Component):
 
     def add_to_sim(self):
         wires = [self.window.canvas.placed_components["wires"].index(w) + 1 for w in self.connected_wires]
-        self.window.interface.circuit.add_loss(wires = wires, eta = self.eta)
+        self.window.interface.circuit.add_loss(wire = wires[0], eta = self.eta)
 
 class Wire(Component):
     def __init__(self, window):
@@ -530,7 +530,7 @@ class Wire(Component):
     def update_property(self, property_name):
         if property_name == "n_photons":
             self.n_photons = int(self.property_box.properties["n_photons"].text())
-            self.window.control_panel.gram_matrix_tab.update_gram_matrix()
+            self.window.control_panel.input_state_tab.update_gram_matrix()
             self.window.console.refresh()
 
     @property

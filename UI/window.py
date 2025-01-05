@@ -58,6 +58,7 @@ class MainWindow(QMainWindow):
 
         # Window header
         self.update_title()
+        self.setWindowIcon(QIcon("assets/logo.png"))
 
         # Prevent focus from being on a widget
         self.setFocus()
@@ -95,7 +96,7 @@ class MainWindow(QMainWindow):
 
         # Recreate circuit
         self.control_panel.components_tab.refresh()
-        self.control_panel.gram_matrix_tab.set_gram_matrix()
+        self.control_panel.input_state_tab.set_gram_matrix()
         self.canvas.deselect_all()
         self.canvas.update()
 
@@ -113,7 +114,7 @@ class MainWindow(QMainWindow):
 
         # Recreate circuit
         self.control_panel.components_tab.refresh()
-        self.control_panel.gram_matrix_tab.set_gram_matrix()
+        self.control_panel.input_state_tab.set_gram_matrix()
         self.canvas.deselect_all()
         self.canvas.update()
 
@@ -143,7 +144,7 @@ class MainWindow(QMainWindow):
             comp.delete()
         self.console.refresh()
         self.control_panel.components_tab.clear_components()
-        self.control_panel.gram_matrix_tab.update_gram_matrix()
+        self.control_panel.input_state_tab.update_gram_matrix()
         self.canvas.repaint()
 
     def save_file(self):
@@ -190,7 +191,7 @@ class MainWindow(QMainWindow):
 
             # Recreate circuit
             self.control_panel.components_tab.refresh()
-            self.control_panel.gram_matrix_tab.set_gram_matrix()
+            self.control_panel.input_state_tab.set_gram_matrix()
             self.console.refresh()
             self.canvas.update()
 

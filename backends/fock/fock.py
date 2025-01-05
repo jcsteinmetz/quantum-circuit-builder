@@ -6,6 +6,7 @@ import numpy as np
 from backends.backend import Backend
 from backends.fock.beamsplitter import BeamSplitter
 from backends.fock.switch import Switch
+from backends.fock.loss import Loss
 from backends.utils import calculate_hilbert_dimension, basis_to_rank, rank_to_basis
 
 class Fock(Backend):
@@ -21,7 +22,7 @@ class Fock(Backend):
 
     def run(self):
         for comp in self.component_list:
-            self.state.apply_component(comp)
+            comp.apply(self.state)
             self.state.eliminate_tolerance()
 
     def add_beamsplitter(self, **kwargs):
@@ -33,7 +34,8 @@ class Fock(Backend):
         self.component_list.append(comp)
 
     def add_loss(self, **kwargs):
-        raise NotImplementedError("Loss is not implemented yet in the Fock backend.")
+        comp = Loss(self.state, **kwargs)
+        self.component_list.append(comp)
 
     def add_detector(self, **kwargs):
         raise NotImplementedError("Detectors are not implemented yet in the Fock backend.")
@@ -53,8 +55,6 @@ class Fock(Backend):
             table_data[row, 1] = prob_vector[rank]
 
         for row in range(len(table_data[:, 1])):
-            print(table_data[row, 1])
-            print(f"{table_data[row, 1]:.4g}")
             table_data[row, 1] = f'{float(f"{table_data[row, 1]:.4g}"):g}'
         return table_data
         
@@ -75,10 +75,6 @@ class State:
         input_basis_rank = basis_to_rank(input_basis_element)
         self.density_matrix[:] = 0
         self.density_matrix[input_basis_rank, input_basis_rank] = 1
-    
-    def apply_component(self, comp):
-        unitary = comp.unitary()
-        self.density_matrix = unitary @ self.density_matrix @ np.conjugate(unitary).T
     
     def eliminate_tolerance(self, tol=1E-10):
         self.density_matrix[np.abs(self.density_matrix) < tol] = 0

@@ -2,6 +2,7 @@ from backends.backend import Backend
 import strawberryfields as sf
 from strawberryfields.ops import Fock, Vac, BSgate, Interferometer, LossChannel
 import numpy as np
+import math
 from backends.utils import degrees_to_radians, calculate_hilbert_dimension, rank_to_basis
 
 class Xanadu(Backend):
@@ -27,18 +28,22 @@ class Xanadu(Backend):
 
     @property
     def output_data(self):
-        probs_for_n_photons = np.zeros((self.hilbert_dimension))
+        prob_vector = []
 
         # Get the indices for the array
         indices = np.indices(self.state.output_probabilities.shape)
 
         # Iterate over all indices and apply the condition
-        count = 0
-        for idx in zip(*indices.reshape(self.state.output_probabilities.ndim, -1)):  # Reshape to get all index combinations
-            if sum(idx) == self.n_photons:  # Check if sum of indices equals the target
-                probs_for_n_photons[count] = self.state.output_probabilities[idx]  # Add the corresponding element
-                count += 1
-        prob_vector = probs_for_n_photons[::-1] # xanadu uses reverse lex order
+        for n in range(self.n_photons+1):
+            sub_prob_vector = np.zeros((math.comb(n + self.n_wires - 1, n)))
+            count = 0
+            for idx in zip(*indices.reshape(self.state.output_probabilities.ndim, -1)):  # Reshape to get all index combinations
+                if sum(idx) == n:  # Check if sum of indices equals the target
+                    sub_prob_vector[count] = self.state.output_probabilities[idx]  # Add the corresponding element
+                    count += 1
+            sub_prob_vector = sub_prob_vector[::-1] # xanadu uses reverse lex order
+            prob_vector.extend(sub_prob_vector)
+        prob_vector = np.array(prob_vector)
 
         table_length = np.count_nonzero(prob_vector)
         table_data = np.zeros((table_length, 2), dtype=object)
@@ -52,8 +57,6 @@ class Xanadu(Backend):
             table_data[row, 1] = prob_vector[rank]
 
         for row in range(len(table_data[:, 1])):
-            print(table_data[row, 1])
-            print(f"{table_data[row, 1]:.4g}")
             table_data[row, 1] = f'{float(f"{table_data[row, 1]:.4g}"):g}'
         return table_data
     
@@ -114,12 +117,12 @@ class Switch:
             Interferometer(np.array([[0, 1], [1, 0]])) | (q[self.reindexed_wires[0]], q[self.reindexed_wires[1]])
 
 class Loss:
-    def __init__(self, prog, *, wires, eta = 1):
+    def __init__(self, prog, *, wire, eta = 1):
         self.prog = prog
-        self.wires = wires
+        self.wire = wire
         self.eta = eta
-        self.reindexed_wires = [wire - 1 for wire in self.wires]
+        self.reindexed_wire = self.wire - 1
 
     def apply(self):
         with self.prog.context as q:
-            LossChannel(self.eta) | (q[self.reindexed_wires[0]])
+            LossChannel(self.eta) | (q[self.reindexed_wire])

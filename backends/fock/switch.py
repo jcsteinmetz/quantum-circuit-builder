@@ -18,6 +18,10 @@ class Switch(Component):
         self.wires = wires
         self.reindexed_wires = [wire - 1 for wire in self.wires]
 
+    def apply(self, state):
+        unitary = self.unitary()
+        state.density_matrix = unitary @ state.density_matrix @ np.conjugate(unitary).T
+
     def unitary(self):
         """Switch operator in the full Fock space."""
         hilbert = self.state.hilbert_dimension

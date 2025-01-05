@@ -1,6 +1,6 @@
 from PySide6.QtWidgets import QTabWidget
 from UI.control_panel.tabs.components_tab import ComponentsTab
-from UI.control_panel.tabs.gram_matrix_tab import GramMatrixTab
+from UI.control_panel.tabs.input_state_tab import InputStateTab
 from UI.control_panel.tabs.output_tab import OutputTab
 
 class ControlPanel(QTabWidget):
@@ -13,8 +13,8 @@ class ControlPanel(QTabWidget):
         self.components_tab = ComponentsTab(window)
         self.addTab(self.components_tab, "Components")
 
-        self.gram_matrix_tab = GramMatrixTab(window)
-        self.addTab(self.gram_matrix_tab, "Gram matrix")
+        self.input_state_tab = InputStateTab(window)
+        self.addTab(self.input_state_tab, "Input state (disabled)")
         
         self.output_tab = OutputTab(window)
         self.addTab(self.output_tab, "Output")

@@ -3,10 +3,13 @@ from PySide6.QtGui import QBrush, QColor
 from PySide6.QtCore import Qt
 import numpy as np
 
-class GramMatrixTab(QWidget):
+class InputStateTab(QWidget):
     def __init__(self, window):
         super().__init__()
         self.window = window
+
+        self.title = "Input state"
+
         self.gram_table = QTableWidget()
         self.uniform_checkbox = QCheckBox("Uniform")
         self.uniform_textbox = QLineEdit("1")

@@ -2,6 +2,7 @@
 Contains the beam splitter class in Fock space.
 """
 
+import math
 import numpy as np
 import scipy
 from backends.fock.component import Component
@@ -32,6 +33,10 @@ class BeamSplitter(Component):
 
         # self.two_wire_unitaries = {n_photons: self.two_wire_unitary(n_photons) for n_photons in set(self.photon_count_per_rank.values())}
         self.two_wire_unitaries = {n_photons: self.two_wire_unitary(n_photons) for n_photons in range(self.state.n_photons+1)}
+
+    def apply(self, state):
+        unitary = self.unitary()
+        state.density_matrix = unitary @ state.density_matrix @ np.conjugate(unitary).T
 
     def unitary(self):
         """Unitary operator in the full Fock space."""
@@ -76,7 +81,8 @@ class BeamSplitter(Component):
 
         # Generate all possible combinations of occupation numbers within self.wires
         photons = self.photon_count_per_rank[rank]
-        wire_combinations = [rank_to_basis(2, photons, rank) for rank in range(calculate_hilbert_dimension(2, photons))]
+        wire_hilbert = calculate_hilbert_dimension(2, photons)
+        wire_combinations = [rank_to_basis(2, photons, rank) for rank in range(wire_hilbert) if sum(rank_to_basis(2, photons, rank)) == photons]
 
         # Shuffle the occupation numbers within self.wires, and return the ranks of the resulting basis elements
         connected_ranks = []
