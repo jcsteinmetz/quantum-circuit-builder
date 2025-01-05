@@ -17,6 +17,10 @@ class Switch(Component):
         self.wires = wires
         self.reindexed_wires = [wire - 1 for wire in self.wires]
 
+    def apply(self, circuit):
+        unitary = self.unitary()
+        circuit.circuit_unitary = unitary @ circuit.circuit_unitary
+
     def unitary(self):
         unitary = np.eye(self.circuit.n_wires, dtype=complex)
         wire0 = self.reindexed_wires[0]

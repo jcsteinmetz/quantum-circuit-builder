@@ -18,18 +18,18 @@ class Permanent(Backend):
 
         self.component_list = []
 
+        self.circuit_unitary = np.eye(self.n_wires)
+
     def set_input_state(self, input_basis_element):
         self.state.input_basis_element = input_basis_element
 
     def run(self):
-        circuit_unitary = np.eye(self.n_wires)
         for comp in self.component_list:
-            unitary = comp.unitary()
-            circuit_unitary = unitary @ circuit_unitary
+            comp.apply(self)
 
         for rank in range(self.state.hilbert_dimension):
             output_basis_element = rank_to_basis(self.n_wires, self.n_photons, rank)
-            self.state.output_probabilities[rank] = self.output_probability(circuit_unitary, output_basis_element)
+            self.state.output_probabilities[rank] = self.output_probability(self.circuit_unitary, output_basis_element)
         self.state.eliminate_tolerance()
 
     def output_probability(self, circuit_unitary, output_basis_element):
