@@ -28,7 +28,7 @@ class StyleManager:
             }
         }
 
-    def get_styles(self):
+    def get_node_styles(self):
         return {
             "face_color": self.get_style("face_color"),
             "border_color": self.get_style("border_color"),
@@ -49,7 +49,7 @@ class StyleManager:
     
     def update_styles(self):
         self.window.canvas.update_styles()
-        self.window.canvas.component_renderer.update_styles()
+        self.window.canvas.component_renderer.update_node_styles()
 
     def darkmode_toggle(self):
         if self.current_theme == "basic":

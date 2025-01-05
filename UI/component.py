@@ -32,8 +32,8 @@ class ComponentRenderer:
     def _transparent(self, col):
         return (col[0], col[1], col[2], 128)
     
-    def update_styles(self):
-        styles = self.window.style_manager.get_styles()
+    def update_node_styles(self):
+        styles = self.window.style_manager.get_node_styles()
         self.face_color = styles["face_color"]
         self.border_color = styles["border_color"]
         self.selected_border_color = styles["selected_border_color"]
@@ -64,15 +64,7 @@ class ComponentRenderer:
         painter.drawText(rectangle, Qt.AlignCenter, comp.name)
 
     def draw_property_box(self, comp):
-
-        comp.property_box.move(int(comp.node_positions[0][0] + comp.property_box.offset[0]), int(comp.node_positions[0][1]+comp.property_box.offset[1]))
-
-        # Property manager style
-        style = self.window.style_manager.get_style("property_box_color")
-        comp.property_box.setStyleSheet(style)
-        
-        if not comp.property_box.isVisible():
-            comp.property_box.show()
+        comp.property_box.draw()
 
     def draw_square(self, painter, pos, scale):
         bottom_left = QPointF(pos.x() - 0.5*scale, pos.y() - 0.5*scale)
@@ -174,6 +166,7 @@ class Component(ABC):
         self.is_selected = False
         self.direction = None
         self.shape_scale = 1
+        self.shape_type = []
 
         # Property manager
         self.property_box = PropertyBox(self, self.window.canvas)
@@ -211,7 +204,7 @@ class Component(ABC):
         wires_connected_to_component = []
         self.snap()
         for wire in self.window.canvas.placed_components["wires"]:
-            if self._is_connected_to_wire(wire):
+            if self.is_connected_to_wire(wire):
                 wires_connected_to_component.append(wire)
         return wires_connected_to_component
     
@@ -221,11 +214,11 @@ class Component(ABC):
         self.snap()
         for comp in self.window.canvas.all_placed_components():
             comp.snap()
-            if comp._is_connected_to_wire(self):
+            if comp.is_connected_to_wire(self):
                 components_connected_to_wire.append(comp)
         return components_connected_to_wire
     
-    def _is_connected_to_wire(self, wire):
+    def is_connected_to_wire(self, wire):
         wire.snap()
         wire_y = wire.node_positions[0][1]
         wire_range = [pos[0] for pos in self.node_positions]
@@ -353,7 +346,10 @@ class Component(ABC):
             self.property_box.hide()
 
     def contains(self, position_to_check):
-        return any([self._node_contains(pos, position_to_check) for pos in self.node_positions])    
+        for i, pos in enumerate(self.node_positions):
+            if self._node_contains(pos, position_to_check) and self.shape_type[i]:
+                return True
+        return False
 
     def _node_contains(self, node, position_to_check):
         if not node:
@@ -462,10 +458,12 @@ class Detector(Component):
         return False
     
     def add_to_console(self):
-        pass
+        wire_index = self.get_wire_index(self.connected_wires[0])
+        self.window.console.code += "add detector on wire"+str(wire_index)+"with herald"+str(self.herald)+"\n"
     
     def add_to_sim(self):
-        pass
+        wires = [self.window.canvas.placed_components["wires"].index(w) + 1 for w in self.connected_wires]
+        self.window.interface.circuit.add_detector(wires = wires, herald = self.herald)
 
 class Loss(Component):
     def __init__(self, window):
@@ -506,7 +504,8 @@ class Loss(Component):
             self.window.console.code += "add loss on wire"+str(wire_index)+"with eta"+str(self.eta)+"\n"
 
     def add_to_sim(self):
-        print("adding loss (placeholder code)")
+        wires = [self.window.canvas.placed_components["wires"].index(w) + 1 for w in self.connected_wires]
+        self.window.interface.circuit.add_loss(wires = wires, eta = self.eta)
 
 class Wire(Component):
     def __init__(self, window):
@@ -616,7 +615,8 @@ class BeamSplitter(Component):
             self.window.console.code += "add beamsplitter on wires"+str(wire_indices)+"with theta"+str(self.theta)+"\n"
     
     def add_to_sim(self):
-        self.window.interface.circuit.add_beamsplitter(wires = self.connected_wires, theta = self.theta)
+        wires = [self.window.canvas.placed_components["wires"].index(w) + 1 for w in self.connected_wires]
+        self.window.interface.circuit.add_beamsplitter(wires = wires, theta = self.theta)
 
 class Switch(Component):
     def __init__(self, window):
@@ -651,4 +651,5 @@ class Switch(Component):
         self.window.console.code += "add switch on wires"+str(wire_indices)+"\n"
 
     def add_to_sim(self):
-        print("adding switch (placeholder code)")
+        wires = [self.window.canvas.placed_components["wires"].index(w) + 1 for w in self.connected_wires]
+        self.window.interface.circuit.add_switch(wires = wires)

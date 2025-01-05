@@ -1,7 +1,6 @@
-# import sys
-# sys.path.append('./backends/fock')
-
-from backends.fock.circuit import Circuit
+import numpy as np
+from backends.fock.fock import Fock
+from backends.permanent.permanent import Permanent
 
 class Interface:
     def __init__(self, window):
@@ -10,14 +9,21 @@ class Interface:
         self.backend = None
 
     def build_circuit(self):
-        self.circuit = Circuit(self.window.canvas.n_wires, self.window.canvas.n_photons)
+        if self.backend == "fock":
+            self.circuit = Fock(self.window.canvas.n_wires, self.window.canvas.n_photons)
+        elif self.backend == "permanent":
+            self.circuit = Permanent(self.window.canvas.n_wires, self.window.canvas.n_photons)
+        elif self.backend == None:
+            raise ValueError("Please select a backend.")
+        else:
+            raise ValueError("Invalid backend choice.")
+        
+        self.circuit.set_input_state(self.input_fock_state)
 
         for comp in self.window.canvas.placed_components["components"]:
             comp.add_to_sim()
 
         self.add_detectors()
-
-        # return self.circuit
     
     def add_detectors(self):
         wires = []
@@ -31,5 +37,8 @@ class Interface:
             self.circuit.add_detector(wires = wires, herald = herald)
 
     def run_circuit(self):
-        print("running circuit")
         self.circuit.run()
+
+    @property
+    def input_fock_state(self):
+        return tuple(wire.n_photons for wire in self.window.canvas.placed_components["wires"])

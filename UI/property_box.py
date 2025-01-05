@@ -40,3 +40,13 @@ class PropertyBox(QFrame):
             first_property = next(iter(self.properties.values()))
             first_property.setFocus()
             first_property.selectAll()
+
+    def draw(self):
+        self.move(int(self.component.node_positions[0][0] + self.offset[0]), int(self.component.node_positions[0][1]+self.offset[1]))
+
+        # Property manager style
+        style = self.component.window.style_manager.get_style("property_box_color")
+        self.setStyleSheet(style)
+        
+        if not self.isVisible() and self.properties:
+            self.show()

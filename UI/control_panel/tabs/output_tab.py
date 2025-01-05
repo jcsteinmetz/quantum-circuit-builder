@@ -1,3 +1,4 @@
+import traceback
 from PySide6.QtWidgets import QTextEdit, QTableWidget, QWidget, QStackedWidget, QVBoxLayout
 
 class OutputTab(QWidget):
@@ -27,7 +28,7 @@ class OutputTab(QWidget):
 
     def print_output(self):
         try:
-            self.output_data = self.window.interface.circuit.state.density_matrix
+            self.output_data = self.window.interface.circuit.state.output_data
             self.output_table.setPlainText(str(self.output_data))
             self.stacked_widget.setCurrentIndex(0)
         except Exception as e:
