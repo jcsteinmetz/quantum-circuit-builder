@@ -140,10 +140,10 @@ class ToolBar(QToolBar):
         self.window.clear()
 
     def save_trigger(self):
-        pass
+        self.window.save_file()
 
     def open_trigger(self):
-        pass
+        self.window.open_file()
 
     def quit_trigger(self):
         """
