@@ -9,7 +9,7 @@ class StyleManager:
             "basic": {
                 "face_color": (0, 0, 0),
                 "border_color": (0, 0, 0),
-                "selected_border_color": (219, 197, 119),
+                "selected_border_color": (102, 178, 255),
                 "bg_color": (255, 255, 255),
                 "gridline_color": (0, 0, 0),
                 "error_color": (255, 0, 0),
@@ -19,7 +19,7 @@ class StyleManager:
             "darkmode": {
                 "face_color": (255, 255, 255),
                 "border_color": (255, 255, 255),
-                "selected_border_color": (219, 197, 119),
+                "selected_border_color": (102, 178, 255),
                 "bg_color": (0, 0, 0),
                 "gridline_color": (50, 50, 50),
                 "error_color": (255, 0, 0),
