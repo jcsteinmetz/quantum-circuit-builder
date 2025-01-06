@@ -43,7 +43,7 @@ class Permanent(Backend):
         circuit_submatrix = self.submatrix(circuit_unitary, output_basis_element)
         norm_input = np.prod([math.factorial(n) for n in output_basis_element])
         norm_output = np.prod([math.factorial(n) for n in self.state.input_basis_element])
-        return (self.matrix_permanent(circuit_submatrix))**2/(norm_input * norm_output)
+        return np.abs(self.matrix_permanent(circuit_submatrix))**2/(norm_input * norm_output)
 
     def submatrix(self, circuit_unitary, output_basis_element):
         UT = np.zeros((self.n_wires, self.n_photons), dtype=complex)

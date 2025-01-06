@@ -33,7 +33,6 @@ class Xanadu(Backend):
 
         # Get the indices for the array
         indices = np.indices(self.state.output_probabilities.shape)
-        print(self.state.output_probabilities)
 
         # Iterate over all indices and apply the condition
         for n in range(self.n_photons+1):
