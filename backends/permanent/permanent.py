@@ -8,6 +8,7 @@ import numpy as np
 from backends.backend import Backend
 from backends.permanent.beamsplitter import BeamSplitter
 from backends.permanent.switch import Switch
+from backends.permanent.detector import Detector
 from backends.utils import calculate_hilbert_dimension, rank_to_basis
 
 class Permanent(Backend):
@@ -25,11 +26,17 @@ class Permanent(Backend):
 
     def run(self):
         for comp in self.component_list:
-            comp.apply(self)
+            if not isinstance(comp, Detector):
+                comp.apply(self)
 
         for rank in range(self.state.hilbert_dimension):
             output_basis_element = rank_to_basis(self.n_wires, self.n_photons, rank)
             self.state.output_probabilities[rank] = self.output_probability(self.circuit_unitary, output_basis_element)
+
+        for comp in self.component_list:
+            if isinstance(comp, Detector):
+                comp.apply(self)
+
         self.state.eliminate_tolerance()
 
     def output_probability(self, circuit_unitary, output_basis_element):
@@ -67,7 +74,8 @@ class Permanent(Backend):
         raise ValueError("Loss is not implemented yet in the permanent backend.")
 
     def add_detector(self, **kwargs):
-        raise ValueError("Detectors are not implemented yet in the permanent backend.")
+        comp = Detector(self, **kwargs)
+        self.component_list.append(comp)
         
     def matrix_permanent(self, matrix):
         n = len(matrix)
@@ -108,6 +116,14 @@ class State:
 
         self.input_basis_element = ()
         self.output_probabilities = np.zeros(self.hilbert_dimension)
+
+    def postselect(self, wires, herald):
+        reindexed_wires = [w-1 for w in wires]
+        for rank in range(self.hilbert_dimension):
+            basis_element = np.array(rank_to_basis(self.n_wires, self.n_photons, rank))
+            keep = np.all(basis_element[reindexed_wires] == herald)
+            if not keep:
+                self.output_probabilities[rank] = 0
     
     def eliminate_tolerance(self, tol=1E-10):
         self.output_probabilities[np.abs(self.output_probabilities) < tol] = 0

@@ -5,5 +5,5 @@ class Component(ABC):
         self.circuit = circuit
 
     @abstractmethod
-    def unitary(self):
+    def apply(self):
         raise NotImplementedError

@@ -7,6 +7,7 @@ from backends.backend import Backend
 from backends.fock.beamsplitter import BeamSplitter
 from backends.fock.switch import Switch
 from backends.fock.loss import Loss
+from backends.fock.detector import Detector
 from backends.utils import calculate_hilbert_dimension, basis_to_rank, rank_to_basis
 
 class Fock(Backend):
@@ -38,7 +39,8 @@ class Fock(Backend):
         self.component_list.append(comp)
 
     def add_detector(self, **kwargs):
-        raise NotImplementedError("Detectors are not implemented yet in the Fock backend.")
+        comp = Detector(self.state, **kwargs)
+        self.component_list.append(comp)
     
     @property
     def output_data(self):
@@ -78,3 +80,12 @@ class State:
     
     def eliminate_tolerance(self, tol=1E-10):
         self.density_matrix[np.abs(self.density_matrix) < tol] = 0
+
+    def postselect(self, wires, herald):
+        reindexed_wires = [w-1 for w in wires]
+        for rank in self.occupied_ranks:
+            basis_element = np.array(rank_to_basis(self.n_wires, self.n_photons, rank))
+            keep = np.all(basis_element[reindexed_wires] == herald)
+            if not keep:
+                self.density_matrix[rank, :] = 0
+                self.density_matrix[:, rank] = 0

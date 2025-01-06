@@ -1,6 +1,6 @@
 from backends.backend import Backend
 import strawberryfields as sf
-from strawberryfields.ops import Fock, Vac, BSgate, Interferometer, LossChannel
+from strawberryfields.ops import Fock, Vac, BSgate, Interferometer, LossChannel, MeasureFock
 import numpy as np
 import math
 from backends.utils import degrees_to_radians, calculate_hilbert_dimension, rank_to_basis
@@ -10,17 +10,21 @@ class Xanadu(Backend):
         super().__init__(n_wires, n_photons)
 
         self.hilbert_dimension = calculate_hilbert_dimension(self.n_wires, self.n_photons)
-        self.eng = sf.Engine("fock", backend_options={"cutoff_dim": self.hilbert_dimension})
+        self.eng = sf.Engine("fock", backend_options={"cutoff_dim": self.n_photons+1})
         self.state = State(self.n_wires, self.n_photons)
 
         self.component_list = []
 
     def run(self):
+        print("running")
         for comp in self.component_list:
             comp.apply()
+        print("actual")
 
         results = self.eng.run(self.state.prog)
+        print("done")
         self.state.output_probabilities = np.real(np.copy(results.state.all_fock_probs()))
+        print("uber done")
         self.state.eliminate_tolerance()
 
     def set_input_state(self, input_basis_label):
@@ -32,6 +36,7 @@ class Xanadu(Backend):
 
         # Get the indices for the array
         indices = np.indices(self.state.output_probabilities.shape)
+        print(self.state.output_probabilities)
 
         # Iterate over all indices and apply the condition
         for n in range(self.n_photons+1):
@@ -73,15 +78,14 @@ class Xanadu(Backend):
         self.component_list.append(comp)
     
     def add_detector(self, **kwargs):
-        raise NotImplementedError("Detectors are not implemented yet for the Strawberry Fields backend.")
+        comp = Detector(self.state.prog, **kwargs)
+        self.component_list.append(comp)
 
 class State:
     def __init__(self, n_wires, n_photons):
         self.n_wires = n_wires
         self.n_photons = n_photons
-
         self.prog = sf.Program(self.n_wires)
-
         self.output_probabilities = None
 
     def set_program_input(self, input_basis_element):
@@ -126,3 +130,15 @@ class Loss:
     def apply(self):
         with self.prog.context as q:
             LossChannel(self.eta) | (q[self.reindexed_wire])
+
+class Detector:
+    def __init__(self, prog, *, wires, herald):
+        self.prog = prog
+        self.wires = wires
+        self.herald = herald
+        self.reindexed_wires = [w - 1 for w in self.wires]
+
+    def apply(self):
+        with self.prog.context as q:
+            for wire, herald in zip(self.reindexed_wires, self.herald):
+                MeasureFock(select=herald) | q[wire]
