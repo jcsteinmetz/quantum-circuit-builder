@@ -99,6 +99,7 @@ class Canvas(QWidget):
     def deselect_all(self):
         for comp in self.all_placed_components():
             comp.is_selected = False
+            comp.property_box.hide()
         self.update()
 
     def drag(self, delta):

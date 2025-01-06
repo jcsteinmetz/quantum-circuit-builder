@@ -66,6 +66,9 @@ class MainWindow(QMainWindow):
         self.update_undo_stack()
 
     def mark_unsaved_changes(self):
+        if self.redo_stack:
+            self.redo_stack.clear()
+
         self.update_undo_stack()
         self.unsaved_changes = True
         self.update_title()
@@ -108,17 +111,17 @@ class MainWindow(QMainWindow):
                 self.canvas.grid.size
             ) = self.redo_stack.pop()
 
-        # Set unserializable attributes
-        for comp in self.canvas.all_placed_components():
-            comp.set_unserializable_attributes(self)
+            # Set unserializable attributes
+            for comp in self.canvas.all_placed_components():
+                comp.set_unserializable_attributes(self)
 
-        # Recreate circuit
-        self.control_panel.components_tab.refresh()
-        self.control_panel.input_state_tab.set_gram_matrix()
-        self.canvas.deselect_all()
-        self.canvas.update()
+            # Recreate circuit
+            self.control_panel.components_tab.refresh()
+            self.control_panel.input_state_tab.set_gram_matrix()
+            self.canvas.deselect_all()
+            self.canvas.update()
 
-        self.update_undo_stack()
+            self.update_undo_stack()
 
     def update_title(self):
         title = "Circuit Builder v1.0 - "+self.active_file

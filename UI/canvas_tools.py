@@ -58,8 +58,9 @@ class Select(CanvasTool):
                     is_selected = is_selected and selected_rect.contains(QPoint(*comp.node_positions[1]))
                 comp.toggle_selection(is_selected)
             
-                # If the user clicked on a component without moving the mouse, then select that component
-                if self.window.canvas.current_mouse_position == self.window.canvas.mouse_pressed_position:
+                # If the user clicked on a component, then select that component
+                if comp.contains(self.window.canvas.mouse_pressed_position) and comp.contains(self.window.canvas.current_mouse_position):
+                # if self.window.canvas.current_mouse_position == self.window.canvas.mouse_pressed_position:
                     is_selected = comp.contains(event.position().toTuple())
                     comp.toggle_selection(is_selected)
 

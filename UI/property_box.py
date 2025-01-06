@@ -9,6 +9,9 @@ class PropertyBox(QFrame):
         self.component = component
         self.properties = {}
 
+        self.default_value = None
+
+        self.line_edit = None
         self.layout = QFormLayout()
         self.setLayout(self.layout)
         self.hide()
@@ -26,13 +29,17 @@ class PropertyBox(QFrame):
         default_value: value to show by default when the property appears
         validator: which QValidator to use on any new input to this property
         """
-        line_edit = QLineEdit(str(default_value))
-        self.properties[property_name] = line_edit
-        line_edit.setValidator(validator)
-        line_edit.returnPressed.connect(line_edit.clearFocus)
-        line_edit.editingFinished.connect(lambda: self.component.update_property(property_name))
-        line_edit.editingFinished.connect(lambda: self.component.window.control_panel.components_tab.update_property(self.component, property_name, line_edit.text()))
-        self.layout.addRow(property_name, line_edit)
+        self.default_value = default_value
+        self.line_edit = QLineEdit(str(self.default_value))
+        self.properties[property_name] = self.line_edit
+        self.line_edit.setValidator(validator)
+        self.line_edit.returnPressed.connect(self.line_edit.clearFocus)
+        self.line_edit.editingFinished.connect(lambda: self.on_editing_finished(property_name))
+        self.layout.addRow(property_name, self.line_edit)
+
+    def on_editing_finished(self, property_name):
+        self.component.update_property(property_name)
+        self.component.window.control_panel.components_tab.update_property(self.component, property_name, self.line_edit.text())
 
     def showEvent(self, event):
         """Show the property box and default to editing the first property."""
