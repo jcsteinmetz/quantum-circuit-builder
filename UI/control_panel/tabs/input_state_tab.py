@@ -54,6 +54,9 @@ class InputStateTab(QWidget):
 
         self.gram_table.blockSignals(False)
 
+        # Temporarily disable this tab until distinguishability is implemented
+        self.lock_gram_matrix()
+
     def update_gram_matrix(self):
         if self.uniform_checkbox.isChecked():
             uniform_overlap = float(self.uniform_textbox.text())
@@ -133,6 +136,7 @@ class InputStateTab(QWidget):
         for row in range(self.gram_table.rowCount()):
             for col in range(self.gram_table.columnCount()):
                 item = self.gram_table.item(row, col)
+
                 item.setFlags(Qt.ItemIsSelectable | Qt.ItemIsEnabled)
 
                 item.setText("1")

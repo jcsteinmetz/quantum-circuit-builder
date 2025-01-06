@@ -7,19 +7,10 @@ class Interface:
     def __init__(self, window):
         self.window = window
         self.circuit = None
-        self.backend = None
+        self.backend = Fock
 
     def build_circuit(self):
-        if self.backend == "fock":
-            self.circuit = Fock(self.window.canvas.n_wires, self.window.canvas.n_photons)
-        elif self.backend == "permanent":
-            self.circuit = Permanent(self.window.canvas.n_wires, self.window.canvas.n_photons)
-        elif self.backend == "xanadu":
-            self.circuit = Xanadu(self.window.canvas.n_wires, self.window.canvas.n_photons)
-        elif self.backend == None:
-            raise ValueError("Please select a backend.")
-        else:
-            raise ValueError("Invalid backend choice.")
+        self.circuit = self.backend(self.window.canvas.n_wires, self.window.canvas.n_photons)
         
         self.circuit.set_input_state(self.input_fock_state)
 

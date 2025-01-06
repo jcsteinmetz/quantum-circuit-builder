@@ -7,6 +7,9 @@ from PySide6.QtWidgets import QSizePolicy, QWidget, QToolBar, QApplication, QCom
 from PySide6.QtGui import QAction, QActionGroup
 from UI.component import Wire, BeamSplitter, Switch, Loss, Detector
 from UI.canvas_tools import Select, Grab
+from backends.fock.fock import Fock
+from backends.permanent.permanent import Permanent
+from backends.xanadu.xanadu import Xanadu
 
 class ToolBar(QToolBar):
     """
@@ -29,10 +32,9 @@ class ToolBar(QToolBar):
         }
 
         backend_options = {
-            "Select backend": None,
-            "Fock backend": "fock",
-            "Permanent backend": "permanent",
-            "Xanadu": "xanadu"
+            "Fock backend": Fock,
+            "Permanent backend": Permanent,
+            "Xanadu": Xanadu
         }
         
         # Button icons
@@ -119,10 +121,6 @@ class ToolBar(QToolBar):
 
     def set_backend(self, backend_choice):
         self.window.interface.backend = backend_choice
-        if backend_choice in ["fock", "permanent", "xanadu", None]:
-            self.window.control_panel.input_state_tab.lock_gram_matrix()
-        else:
-            self.window.control_panel.input_state_tab.unlock_gram_matrix()
 
     def darkmode_trigger(self):
         self.window.style_manager.darkmode_toggle()

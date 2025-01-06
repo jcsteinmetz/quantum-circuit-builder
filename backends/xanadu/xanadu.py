@@ -16,15 +16,12 @@ class Xanadu(Backend):
         self.component_list = []
 
     def run(self):
-        print("running")
         for comp in self.component_list:
             comp.apply()
-        print("actual")
 
         results = self.eng.run(self.state.prog)
-        print("done")
+
         self.state.output_probabilities = np.real(np.copy(results.state.all_fock_probs()))
-        print("uber done")
         self.state.eliminate_tolerance()
 
     def set_input_state(self, input_basis_label):
