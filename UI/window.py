@@ -149,6 +149,7 @@ class MainWindow(QMainWindow):
         self.control_panel.components_tab.clear_components()
         self.control_panel.input_state_tab.update_gram_matrix()
         self.canvas.repaint()
+        self.mark_unsaved_changes()
 
     def save_file(self):
         # Save to circ file
