@@ -29,4 +29,4 @@ pip install .
 ```
 
 ## Screenshot
-[Screenshot][assets/screenshot.png]
+![](assets/screenshot.png)
