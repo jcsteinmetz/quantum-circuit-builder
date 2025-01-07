@@ -7,12 +7,13 @@ import scipy
 import math
 import numpy as np
 from backends.backend import Backend
-from backends.beamsplitter import BeamSplitter
-from backends.switch import Switch
-from backends.detector import Detector
-from backends.phaseshift import PhaseShift
-from backends.loss import Loss
+from backends.components.beamsplitter import BeamSplitter
+from backends.components.switch import Switch
+from backends.components.detector import Detector
+from backends.components.phaseshift import PhaseShift
+from backends.components.loss import Loss
 from backends.utils import rank_to_basis, spin_y_matrix, degrees_to_radians
+
 
 class Permanent(Backend):
     def __init__(self, n_wires, n_photons):
@@ -28,7 +29,7 @@ class Permanent(Backend):
 
     def run(self):
         for comp in self.component_list:
-            if not isinstance(comp, DetectorPermanent):
+            if not isinstance(comp, PermanentDetector):
                 comp.apply()
 
         for rank in range(self.hilbert_dimension):
@@ -36,7 +37,7 @@ class Permanent(Backend):
             self.output_probabilities[rank] = self.output_probability(self.circuit_unitary, output_basis_element)
 
         for comp in self.component_list:
-            if isinstance(comp, DetectorPermanent):
+            if isinstance(comp, PermanentDetector):
                 comp.apply()
 
         self.eliminate_tolerance()
@@ -65,23 +66,23 @@ class Permanent(Backend):
         return UST
 
     def add_beamsplitter(self, **kwargs):
-        comp = BeamSplitterPermanent(self, **kwargs)
+        comp = PermanentBeamSplitter(self, **kwargs)
         self.add_component(comp)
 
     def add_switch(self, **kwargs):
-        comp = SwitchPermanent(self, **kwargs)
+        comp = PermanentSwitch(self, **kwargs)
         self.add_component(comp)
 
     def add_phaseshift(self, **kwargs):
-        comp = PhaseShiftPermanent(self, **kwargs)
+        comp = PermanentPhaseShift(self, **kwargs)
         self.add_component(comp)
 
     def add_loss(self, **kwargs):
-        comp = LossPermanent(self, **kwargs)
+        comp = PermanentLoss(self, **kwargs)
         self.add_component(comp)
 
     def add_detector(self, **kwargs):
-        comp = DetectorPermanent(self, **kwargs)
+        comp = PermanentDetector(self, **kwargs)
         self.add_component(comp)
         
     def matrix_permanent(self, matrix):
@@ -117,8 +118,7 @@ class Permanent(Backend):
     def eliminate_tolerance(self, tol=1E-10):
         self.output_probabilities[np.abs(self.output_probabilities) < tol] = 0
 
-    
-class BeamSplitterPermanent(BeamSplitter):
+class PermanentBeamSplitter(BeamSplitter):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -140,8 +140,9 @@ class BeamSplitterPermanent(BeamSplitter):
     def two_wire_unitary(self):
         """Unitary operator in the space of the two wires connected by the beam splitter."""
         return scipy.linalg.expm(1j*(self.theta/2)*spin_y_matrix(2))
-    
-class SwitchPermanent(Switch):
+
+
+class PermanentSwitch(Switch):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -162,8 +163,9 @@ class SwitchPermanent(Switch):
     
     def two_wire_unitary(self):
         return np.array([[0, 1], [1, 0]])
-    
-class PhaseShiftPermanent(PhaseShift):
+
+
+class PermanentPhaseShift(PhaseShift):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -175,15 +177,17 @@ class PhaseShiftPermanent(PhaseShift):
         unitary = np.eye(self.backend.n_wires, dtype=complex)
         unitary[self.reindexed_wire, self.reindexed_wire] = np.exp(1j*self.phase)
         return unitary
-    
-class LossPermanent(Loss):
+
+
+class PermanentLoss(Loss):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
     def apply(self):
         raise ValueError("Loss is not implemented yet in the permanent backend.")
-    
-class DetectorPermanent(Detector):
+
+
+class PermanentDetector(Detector):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 

@@ -5,11 +5,11 @@ Basic Fock state model for fixed photon number
 import numpy as np
 import scipy
 from backends.backend import Backend
-from backends.beamsplitter import BeamSplitter
-from backends.switch import Switch
-from backends.loss import Loss
-from backends.detector import Detector
-from backends.phaseshift import PhaseShift
+from backends.components.beamsplitter import BeamSplitter
+from backends.components.switch import Switch
+from backends.components.loss import Loss
+from backends.components.detector import Detector
+from backends.components.phaseshift import PhaseShift
 from backends.utils import basis_to_rank, rank_to_basis, calculate_hilbert_dimension, spin_y_matrix, degrees_to_radians
 
 class Fock(Backend):
@@ -27,23 +27,23 @@ class Fock(Backend):
             self.eliminate_tolerance()
 
     def add_beamsplitter(self, **kwargs):
-        comp = BeamSplitterFock(self, **kwargs)
+        comp = FockBeamSplitter(self, **kwargs)
         self.add_component(comp)
 
     def add_switch(self, **kwargs):
-        comp = SwitchFock(self, **kwargs)
+        comp = FockSwitch(self, **kwargs)
         self.add_component(comp)
 
     def add_phaseshift(self, **kwargs):
-        comp = PhaseShiftFock(self, **kwargs)
+        comp = FockPhaseShift(self, **kwargs)
         self.add_component(comp)
 
     def add_loss(self, **kwargs):
-        comp = LossFock(self, **kwargs)
+        comp = FockLoss(self, **kwargs)
         self.add_component(comp)
 
     def add_detector(self, **kwargs):
-        comp = DetectorFock(self, **kwargs)
+        comp = FockDetector(self, **kwargs)
         self.add_component(comp)
     
     @property
@@ -76,7 +76,7 @@ class Fock(Backend):
     def eliminate_tolerance(self, tol=1E-10):
         self.density_matrix[np.abs(self.density_matrix) < tol] = 0
 
-class BeamSplitterFock(BeamSplitter):
+class FockBeamSplitter(BeamSplitter):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -141,7 +141,7 @@ class BeamSplitterFock(BeamSplitter):
             connected_ranks.append(basis_to_rank(tuple(basis_element)))
         return connected_ranks
     
-class SwitchFock(Switch):
+class FockSwitch(Switch):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -164,7 +164,7 @@ class SwitchFock(Switch):
 
         return unitary
     
-class PhaseShiftFock(PhaseShift):
+class FockPhaseShift(PhaseShift):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -191,7 +191,7 @@ class PhaseShiftFock(PhaseShift):
 
         return unitary
     
-class LossFock(Loss):
+class FockLoss(Loss):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -214,7 +214,7 @@ class LossFock(Loss):
                     kraus_operators[lost_photons][new_rank, rank] = self.eta**((photons_in_wire - lost_photons)/2)*(1 - self.eta)**(lost_photons / 2)
         return kraus_operators
     
-class DetectorFock(Detector):
+class FockDetector(Detector):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 

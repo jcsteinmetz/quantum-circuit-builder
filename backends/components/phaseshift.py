@@ -1,4 +1,4 @@
-from backends.component import Component
+from backends.components.component import Component
 from backends.utils import degrees_to_radians
 
 class PhaseShift(Component):

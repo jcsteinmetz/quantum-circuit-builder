@@ -3,18 +3,18 @@ import perceval as pcvl
 from perceval.components import BS, PS, PERM
 from backends.backend import Backend
 from backends.utils import degrees_to_radians, rank_to_basis
-from backends.beamsplitter import BeamSplitter
-from backends.switch import Switch
-from backends.phaseshift import PhaseShift
-from backends.loss import Loss
-from backends.detector import Detector
+from backends.components.beamsplitter import BeamSplitter
+from backends.components.switch import Switch
+from backends.components.phaseshift import PhaseShift
+from backends.components.loss import Loss
+from backends.components.detector import Detector
 
 class Quandela(Backend):
     def __init__(self, n_wires, n_photons):
         super().__init__(n_wires, n_photons)
 
         self.circuit = pcvl.Circuit(self.n_wires)
-        self.prog = pcvl.BackendFactory().get_backend("Naive")
+        self.naive_backend = pcvl.BackendFactory().get_backend("Naive")
 
         self.input_basis_element = ()
 
@@ -24,12 +24,12 @@ class Quandela(Backend):
         for comp in self.component_list:
             comp.apply()
 
-        self.prog.set_circuit(self.circuit)
-        self.prog.set_input_state(self.input_basis_element)
+        self.naive_backend.set_circuit(self.circuit)
+        self.naive_backend.set_input_state(self.input_basis_element)
 
         for rank in range(self.hilbert_dimension):
             output_basis_element = pcvl.BasicState(rank_to_basis(self.n_wires, self.n_photons, rank))
-            prob = np.abs(self.prog.prob_amplitude(output_basis_element))**2
+            prob = np.abs(self.naive_backend.prob_amplitude(output_basis_element))**2
             self.output_probabilities[rank] = prob
         self.eliminate_tolerance()
 
@@ -56,29 +56,29 @@ class Quandela(Backend):
         return table_data
 
     def add_beamsplitter(self, **kwargs):
-        comp = BeamSplitterQuandela(self, **kwargs)
+        comp = QuandelaBeamSplitter(self, **kwargs)
         self.add_component(comp)
     
     def add_switch(self, **kwargs):
-        comp = SwitchQuandela(self, **kwargs)
+        comp = QuandelaSwitch(self, **kwargs)
         self.add_component(comp)
 
     def add_phaseshift(self, **kwargs):
-        comp = PhaseShiftQuandela(self, **kwargs)
+        comp = QuandelaPhaseShift(self, **kwargs)
         self.add_component(comp)
     
     def add_loss(self, **kwargs):
-        comp = LossQuandela(self, **kwargs)
+        comp = QuandelaLoss(self, **kwargs)
         self.add_component(comp)
     
     def add_detector(self, **kwargs):
-        comp = DetectorQuandela(self, **kwargs)
+        comp = QuandelaDetector(self, **kwargs)
         self.add_component(comp)
 
     def eliminate_tolerance(self, tol=1E-10):
         self.output_probabilities[np.abs(self.output_probabilities) < tol] = 0
 
-class BeamSplitterQuandela(BeamSplitter):
+class QuandelaBeamSplitter(BeamSplitter):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -105,28 +105,28 @@ class BeamSplitterQuandela(BeamSplitter):
         if switched:
             self.backend.circuit.add(all_wires, PERM(permuted_wires))
 
-class SwitchQuandela(Switch):
+class QuandelaSwitch(Switch):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
     def apply(self):
         self.backend.circuit.add(tuple(self.reindexed_wires), PERM([1, 0]))
 
-class PhaseShiftQuandela(PhaseShift):
+class QuandelaPhaseShift(PhaseShift):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
     def apply(self):
         self.backend.circuit.add(self.wire, PS(phi = self.phase))
 
-class LossQuandela(Loss):
+class QuandelaLoss(Loss):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
     def apply(self):
         raise ValueError("Loss is not implemented in the Perceval backend.")
 
-class DetectorQuandela(Detector):
+class QuandelaDetector(Detector):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 

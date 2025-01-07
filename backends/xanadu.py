@@ -4,11 +4,11 @@ from strawberryfields.ops import Fock, Vac, BSgate, Interferometer, LossChannel,
 import numpy as np
 import math
 from backends.utils import degrees_to_radians, rank_to_basis
-from backends.beamsplitter import BeamSplitter
-from backends.switch import Switch
-from backends.phaseshift import PhaseShift
-from backends.loss import Loss
-from backends.detector import Detector
+from backends.components.beamsplitter import BeamSplitter
+from backends.components.switch import Switch
+from backends.components.phaseshift import PhaseShift
+from backends.components.loss import Loss
+from backends.components.detector import Detector
 
 class Xanadu(Backend):
     def __init__(self, n_wires, n_photons):
@@ -72,29 +72,29 @@ class Xanadu(Backend):
         return table_data
     
     def add_beamsplitter(self, **kwargs):
-        comp = BeamSplitterXanadu(self, **kwargs)
+        comp = XanaduBeamSplitter(self, **kwargs)
         self.add_component(comp)
     
     def add_switch(self, **kwargs):
-        comp = SwitchXanadu(self, **kwargs)
+        comp = XanaduSwitch(self, **kwargs)
         self.add_component(comp)
 
     def add_phaseshift(self, **kwargs):
-        comp = PhaseShiftXanadu(self, **kwargs)
+        comp = XanaduPhaseShift(self, **kwargs)
         self.add_component(comp)
     
     def add_loss(self, **kwargs):
-        comp = LossXanadu(self, **kwargs)
+        comp = XanaduLoss(self, **kwargs)
         self.add_component(comp)
     
     def add_detector(self, **kwargs):
-        comp = DetectorXanadu(self, **kwargs)
+        comp = XanaduDetector(self, **kwargs)
         self.add_component(comp)
 
     def eliminate_tolerance(self, tol=1E-10):
         self.output_probabilities[np.abs(self.output_probabilities) < tol] = 0
 
-class BeamSplitterXanadu(BeamSplitter):
+class XanaduBeamSplitter(BeamSplitter):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -102,7 +102,7 @@ class BeamSplitterXanadu(BeamSplitter):
         with self.backend.circuit.context as q:
             BSgate(self.theta, np.pi/2) | (q[self.reindexed_wires[0]], q[self.reindexed_wires[1]])
 
-class SwitchXanadu(Switch):
+class XanaduSwitch(Switch):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -110,7 +110,7 @@ class SwitchXanadu(Switch):
         with self.backend.circuit.context as q:
             Interferometer(np.array([[0, 1], [1, 0]])) | (q[self.reindexed_wires[0]], q[self.reindexed_wires[1]])
 
-class LossXanadu(Loss):
+class XanaduLoss(Loss):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -118,7 +118,7 @@ class LossXanadu(Loss):
         with self.backend.circuit.context as q:
             LossChannel(self.eta) | (q[self.reindexed_wire])
 
-class DetectorXanadu(Detector):
+class XanaduDetector(Detector):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -127,7 +127,7 @@ class DetectorXanadu(Detector):
             for wire, herald in zip(self.reindexed_wires, self.herald):
                 MeasureFock(select=herald) | q[wire]
 
-class PhaseShiftXanadu(PhaseShift):
+class XanaduPhaseShift(PhaseShift):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 

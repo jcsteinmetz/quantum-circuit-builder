@@ -1,4 +1,4 @@
-from backends.component import Component
+from backends.components.component import Component
 
 class Switch(Component):
     
