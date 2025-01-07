@@ -4,7 +4,7 @@ Contains the ToolBar class.
 
 from functools import partial
 from PySide6.QtWidgets import QSizePolicy, QWidget, QToolBar, QApplication, QComboBox, QStyle
-from PySide6.QtGui import QAction, QActionGroup
+from PySide6.QtGui import QAction, QActionGroup, QIcon
 from UI.component import Wire, BeamSplitter, Switch, Loss, Detector, PhaseShift
 from UI.canvas_tools import Select, Grab
 from backends.fock.fock import Fock
@@ -22,14 +22,14 @@ class ToolBar(QToolBar):
 
         # Tools (name of tool class, tool icon)
         tools = {
-            "Select": (Select, None),
-            "Grab": (Grab, None),
-            "Wire": (Wire, None),
-            "Beam splitter": (BeamSplitter, None),
-            "Switch": (Switch, None),
-            "Phase shift": (PhaseShift, None),
-            "Loss": (Loss, None),
-            "Detector": (Detector, None)
+            "Select": (Select, QIcon("assets/select.png")),
+            "Grab": (Grab, QIcon("assets/grab.png")),
+            "Wire": (Wire, QIcon("assets/wire.png")),
+            "Beam splitter": (BeamSplitter, QIcon("assets/beamsplitter.png")),
+            "Switch": (Switch, QIcon("assets/switch.png")),
+            "Phase shift": (PhaseShift, QIcon("assets/phaseshift.png")),
+            "Loss": (Loss, QIcon("assets/loss.png")),
+            "Detector": (Detector, QIcon("assets/detector.png"))
         }
 
         backend_options = {
@@ -43,10 +43,10 @@ class ToolBar(QToolBar):
         save_icon = self.style().standardIcon(QStyle.StandardPixmap.SP_DialogSaveButton)
         undo_icon = self.style().standardIcon(QStyle.StandardPixmap.SP_ArrowBack)
         redo_icon = self.style().standardIcon(QStyle.StandardPixmap.SP_ArrowForward)
-        recenter_icon = None
+        recenter_icon = QIcon("assets/recenter.png")
         run_icon = self.style().standardIcon(QStyle.StandardPixmap.SP_MediaPlay)
         delete_icon = self.style().standardIcon(QStyle.StandardPixmap.SP_DialogCancelButton)
-        darkmode_icon = None
+        darkmode_icon = QIcon("assets/darkmode.png")
         clear_icon = self.style().standardIcon(QStyle.StandardPixmap.SP_DialogDiscardButton)
         quit_icon = self.style().standardIcon(QStyle.StandardPixmap.SP_DialogCloseButton)
 
