@@ -10,6 +10,7 @@ from UI.canvas_tools import Select, Grab
 from backends.fock.fock import Fock
 from backends.permanent.permanent import Permanent
 from backends.xanadu.xanadu import Xanadu
+from backends.quandela.quandela import Quandela
 
 class ToolBar(QToolBar):
     """
@@ -35,7 +36,8 @@ class ToolBar(QToolBar):
         backend_options = {
             "Fock backend": Fock,
             "Permanent backend": Permanent,
-            "Xanadu": Xanadu
+            "Strawberry fields": Xanadu,
+            "Perceval": Quandela
         }
         
         # Button icons

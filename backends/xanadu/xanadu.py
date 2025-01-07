@@ -24,8 +24,8 @@ class Xanadu(Backend):
         self.state.output_probabilities = np.real(np.copy(results.state.all_fock_probs()))
         self.state.eliminate_tolerance()
 
-    def set_input_state(self, input_basis_label):
-        self.state.set_program_input(input_basis_label)
+    def set_input_state(self, input_basis_element):
+        self.state.set_program_input(input_basis_element)
 
     @property
     def output_data(self):
