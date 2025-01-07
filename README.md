@@ -1,3 +1,5 @@
+[![Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue)](https://opensource.org/licenses/Apache-2.0)
+
 Quantum Circuit Designer is a GUI for designing and simulating quantum linear optical circuits.
 
 ## Key features
