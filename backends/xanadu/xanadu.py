@@ -1,6 +1,6 @@
 from backends.backend import Backend
 import strawberryfields as sf
-from strawberryfields.ops import Fock, Vac, BSgate, Interferometer, LossChannel, MeasureFock
+from strawberryfields.ops import Fock, Vac, BSgate, Interferometer, LossChannel, MeasureFock, Rgate
 import numpy as np
 import math
 from backends.utils import degrees_to_radians, calculate_hilbert_dimension, rank_to_basis
@@ -67,6 +67,10 @@ class Xanadu(Backend):
     
     def add_switch(self, **kwargs):
         comp = Switch(self.state.prog, **kwargs)
+        self.component_list.append(comp)
+
+    def add_phaseshift(self, **kwargs):
+        comp = PhaseShift(self.state.prog, **kwargs)
         self.component_list.append(comp)
     
     def add_loss(self, **kwargs):
@@ -138,3 +142,22 @@ class Detector:
         with self.prog.context as q:
             for wire, herald in zip(self.reindexed_wires, self.herald):
                 MeasureFock(select=herald) | q[wire]
+
+class PhaseShift:
+    def __init__(self, prog, *, wire, phase):
+
+        if not isinstance(wire, int):
+            raise ValueError("Phase shift requires exactly 1 wire.")
+        
+        if not 0 <= phase <= 360:
+            raise ValueError("Phase must be between 0 and 360.")
+
+        self.prog = prog
+        self.wire = wire
+        self.reindexed_wire = self.wire - 1
+
+        self.phase = degrees_to_radians(phase)
+
+    def apply(self):
+        with self.prog.context as q:
+            Rgate(self.phase) | q[self.reindexed_wire]

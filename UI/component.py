@@ -653,3 +653,45 @@ class Switch(Component):
     def add_to_sim(self):
         wires = [self.window.canvas.placed_components["wires"].index(w) + 1 for w in self.connected_wires]
         self.window.interface.circuit.add_switch(wires = wires)
+
+class PhaseShift(Component):
+    def __init__(self, window):
+        super().__init__(window)
+
+        # Style
+        self.shape_scale = 0.5
+        self.shape_type = ["square"]
+
+        # Properties
+        self.phase = 180
+        self.create_property_box()
+
+    @property
+    def length(self):
+        return 1
+
+    def create_property_box(self):
+        self.property_box.add_property("phase", self.phase, QDoubleValidator(0, 360, 2))
+
+    def update_property(self, property_name):
+        if property_name == "phase":
+            self.phase = float(self.property_box.properties["phase"].text())
+            self.window.console.refresh()
+    
+    @property
+    def placeable(self):
+        if self.overlaps_a_component(self.potential_placement):
+            return False
+        if self.overlaps_a_wire(self.potential_placement):
+            return True
+        
+    def add_to_console(self):
+        wire_index = self.get_wire_index(self.connected_wires[0])
+        if self.phase == 180:
+            self.window.console.code += "add phase shift on wire"+str(wire_index)+"\n"
+        else:
+            self.window.console.code += "add phase shift on wire"+str(wire_index)+"with phase"+str(self.phase)+"\n"
+
+    def add_to_sim(self):
+        wires = [self.window.canvas.placed_components["wires"].index(w) + 1 for w in self.connected_wires]
+        self.window.interface.circuit.add_phaseshift(wire = wires[0], phase = self.phase)

@@ -7,7 +7,7 @@ class Switch(Component):
     Switch in Fock space.
 
     Attributes:
-    wires (list): list of wires connected to the beam splitter (1-indexed)
+    wires (list): list of wires connected to the switch (1-indexed)
     """
     def __init__(self, state, *, wires):
         super().__init__(state)

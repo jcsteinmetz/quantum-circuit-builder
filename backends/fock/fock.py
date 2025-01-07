@@ -8,6 +8,7 @@ from backends.fock.beamsplitter import BeamSplitter
 from backends.fock.switch import Switch
 from backends.fock.loss import Loss
 from backends.fock.detector import Detector
+from backends.fock.phaseshift import PhaseShift
 from backends.utils import calculate_hilbert_dimension, basis_to_rank, rank_to_basis
 
 class Fock(Backend):
@@ -32,6 +33,10 @@ class Fock(Backend):
 
     def add_switch(self, **kwargs):
         comp = Switch(self.state, **kwargs)
+        self.component_list.append(comp)
+
+    def add_phaseshift(self, **kwargs):
+        comp = PhaseShift(self.state, **kwargs)
         self.component_list.append(comp)
 
     def add_loss(self, **kwargs):

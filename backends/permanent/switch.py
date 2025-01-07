@@ -6,7 +6,7 @@ class Switch(Component):
     Switch in the permanent backend.
 
     Attributes:
-    wires (list): list of wires connected to the beam splitter (1-indexed)
+    wires (list): list of wires connected to the switch (1-indexed)
     """
     def __init__(self, circuit, *, wires):
         super().__init__(circuit)

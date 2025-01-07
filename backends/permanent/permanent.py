@@ -9,6 +9,7 @@ from backends.backend import Backend
 from backends.permanent.beamsplitter import BeamSplitter
 from backends.permanent.switch import Switch
 from backends.permanent.detector import Detector
+from backends.permanent.phaseshift import PhaseShift
 from backends.utils import calculate_hilbert_dimension, rank_to_basis
 
 class Permanent(Backend):
@@ -68,6 +69,10 @@ class Permanent(Backend):
 
     def add_switch(self, **kwargs):
         comp = Switch(self, **kwargs)
+        self.component_list.append(comp)
+
+    def add_phaseshift(self, **kwargs):
+        comp = PhaseShift(self, **kwargs)
         self.component_list.append(comp)
 
     def add_loss(self, **kwargs):

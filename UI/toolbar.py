@@ -5,7 +5,7 @@ Contains the ToolBar class.
 from functools import partial
 from PySide6.QtWidgets import QSizePolicy, QWidget, QToolBar, QApplication, QComboBox, QStyle
 from PySide6.QtGui import QAction, QActionGroup
-from UI.component import Wire, BeamSplitter, Switch, Loss, Detector
+from UI.component import Wire, BeamSplitter, Switch, Loss, Detector, PhaseShift
 from UI.canvas_tools import Select, Grab
 from backends.fock.fock import Fock
 from backends.permanent.permanent import Permanent
@@ -27,6 +27,7 @@ class ToolBar(QToolBar):
             "Wire": (Wire, None),
             "Beam splitter": (BeamSplitter, None),
             "Switch": (Switch, None),
+            "Phase shift": (PhaseShift, None),
             "Loss": (Loss, None),
             "Detector": (Detector, None)
         }

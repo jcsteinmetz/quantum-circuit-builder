@@ -22,6 +22,10 @@ class Backend(ABC):
         raise NotImplementedError
     
     @abstractmethod
+    def add_phaseshift(self, **kwargs):
+        raise NotImplementedError
+    
+    @abstractmethod
     def add_loss(self, **kwargs):
         raise NotImplementedError
     
