@@ -7,10 +7,10 @@ from PySide6.QtWidgets import QSizePolicy, QWidget, QToolBar, QApplication, QCom
 from PySide6.QtGui import QAction, QActionGroup, QIcon
 from UI.component import Wire, BeamSplitter, Switch, Loss, Detector, PhaseShift
 from UI.canvas_tools import Select, Grab
-from backends.fock.fock import Fock
-from backends.permanent.permanent import Permanent
-from backends.xanadu.xanadu import Xanadu
-from backends.quandela.quandela import Quandela
+from backends.fock import Fock
+from backends.permanent import Permanent
+from backends.xanadu import Xanadu
+from backends.quandela import Quandela
 
 class ToolBar(QToolBar):
     """

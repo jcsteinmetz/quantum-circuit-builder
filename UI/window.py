@@ -200,6 +200,7 @@ class MainWindow(QMainWindow):
             self.canvas.update()
 
             self.active_file = file_path.split("/")[-1]
+            self.canvas.deselect_all()
             self.unsaved_changes = False
             self.update_title()
             self.update_undo_stack()

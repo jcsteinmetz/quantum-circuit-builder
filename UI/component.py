@@ -318,6 +318,7 @@ class Component(ABC):
             self.window.canvas.placed_components["components"].remove(self)
         elif self in self.window.canvas.placed_components["detectors"]:
             self.window.canvas.placed_components["detectors"].remove(self)
+        self.window.mark_unsaved_changes()
 
     def move(self, delta):
         self.node_positions = [self._move_node(pos, delta) for pos in self.node_positions]

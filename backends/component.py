@@ -1,9 +1,12 @@
 from abc import ABC, abstractmethod
 
 class Component(ABC):
-    def __init__(self, circuit):
-        self.circuit = circuit
-
     @abstractmethod
+    def __init__(self):
+        self.validate_input()
+
     def apply(self):
+        raise NotImplementedError
+    
+    def validate_input(self):
         raise NotImplementedError

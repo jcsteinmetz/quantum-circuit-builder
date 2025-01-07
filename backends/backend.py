@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from backends.utils import calculate_hilbert_dimension
 
 class Backend(ABC):
     def __init__(self, n_wires, n_photons):
@@ -9,9 +10,16 @@ class Backend(ABC):
         self.n_wires = n_wires
         self.n_photons = n_photons
 
+        self.hilbert_dimension = calculate_hilbert_dimension(self.n_wires, self.n_photons)
+
+        self.component_list = []
+
     @abstractmethod
     def run(self):
         raise NotImplementedError
+    
+    def add_component(self, comp):
+        self.component_list.append(comp)
 
     @abstractmethod
     def add_beamsplitter(self, **kwargs):
@@ -36,3 +44,4 @@ class Backend(ABC):
     @abstractmethod
     def set_input_state(self, input_basis_element):
         pass
+

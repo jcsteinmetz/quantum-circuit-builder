@@ -1,7 +1,7 @@
 import numpy as np
-from backends.fock.fock import Fock
-from backends.permanent.permanent import Permanent
-from backends.xanadu.xanadu import Xanadu
+from backends.fock import Fock
+from backends.permanent import Permanent
+from backends.xanadu import Xanadu
 
 class Interface:
     def __init__(self, window):
