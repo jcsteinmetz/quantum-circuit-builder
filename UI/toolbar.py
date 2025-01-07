@@ -126,6 +126,7 @@ class ToolBar(QToolBar):
 
     def set_backend(self, backend_choice):
         self.window.interface.backend = backend_choice
+        self.window.console.refresh()
 
     def darkmode_trigger(self):
         self.window.style_manager.darkmode_toggle()
