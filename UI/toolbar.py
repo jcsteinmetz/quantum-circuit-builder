@@ -88,6 +88,8 @@ class ToolBar(QToolBar):
             if tool_type == Select:
                 action.setChecked(True)
 
+            action.setToolTip(tool_name)
+
             self.addAction(action)
             action_group.addAction(action)
             action.triggered.connect(partial(self.set_active_tool, tool_type))
