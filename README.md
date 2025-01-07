@@ -15,6 +15,7 @@ Quantum Circuit Designer is a GUI for designing and simulating quantum linear op
 * Matrix permanent backend
 ### Industry simulators
 * [Strawberry fields](https://github.com/XanaduAI/strawberryfields) Fock backend
+* [Perceval](https://github.com/Quandela/Perceval) Naive backend
 
 ## Installation
 Clone the repository using
@@ -27,4 +28,5 @@ then install the package by running
 pip install .
 ```
 
-## Screenshots
+## Screenshot
+[Screenshot][assets/screenshot.png]
