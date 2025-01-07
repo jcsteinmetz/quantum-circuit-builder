@@ -3,6 +3,7 @@ Basic Fock state model for fixed photon number
 """
 
 import numpy as np
+import math
 import scipy
 from backends.backend import Backend
 from backends.components.beamsplitter import BeamSplitter
@@ -211,7 +212,7 @@ class FockLoss(Loss):
                     new_basis_element = [n if wire != self.reindexed_wire else n - lost_photons for wire, n in enumerate(basis_element)]
                     new_rank = basis_to_rank(new_basis_element)
 
-                    kraus_operators[lost_photons][new_rank, rank] = self.eta**((photons_in_wire - lost_photons)/2)*(1 - self.eta)**(lost_photons / 2)
+                    kraus_operators[lost_photons][new_rank, rank] = np.sqrt(math.comb(photons_in_wire, lost_photons))*self.eta**((photons_in_wire - lost_photons)/2)*(1 - self.eta)**(lost_photons / 2)
         return kraus_operators
     
 class FockDetector(Detector):
