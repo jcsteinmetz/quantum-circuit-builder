@@ -20,9 +20,7 @@ class Xanadu(Backend):
 
     def run(self):
         for comp in self.component_list:
-            print("applying",comp)
             comp.apply()
-        print("done")
 
         results = self.eng.run(self.circuit)
 
@@ -67,8 +65,6 @@ class Xanadu(Backend):
             table_data[row, 0] = "".join(basis_element_string)
             table_data[row, 1] = prob_vector[rank]
 
-        for row in range(len(table_data[:, 1])):
-            table_data[row, 1] = f'{float(f"{table_data[row, 1]:.4g}"):g}'
         return table_data
     
     def add_beamsplitter(self, **kwargs):
@@ -100,7 +96,7 @@ class XanaduBeamSplitter(BeamSplitter):
 
     def apply(self):
         with self.backend.circuit.context as q:
-            BSgate(self.theta, np.pi/2) | (q[self.reindexed_wires[0]], q[self.reindexed_wires[1]])
+            BSgate(self.theta/2, 0) | (q[self.reindexed_wires[0]], q[self.reindexed_wires[1]])
 
 class XanaduSwitch(Switch):
     def __init__(self, *args, **kwargs):

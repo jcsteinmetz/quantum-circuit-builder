@@ -45,8 +45,6 @@ class Quandela(Backend):
             table_data[row, 1] = value
             row += 1
 
-        for row in range(len(table_data[:, 1])):
-            table_data[row, 1] = f'{float(f"{table_data[row, 1]:.4g}"):g}'
         return table_data
 
     def add_beamsplitter(self, **kwargs):

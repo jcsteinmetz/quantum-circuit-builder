@@ -31,7 +31,17 @@ class OutputTab(QWidget):
     def print_output(self):
         try:
             self.table_data = self.window.interface.circuit.output_data
-            self.table_data = np.vstack((self.table_data, ["Total", sum(float(i) for i in self.table_data[:, 1])]))
+
+            total_prob = sum(float(i) for i in self.table_data[:, 1])
+
+            self.table_data = np.vstack((self.table_data, ["Total", total_prob]))
+
+            # vstack automatically converts total_prob to a string
+            self.table_data[-1, 1] = float(self.table_data[-1, 1])
+
+            for row in range(len(self.table_data[:, 1])):
+                self.table_data[row, 1] = f'{float(f"{self.table_data[row, 1]:.4g}"):g}'
+
             n_rows = np.shape(self.table_data)[0]
             n_cols = np.shape(self.table_data)[1]
             self.output_table.setRowCount(n_rows)
