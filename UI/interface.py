@@ -4,13 +4,18 @@ from backends.permanent import Permanent
 from backends.xanadu import Xanadu
 
 class Interface:
+    """
+    Class containing communications between the UI and the backend. Translates the list of drawn components
+    into code that is run in the chosen backend.
+    """
     def __init__(self, window):
         self.window = window
         self.circuit = None
-        self.backend = Fock
+        self.chosen_backend = Fock
 
     def build_circuit(self):
-        self.circuit = self.backend(self.window.canvas.n_wires, self.window.canvas.n_photons)
+        """Creates a circuit in the chosen backend and adds all drawn components."""
+        self.circuit = self.chosen_backend(self.window.canvas.n_wires, self.window.canvas.n_photons)
         
         self.circuit.set_input_state(self.input_fock_state)
 
@@ -20,6 +25,7 @@ class Interface:
         self.add_detectors()
     
     def add_detectors(self):
+        """Add all detectors at once at the end of the simulation."""
         wires = []
         herald = []
         if self.window.canvas.placed_components["detectors"]:
@@ -35,4 +41,5 @@ class Interface:
 
     @property
     def input_fock_state(self):
+        """The Fock state at the beginning of the circuit, taken from the wires' properties entered by the user."""
         return tuple(wire.n_photons for wire in self.window.canvas.placed_components["wires"])

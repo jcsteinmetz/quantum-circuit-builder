@@ -7,6 +7,9 @@ from UI.component import Wire, Detector, ComponentRenderer
 import numpy as np
 
 class Canvas(QWidget):
+    """
+    The main working area where circuit components can be drawn.
+    """
     def __init__(self, window):
         super().__init__()
         self.window = window
@@ -29,10 +32,16 @@ class Canvas(QWidget):
         self.active_tool = None
 
     def update_styles(self):
+        """
+        Change the colours of the canvas background and grid depending on the current theme.
+        """
         self.bg_color = self.window.style_manager.get_style("bg_color")
         self.gridline_color = self.window.style_manager.get_style("gridline_color")
 
     def paintEvent(self, event):
+        """
+        Repaints the canvas.
+        """
         painter = QPainter(self)
 
         # Draw the grid
@@ -47,6 +56,9 @@ class Canvas(QWidget):
             self.component_renderer.preview(painter, self.active_tool)
 
     def all_placed_components(self):
+        """
+        Returns a list of all components, no matter their type.
+        """
         for comp_list in self.placed_components.values():
             for comp in comp_list[:]:
                 yield comp
@@ -70,11 +82,18 @@ class Canvas(QWidget):
         return super().eventFilter(obj, event)
     
     def initialize_active_tool(self):
+        """
+        Start with the Select tool.
+        """
         self.active_tool = Select(self.window)
         self.installEventFilter(self)
 
     @property
     def overlaps(self):
+        """
+        List of overlaps between photons' internal states. This is the same as a flattened version of
+        the upper triangular part of the Gram matrix.
+        """
         if self.n_photons in [0, 1]:
             return [1]
         upper_triangular_indices = np.triu_indices(self.n_photons, k=1)
@@ -82,21 +101,34 @@ class Canvas(QWidget):
 
     @property
     def n_wires(self):
+        """
+        Current number of wires on the canvas.
+        """
         return len(self.placed_components["wires"])
     
     @property
     def n_photons(self):
+        """
+        Current number of photons entered into the simulation.
+        """
         n_photons = 0
         for wire in self.placed_components["wires"]:
             n_photons += wire.n_photons
         return n_photons
 
     def sort_components(self):
+        """
+        Sorts all categories of components. Components are sorted into the order they will be applied
+        in the simulation - basically left-to-right, top-to-bottom.
+        """
         self.placed_components["wires"] = sorted(self.placed_components["wires"], key = lambda comp: (comp.node_positions[0][1], comp.node_positions[0][0]))
         self.placed_components["components"] = sorted(self.placed_components["components"], key = lambda comp: (comp.node_positions[0][0], comp.node_positions[0][1]))
         self.placed_components["detectors"] = sorted(self.placed_components["detectors"], key = lambda comp: (comp.node_positions[0][1], comp.node_positions[0][0]))
 
     def deselect_all(self):
+        """
+        Deselects all components on the canvas.
+        """
         for comp in self.all_placed_components():
             comp.is_selected = False
             comp.property_box.hide()
@@ -114,6 +146,9 @@ class Canvas(QWidget):
             comp.move(delta)
 
     def recenter(self):
+        """
+        Resets the canvas offset to return to the original position.
+        """
         self.drag(self.grid.offset)
         self.repaint()
 
@@ -142,6 +177,9 @@ class Canvas(QWidget):
         self.preview_enabled = False
 
     def place(self, comp):
+        """
+        Place a component on the canvas. The component is drawn and saved in placed_components.
+        """
         self.active_tool = comp.__class__(self.window)
         if isinstance(comp, Wire):
             self.placed_components["wires"].append(comp)

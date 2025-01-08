@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from UI.property_box import PropertyBox
 
 class ComponentRenderer:
+    """Contains methods for displaying components on the canvas."""
 
     SHAPE_METHODS = {
         "square": "draw_square",
@@ -16,18 +17,11 @@ class ComponentRenderer:
 
     def __init__(self, window):
         self.window = window
-
-        # Style
-        self.face_color = self.window.style_manager.get_style("face_color")
-        self.border_color = self.window.style_manager.get_style("border_color")
-        self.selected_border_color = self.window.style_manager.get_style("selected_border_color")
-        self.error_color = self.window.style_manager.get_style("error_color")
-        self.name_color = self.window.style_manager.get_style("name_color")
-
+        self.update_node_styles()
         self.line_width = 3
         self.shape_type = ["square"]
 
-    # Colors
+    # Style
 
     def _transparent(self, col):
         return (col[0], col[1], col[2], 128)
@@ -41,6 +35,12 @@ class ComponentRenderer:
         self.name_color = styles["name_color"]
 
     def set_painter_style(self, painter, pen_color = None, brush_color = None, transparent = False):
+        """
+        Set the style for drawing components.
+        pen_color (tuple): color for shape borders and lines
+        brush_color (tuple): color for filling in shapes
+        transparent (bool): make the shape 50% transparent
+        """
         if not pen_color:
             pen_color = self.border_color
         if not brush_color:
@@ -56,7 +56,10 @@ class ComponentRenderer:
 
         painter.setBrush(QColor(*brush_color))
 
+    # Drawing
+
     def draw_name(self, painter, comp):
+        """Display a component's name on top of the component shape."""
         name_position = comp.node_positions[0]
         self.set_painter_style(painter, pen_color = self.name_color)
         scale = comp.shape_scale * self.window.canvas.grid.size
@@ -127,7 +130,7 @@ class ComponentRenderer:
         self.draw_shape(painter, comp, position, shape_type)
 
     def draw(self, painter, comp):
-        # draw in reverse order so that wires are underneath nodes
+        """Draws a component on the canvas."""
         for j, pos in enumerate(reversed(comp.node_positions)):
             i = len(comp.node_positions) - 1 - j
             if pos:
@@ -140,6 +143,7 @@ class ComponentRenderer:
             self.draw_property_box(comp)
 
     def preview(self, painter, comp):
+        """Draws a preview of the component that follows the mouse around while snapping to the grid."""
         for i, pos in enumerate(comp.node_positions):
             if pos:
                 # draw node
@@ -460,12 +464,10 @@ class Detector(Component):
         return False
     
     def add_to_console(self):
-        wire_index = self.get_wire_index(self.connected_wires[0])
-        self.window.console.code += "add_detector(wire = "+str(wire_index)+", herald = "+str(self.herald)+")\n"
+        pass
     
     def add_to_sim(self):
-        wires = [self.window.canvas.placed_components["wires"].index(w) + 1 for w in self.connected_wires]
-        self.window.interface.circuit.add_detector(wires = wires, herald = self.herald)
+        pass
 
 class Loss(Component):
     def __init__(self, window):

@@ -1,51 +1,48 @@
 from PySide6.QtCore import Qt, QRect, QSize, QPoint
 from PySide6.QtGui import QMouseEvent
 from PySide6.QtWidgets import QRubberBand
-from abc import ABC
+from abc import ABC, abstractmethod
 
 class CanvasTool(ABC):
+    """Tools to interact with the canvas using the mouse."""
     def __init__(self, window):
         self.window = window
         self.cursor_type = Qt.ArrowCursor
 
+    @abstractmethod
     def on_mouse_press(self, event: QMouseEvent):
         pass
 
+    @abstractmethod
     def on_mouse_move(self, event: QMouseEvent):
         pass
 
+    @abstractmethod
     def on_mouse_release(self, event: QMouseEvent):
         pass
 
 class Select(CanvasTool):
+    """Tool that selects a component by clicking or multiple components by clicking and dragging."""
     def __init__(self, window):
         super().__init__(window)
         self.rubber_band = QRubberBand(QRubberBand.Rectangle, self.window.canvas)
         self.rubber_band_origin = None
 
     def on_mouse_press(self, event: QMouseEvent):
-        """
-        Action to perform when a mouse press occurs on the canvas.
-        """
+        """Begin drawing the rectangular area selection."""
         if event.button() == Qt.LeftButton:
-            # Begin drawing the rectangular area selection
             self.rubber_band_origin = event.pos()
             self.rubber_band.setGeometry(QRect(self.rubber_band_origin, QSize()))
             self.rubber_band.show()
 
     def on_mouse_move(self, event: QMouseEvent):
-        """
-        Action to perform when the mouse is moved on the canvas.
-        """
+        """Expand the rectangular area selection"""
         if self.rubber_band_origin:
-            # Expand the rectangular area selection
             rect = QRect(self.rubber_band_origin, event.pos()).normalized()
             self.rubber_band.setGeometry(rect)
 
     def on_mouse_release(self, event: QMouseEvent):
-        """
-        Action to perform when the mouse button is released on the canvas.
-        """
+        """Select all components inside the rectangle, or select a single component."""
         if event.button() == Qt.LeftButton:
             # Hide the rectangular area selection
             self.rubber_band.hide()
@@ -65,24 +62,21 @@ class Select(CanvasTool):
                     comp.toggle_selection(is_selected)
 
 class Grab(CanvasTool):
+    """Tool that allows the canvas and everything on it to be dragged around."""
     def __init__(self, window):
         super().__init__(window)
         self.dragging_enabled = False
         self.cursor_type = Qt.OpenHandCursor
 
     def on_mouse_press(self, event: QMouseEvent):
-        """
-        Action to perform when a mouse press occurs on the canvas.
-        """
+        """Enable dragging."""
         if event.button() == Qt.LeftButton:
             self.dragging_enabled = True
             self.cursor_type = Qt.ClosedHandCursor
             self.window.canvas.setCursor(self.cursor_type)
 
     def on_mouse_move(self, event: QMouseEvent):
-        """
-        Action to perform when the mouse is moved on the canvas.
-        """
+        """Drag the canvas."""
         if self.dragging_enabled:
             delta_x = event.position().toTuple()[0] - self.window.canvas.current_mouse_position[0]
             delta_y = event.position().toTuple()[1] - self.window.canvas.current_mouse_position[1]
@@ -90,9 +84,7 @@ class Grab(CanvasTool):
             self.window.canvas.drag(delta)
 
     def on_mouse_release(self, event: QMouseEvent):
-        """
-        Action to perform when the mouse button is released on the canvas.
-        """
+        """Disable dragging."""
         if event.button() == Qt.LeftButton:
             self.dragging_enabled = False
             self.cursor_type = Qt.OpenHandCursor

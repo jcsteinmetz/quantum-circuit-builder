@@ -1,8 +1,11 @@
 from PySide6.QtWidgets import QFormLayout, QLineEdit, QFrame
 from PySide6.QtGui import QValidator
-from PySide6.QtCore import QEvent
 
 class PropertyBox(QFrame):
+    """
+    Pop-up box that is associated with a component. Contains a form where the user can fill
+    in the component's properties. The box is shown when the component is selected.
+    """
     def __init__(self, component, parent=None):
         super().__init__(parent)
 
@@ -25,7 +28,7 @@ class PropertyBox(QFrame):
         """"
         Add a new property to the property box.
         
-        property_name: name of the new property
+        property_name (str): name of the new property
         default_value: value to show by default when the property appears
         validator: which QValidator to use on any new input to this property
         """
@@ -49,6 +52,7 @@ class PropertyBox(QFrame):
             first_property.selectAll()
 
     def draw(self):
+        """Draw the property box"""
         self.move(int(self.component.node_positions[0][0] + self.offset[0]), int(self.component.node_positions[0][1]+self.offset[1]))
 
         # Property manager style

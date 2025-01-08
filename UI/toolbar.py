@@ -125,7 +125,7 @@ class ToolBar(QToolBar):
         self.window.canvas.active_tool = tool_type(self.window)
 
     def set_backend(self, backend_choice):
-        self.window.interface.backend = backend_choice
+        self.window.interface.chosen_backend = backend_choice
         self.window.console.refresh()
 
     def darkmode_trigger(self):
