@@ -3,7 +3,7 @@ import strawberryfields as sf
 from strawberryfields.ops import Fock, Vac, BSgate, Interferometer, LossChannel, MeasureFock, Rgate
 import numpy as np
 import math
-from backends.utils import degrees_to_radians, rank_to_basis
+from backends.utils import rank_to_basis
 from backends.components.beamsplitter import BeamSplitter
 from backends.components.switch import Switch
 from backends.components.phaseshift import PhaseShift

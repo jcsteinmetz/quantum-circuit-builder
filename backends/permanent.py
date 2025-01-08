@@ -12,7 +12,7 @@ from backends.components.switch import Switch
 from backends.components.detector import Detector
 from backends.components.phaseshift import PhaseShift
 from backends.components.loss import Loss
-from backends.utils import rank_to_basis, spin_y_matrix, degrees_to_radians
+from backends.utils import rank_to_basis, spin_y_matrix
 
 
 class Permanent(Backend):

@@ -11,7 +11,7 @@ from backends.components.switch import Switch
 from backends.components.loss import Loss
 from backends.components.detector import Detector
 from backends.components.phaseshift import PhaseShift
-from backends.utils import basis_to_rank, rank_to_basis, calculate_hilbert_dimension, spin_y_matrix, degrees_to_radians
+from backends.utils import basis_to_rank, rank_to_basis, calculate_hilbert_dimension, spin_y_matrix
 
 class Fock(Backend):
     def __init__(self, n_wires, n_photons):
