@@ -12,7 +12,7 @@ class Quandela(Backend):
     def __init__(self, n_wires, n_photons):
         super().__init__(n_wires, n_photons)
 
-        self.circuit = pcvl.Processor("Naive", self.n_wires)
+        self.circuit = pcvl.Processor("SLOS", self.n_wires)
 
         self.output_dict = {}
 
@@ -74,10 +74,21 @@ class QuandelaBeamSplitter(BeamSplitter):
         super().__init__(*args, **kwargs)
 
     def apply(self):
-        self.backend.circuit.add(tuple(self.reindexed_wires), BS.H(self.theta))
-
+        # Perceval can only do beam splitters and switches on consecutive wires (it claims it can handle non-consecutive wires but it doesn't seem to work)
+        all_wires = tuple(range(self.backend.n_wires))
+        switched = False
+        if self.reindexed_wires[0] + 1 != self.reindexed_wires[1]:
+            permuted_wires = list(range(self.backend.n_wires))
+            w0, w1 = self.reindexed_wires[0] + 1, self.reindexed_wires[1]
+            permuted_wires[w0], permuted_wires[w1] = permuted_wires[w1], permuted_wires[w0]
+            self.backend.circuit.add(all_wires, PERM(permuted_wires))
+            switched = True
+        self.backend.circuit.add((self.reindexed_wires[0], self.reindexed_wires[0]+1), BS.H(self.theta))
         # Perceval automatically switches wire indices during a beam splitter
-        self.backend.circuit.add(tuple(self.reindexed_wires), PERM([1, 0]))
+        self.backend.circuit.add((self.reindexed_wires[0], self.reindexed_wires[0]+1), PERM([1, 0]))
+        # Switch back
+        if switched:
+            self.backend.circuit.add(all_wires, PERM(permuted_wires))
 
 class QuandelaSwitch(Switch):
     def __init__(self, *args, **kwargs):
