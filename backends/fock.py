@@ -186,7 +186,7 @@ class FockPhaseShift(PhaseShift):
             if photons_in_wire == 0:
                 continue
 
-            unitary[rank, rank] = np.exp(1j*self.phase)
+            unitary[rank, rank] = np.exp(1j*self.phase*photons_in_wire)
 
         return unitary
     
