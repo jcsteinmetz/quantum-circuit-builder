@@ -18,12 +18,14 @@ class Console(QTextEdit):
 
         self.code += "circuit = "+str(self.window.interface.chosen_backend.__name__)+"(n_wires = "+str(self.window.canvas.n_wires)+", n_photons = "+str(self.window.canvas.n_photons)+")\n"
 
+        self.code += "circuit.set_input_state("+str(list(self.window.interface.input_fock_state))+")\n"
+
         for comp in self.window.canvas.placed_components["components"]:
             comp.add_to_console()
 
         self.add_detectors()
 
-        self.code += "circuit.run(input_state = "+str(self.window.interface.input_fock_state)+")\n"
+        self.code += "circuit.run()\n"
 
         self.setPlainText(self.code)
 

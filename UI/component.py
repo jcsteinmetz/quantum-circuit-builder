@@ -503,9 +503,9 @@ class Loss(Component):
     def add_to_console(self):
         wire_index = self.get_wire_index(self.connected_wires[0])
         if self.eta == 1:
-            self.window.console.code += "add_loss(wire = "+str(wire_index)+")\n"
+            self.window.console.code += "circuit.add_loss(wire = "+str(wire_index)+")\n"
         else:
-            self.window.console.code += "add_loss(wire = "+str(wire_index)+", eta = "+str(self.eta)+")\n"
+            self.window.console.code += "circuit.add_loss(wire = "+str(wire_index)+", eta = "+str(self.eta)+")\n"
 
     def add_to_sim(self):
         wires = [self.window.canvas.placed_components["wires"].index(w) + 1 for w in self.connected_wires]
@@ -614,9 +614,9 @@ class BeamSplitter(Component):
     def add_to_console(self):
         wire_indices = [self.get_wire_index(wire) for wire in self.connected_wires]
         if self.theta == 90:
-            self.window.console.code += "add_beamsplitter(wire = "+str(wire_indices)+")\n"
+            self.window.console.code += "circuit.add_beamsplitter(wires = "+str(wire_indices)+")\n"
         else:
-            self.window.console.code += "add_beamsplitter(wire = "+str(wire_indices)+", theta = "+str(self.theta)+")\n"
+            self.window.console.code += "circuit.add_beamsplitter(wires = "+str(wire_indices)+", theta = "+str(self.theta)+")\n"
     
     def add_to_sim(self):
         wires = [self.window.canvas.placed_components["wires"].index(w) + 1 for w in self.connected_wires]
@@ -652,7 +652,7 @@ class Switch(Component):
     
     def add_to_console(self):
         wire_indices = [self.get_wire_index(wire) for wire in self.connected_wires]
-        self.window.console.code += "add_switch(wire = "+str(wire_indices)+")\n"
+        self.window.console.code += "circuit.add_switch(wires = "+str(wire_indices)+")\n"
 
     def add_to_sim(self):
         wires = [self.window.canvas.placed_components["wires"].index(w) + 1 for w in self.connected_wires]
@@ -692,9 +692,9 @@ class PhaseShift(Component):
     def add_to_console(self):
         wire_index = self.get_wire_index(self.connected_wires[0])
         if self.phase == 180:
-            self.window.console.code += "add_phaseshift(wire = "+str(wire_index)+")\n"
+            self.window.console.code += "circuit.add_phaseshift(wire = "+str(wire_index)+")\n"
         else:
-            self.window.console.code += "add_phaseshift(wire = "+str(wire_index)+", phase = "+str(self.phase)+")\n"
+            self.window.console.code += "circuit.add_phaseshift(wire = "+str(wire_index)+", phase = "+str(self.phase)+")\n"
 
     def add_to_sim(self):
         wires = [self.window.canvas.placed_components["wires"].index(w) + 1 for w in self.connected_wires]
