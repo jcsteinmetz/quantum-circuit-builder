@@ -45,10 +45,10 @@ class ToolBar(QToolBar):
                 "Select": (Select, QIcon("assets/select.png")),
                 "Grab": (Grab, QIcon("assets/grab.png")),
                 "Wire": (Wire, QIcon("assets/wire.png")),
-                "X gate": (XGate, None),
-                "Y gate": (YGate, None),
-                "Z gate": (ZGate, None),
-                "Hadamard": (Hadamard, None)
+                "X gate": (XGate, QIcon("assets/xgate.png")),
+                "Y gate": (YGate, QIcon("assets/ygate.png")),
+                "Z gate": (ZGate, QIcon("assets/zgate.png")),
+                "Hadamard": (Hadamard, QIcon("assets/hadamard.png"))
             }
             backend_options = {
                 "Placeholder backend": None
