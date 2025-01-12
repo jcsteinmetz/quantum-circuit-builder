@@ -43,7 +43,7 @@ class MainWindow(QMainWindow):
         self.console = Console(self)
         self.canvas = Canvas(self)
         self.canvas.initialize_active_tool()
-        toolbar = ToolBar(self)
+        self.toolbar = ToolBar(self)
 
         # Progress bar
         self.progress_bar = ProgressBar(self)
@@ -56,7 +56,7 @@ class MainWindow(QMainWindow):
         splitter.addWidget(right_widget)
         splitter.setSizes([100, 700])
 
-        central_widget = self.qvbox_widget([toolbar, splitter])
+        central_widget = self.qvbox_widget([self.toolbar, splitter])
         self.setCentralWidget(central_widget)
         self.setWindowState(Qt.WindowMaximized)
         self.resize(800, 600)
@@ -208,3 +208,6 @@ class MainWindow(QMainWindow):
             self.unsaved_changes = False
             self.update_title()
             self.update_undo_stack()
+
+            # Refresh toolbar
+            self.toolbar.setup_toolbar()

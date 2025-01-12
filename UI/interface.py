@@ -1,7 +1,6 @@
 import numpy as np
-from backends.fock import Fock
-from backends.permanent import Permanent
-from backends.xanadu import Xanadu
+from backends.photonic.fock import Fock
+from backends.gatebased.placeholder import Placeholder
 
 class Interface:
     """
@@ -11,7 +10,10 @@ class Interface:
     def __init__(self, window):
         self.window = window
         self.circuit = None
-        self.chosen_backend = Fock
+        if self.window.simulation_type == "photonic":
+            self.chosen_backend = Fock
+        else:
+            self.chosen_backend = Placeholder
 
     def build_circuit(self):
         """Creates a circuit in the chosen backend and adds all drawn components."""

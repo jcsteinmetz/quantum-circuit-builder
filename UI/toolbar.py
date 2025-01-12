@@ -8,10 +8,11 @@ from PySide6.QtWidgets import QFileDialog, QSizePolicy, QWidget, QToolBar, QAppl
 from PySide6.QtGui import QAction, QActionGroup, QIcon
 from UI.component import Wire, BeamSplitter, Switch, Loss, Detector, PhaseShift, XGate, YGate, ZGate, Hadamard
 from UI.canvas_tools import Select, Grab
-from backends.fock import Fock
-from backends.permanent import Permanent
-from backends.xanadu import Xanadu
-from backends.quandela import Quandela
+from backends.photonic.fock import Fock
+from backends.photonic.permanent import Permanent
+from backends.photonic.xanadu import Xanadu
+from backends.photonic.quandela import Quandela
+from backends.gatebased.placeholder import Placeholder
 
 class ToolBar(QToolBar):
     """
@@ -21,6 +22,23 @@ class ToolBar(QToolBar):
         super().__init__()
 
         self.window = window
+
+        self.setup_toolbar()
+
+    def setup_toolbar(self):
+        self.clear() # clear the toolbar in case it has previously been set up
+
+        # Button icons
+        open_icon = self.style().standardIcon(QStyle.StandardPixmap.SP_DialogOpenButton)
+        save_icon = self.style().standardIcon(QStyle.StandardPixmap.SP_DialogSaveButton)
+        undo_icon = self.style().standardIcon(QStyle.StandardPixmap.SP_ArrowBack)
+        redo_icon = self.style().standardIcon(QStyle.StandardPixmap.SP_ArrowForward)
+        recenter_icon = QIcon("assets/recenter.png")
+        run_icon = self.style().standardIcon(QStyle.StandardPixmap.SP_MediaPlay)
+        delete_icon = self.style().standardIcon(QStyle.StandardPixmap.SP_DialogCancelButton)
+        darkmode_icon = QIcon("assets/darkmode.png")
+        clear_icon = self.style().standardIcon(QStyle.StandardPixmap.SP_DialogDiscardButton)
+        quit_icon = self.style().standardIcon(QStyle.StandardPixmap.SP_DialogCloseButton)
 
         # Tools (name of tool class, tool icon)
         if self.window.simulation_type == "photonic":
@@ -51,20 +69,8 @@ class ToolBar(QToolBar):
                 "Hadamard": (Hadamard, QIcon("assets/hadamard.png"))
             }
             backend_options = {
-                "Placeholder backend": None
+                "Placeholder backend": Placeholder
             }
-        
-        # Button icons
-        open_icon = self.style().standardIcon(QStyle.StandardPixmap.SP_DialogOpenButton)
-        save_icon = self.style().standardIcon(QStyle.StandardPixmap.SP_DialogSaveButton)
-        undo_icon = self.style().standardIcon(QStyle.StandardPixmap.SP_ArrowBack)
-        redo_icon = self.style().standardIcon(QStyle.StandardPixmap.SP_ArrowForward)
-        recenter_icon = QIcon("assets/recenter.png")
-        run_icon = self.style().standardIcon(QStyle.StandardPixmap.SP_MediaPlay)
-        delete_icon = self.style().standardIcon(QStyle.StandardPixmap.SP_DialogCancelButton)
-        darkmode_icon = QIcon("assets/darkmode.png")
-        clear_icon = self.style().standardIcon(QStyle.StandardPixmap.SP_DialogDiscardButton)
-        quit_icon = self.style().standardIcon(QStyle.StandardPixmap.SP_DialogCloseButton)
 
         # Buttons
         self.add_button("Open", self.open_trigger, open_icon)
@@ -122,6 +128,9 @@ class ToolBar(QToolBar):
         dropdown.currentIndexChanged.connect(lambda index: dropdown_trigger(options[dropdown.currentText()]))
         self.addWidget(dropdown)
 
+        # Trigger first option
+        dropdown_trigger(options[dropdown.currentText()])
+
     def add_button(self, name, trigger, icon, checkable=False, checked=False):
         """
         Add a button to the toolbar. Buttons perform a one-time action when clicked.
@@ -175,3 +184,7 @@ class ToolBar(QToolBar):
         Quits the application
         """
         QApplication.instance().quit()
+
+    def clear(self):
+        for action in self.actions():
+            self.removeAction(action)

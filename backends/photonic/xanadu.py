@@ -4,11 +4,11 @@ from strawberryfields.ops import Fock, Vac, BSgate, Interferometer, LossChannel,
 import numpy as np
 import math
 from backends.utils import rank_to_basis
-from backends.components.beamsplitter import BeamSplitter
-from backends.components.switch import Switch
-from backends.components.phaseshift import PhaseShift
-from backends.components.loss import Loss
-from backends.components.detector import Detector
+from backends.photonic.components.beamsplitter import BeamSplitter
+from backends.photonic.components.switch import Switch
+from backends.photonic.components.phaseshift import PhaseShift
+from backends.photonic.components.loss import Loss
+from backends.photonic.components.detector import Detector
 
 class Xanadu(Backend):
     def __init__(self, n_wires, n_photons):
