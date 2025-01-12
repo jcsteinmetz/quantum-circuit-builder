@@ -6,13 +6,13 @@ import os
 from functools import partial
 from PySide6.QtWidgets import QFileDialog, QSizePolicy, QWidget, QToolBar, QApplication, QComboBox, QStyle
 from PySide6.QtGui import QAction, QActionGroup, QIcon
-from UI.component import Wire, BeamSplitter, Switch, Loss, Detector, PhaseShift, XGate, YGate, ZGate, Hadamard
+from UI.component import Wire, BeamSplitter, Switch, Loss, Detector, PhaseShift, XGate, YGate, ZGate, Hadamard, Qubit
 from UI.canvas_tools import Select, Grab
 from backends.photonic.fock import Fock
 from backends.photonic.permanent import Permanent
 from backends.photonic.xanadu import Xanadu
 from backends.photonic.quandela import Quandela
-from backends.gatebased.placeholder import Placeholder
+from backends.gatebased.matrixproduct import MatrixProduct
 
 class ToolBar(QToolBar):
     """
@@ -62,14 +62,14 @@ class ToolBar(QToolBar):
             tools = {
                 "Select": (Select, QIcon("assets/select.png")),
                 "Grab": (Grab, QIcon("assets/grab.png")),
-                "Wire": (Wire, QIcon("assets/wire.png")),
+                "Qubit": (Qubit, QIcon("assets/wire.png")),
                 "X gate": (XGate, QIcon("assets/xgate.png")),
                 "Y gate": (YGate, QIcon("assets/ygate.png")),
                 "Z gate": (ZGate, QIcon("assets/zgate.png")),
                 "Hadamard": (Hadamard, QIcon("assets/hadamard.png"))
             }
             backend_options = {
-                "Placeholder backend": Placeholder
+                "Matrix product backend": MatrixProduct
             }
 
         # Buttons

@@ -22,7 +22,7 @@ def basis_to_rank(element):
         rank += sum(math.comb(n_pp + remaining_modes - 1, n_pp) for n_pp in range(int(remaining_photons)))
     return rank
 
-def calculate_hilbert_dimension(n_wires, n_photons):
+def calculate_fock_hilbert_dimension(n_wires, n_photons):
     return sum(math.comb(n + n_wires - 1, n) for n in range(n_photons + 1))
 
 def spin_y_matrix(size):
@@ -34,3 +34,18 @@ def spin_y_matrix(size):
 
 def degrees_to_radians(deg):
     return (np.pi/180)*deg
+
+def bloch_to_rho(bloch):
+    return 0.5*np.array([[1 + bloch[2], bloch[0] - 1j*bloch[1]], [bloch[0] - 1j*bloch[1], 1 - bloch[2]]], dtype=complex)
+
+def pauli(direction):
+    return direction[0]*pauli_x() + direction[1]*pauli_y() + direction[2]*pauli_z()
+
+def pauli_x():
+    return np.array([[0, 1], [1, 0]], dtype=complex)
+
+def pauli_y():
+    return np.array([[0, -1j], [1j, 0]], dtype=complex)
+
+def pauli_z():
+    return np.array([[1, 0], [0, -1]], dtype=complex)

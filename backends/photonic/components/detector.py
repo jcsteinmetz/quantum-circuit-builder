@@ -1,4 +1,4 @@
-from backends.photonic.components.component import Component
+from backends.component import Component
 
 class Detector(Component):
     def __init__(self, backend, *, wires, herald):

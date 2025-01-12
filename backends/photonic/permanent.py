@@ -6,7 +6,7 @@ import itertools
 import scipy
 import math
 import numpy as np
-from backends.backend import Backend
+from backends.photonic.backend import Backend
 from backends.photonic.components.beamsplitter import BeamSplitter
 from backends.photonic.components.switch import Switch
 from backends.photonic.components.detector import Detector

@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from backends.utils import calculate_hilbert_dimension
+from backends.utils import calculate_fock_hilbert_dimension
 
 class Backend(ABC):
     def __init__(self, n_wires, n_photons):
@@ -10,7 +10,7 @@ class Backend(ABC):
         self.n_wires = n_wires
         self.n_photons = n_photons
 
-        self.hilbert_dimension = calculate_hilbert_dimension(self.n_wires, self.n_photons)
+        self.hilbert_dimension = calculate_fock_hilbert_dimension(self.n_wires, self.n_photons)
 
         self.component_list = []
 

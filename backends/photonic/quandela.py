@@ -1,7 +1,7 @@
 import numpy as np
 import perceval as pcvl
 from perceval.components import BS, PS, PERM, LC
-from backends.backend import Backend
+from backends.photonic.backend import Backend
 from backends.photonic.components.beamsplitter import BeamSplitter
 from backends.photonic.components.switch import Switch
 from backends.photonic.components.phaseshift import PhaseShift

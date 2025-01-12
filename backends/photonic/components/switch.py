@@ -1,4 +1,4 @@
-from backends.photonic.components.component import Component
+from backends.component import Component
 
 class Switch(Component):
     

@@ -1,4 +1,4 @@
-from backends.backend import Backend
+from backends.photonic.backend import Backend
 import strawberryfields as sf
 from strawberryfields.ops import Fock, Vac, BSgate, Interferometer, LossChannel, MeasureFock, Rgate
 import numpy as np

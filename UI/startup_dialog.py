@@ -2,6 +2,8 @@ from PySide6.QtWidgets import (
     QApplication, QFileDialog, QLineEdit, QRadioButton, QGroupBox, QDialog,
     QVBoxLayout, QHBoxLayout, QListWidget, QStackedWidget, QWidget, QLabel, QPushButton
 )
+from PySide6.QtGui import QPixmap
+from PySide6.QtCore import Qt
 import os
 
 
@@ -109,7 +111,9 @@ class StartupDialog(QDialog):
     """
     NEW_CIRCUIT = "New circuit"
     OPEN = "Open"
-    WIDTH, HEIGHT, NAV_WIDTH = 600, 300, 150
+    WIDTH = 600
+    HEIGHT = 200
+    NAV_WIDTH = 150
 
     def __init__(self):
         super().__init__()
@@ -120,8 +124,13 @@ class StartupDialog(QDialog):
         self.set_geometry()
         main_layout = QVBoxLayout(self)
 
+        title_layout = self.create_title_layout()
+
         # Initialize confirm button first so it can be passed to pages
         self.confirm_button = self.create_confirm_button()
+        confirm_layout = QHBoxLayout()
+        confirm_layout.addStretch()
+        confirm_layout.addWidget(self.confirm_button)
 
         # Initialize content and navigation
         self.content = self.create_content_widget()
@@ -132,12 +141,8 @@ class StartupDialog(QDialog):
         nav_content_layout.addWidget(self.navigation)
         nav_content_layout.addWidget(self.content)
 
-        # Confirmation button layout
-        confirm_layout = QHBoxLayout()
-        confirm_layout.addStretch()
-        confirm_layout.addWidget(self.confirm_button)
-
         # Assemble layouts
+        main_layout.addLayout(title_layout)
         main_layout.addLayout(nav_content_layout)
         main_layout.addLayout(confirm_layout)
 
@@ -151,6 +156,31 @@ class StartupDialog(QDialog):
             (screen.height() - self.HEIGHT) // 4,
             self.WIDTH, self.HEIGHT
         )
+
+    def create_title_layout(self):
+        """Create widget displaying the name and logo of the application"""
+        title_layout = QHBoxLayout()
+
+        # Create logo
+        logo = QLabel()
+        pixmap = QPixmap("assets/logo.png")
+        logo.setPixmap(pixmap)
+        logo.setScaledContents(True)
+        logo.setFixedSize(50, 50)
+
+        # Create text
+        title_text = QLabel("Quantum Circuit Builder v1.0")
+        title_text.setStyleSheet("font-family: 'Helvetica'; font-size: 24px; font-weight: bold;")
+        title_text.setAlignment(Qt.AlignCenter) 
+
+        # Add widgets to the layout
+        title_layout.addStretch()
+        title_layout.addWidget(logo)
+        title_layout.addWidget(title_text)
+        title_layout.addStretch()
+        title_layout.setContentsMargins(0, 0, 0, 0)
+
+        return title_layout
 
     def create_navigation_widget(self, items):
         """Create the navigation panel on the left hand side, which is used to choose between pages."""
