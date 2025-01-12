@@ -1,12 +1,11 @@
 """
 Contains the ToolBar class.
 """
-
 import os
 from functools import partial
 from PySide6.QtWidgets import QFileDialog, QSizePolicy, QWidget, QToolBar, QApplication, QComboBox, QStyle
 from PySide6.QtGui import QAction, QActionGroup, QIcon
-from UI.component import Wire, BeamSplitter, Switch, Loss, Detector, PhaseShift, XGate, YGate, ZGate, Hadamard, Qubit
+from UI.component import Wire, BeamSplitter, Switch, Loss, Detector, PhaseShift, XGate, YGate, ZGate, Hadamard, Qubit, CNOT
 from UI.canvas_tools import Select, Grab
 from backends.photonic.fock import Fock
 from backends.photonic.permanent import Permanent
@@ -66,7 +65,8 @@ class ToolBar(QToolBar):
                 "X gate": (XGate, QIcon("assets/xgate.png")),
                 "Y gate": (YGate, QIcon("assets/ygate.png")),
                 "Z gate": (ZGate, QIcon("assets/zgate.png")),
-                "Hadamard": (Hadamard, QIcon("assets/hadamard.png"))
+                "Hadamard": (Hadamard, QIcon("assets/hadamard.png")),
+                "CNOT": (CNOT, QIcon("assets/CNOT.png"))
             }
             backend_options = {
                 "Matrix product backend": MatrixProduct

@@ -6,7 +6,7 @@ import itertools
 import scipy
 import math
 import numpy as np
-from backends.photonic.backend import Backend
+from backends.backend import PhotonicBackend
 from backends.photonic.components.beamsplitter import BeamSplitter
 from backends.photonic.components.switch import Switch
 from backends.photonic.components.detector import Detector
@@ -15,7 +15,7 @@ from backends.photonic.components.loss import Loss
 from backends.utils import rank_to_basis, spin_y_matrix
 
 
-class Permanent(Backend):
+class Permanent(PhotonicBackend):
     def __init__(self, n_wires, n_photons):
         super().__init__(n_wires, n_photons)
 

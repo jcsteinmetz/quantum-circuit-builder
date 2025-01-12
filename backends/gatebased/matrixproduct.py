@@ -4,10 +4,11 @@ Basic matrix product model
 
 import numpy as np
 from backends.gatebased.components.single_qubit_gate import SingleQubitGate
-from backends.utils import bloch_to_rho, pauli
-from backends.gatebased.backend import Backend
+from backends.gatebased.components.two_qubit_gate import TwoQubitGate
+from backends.utils import bloch_to_rho, insert_gate, pauli_x, pauli_y, pauli_z
+from backends.backend import GateBasedBackend
 
-class MatrixProduct(Backend):
+class MatrixProduct(GateBasedBackend):
     def __init__(self, n_qubits):
         super().__init__(n_qubits)
 
@@ -35,6 +36,10 @@ class MatrixProduct(Backend):
 
     def add_hadamard(self, **kwargs):
         comp = MatrixProductHadamard(self, **kwargs)
+        self.add_component(comp)
+
+    def add_CNOT(self, **kwargs):
+        comp = MatrixProductCNOT(self, **kwargs)
         self.add_component(comp)
 
     @property
@@ -74,22 +79,45 @@ class MatrixProductXGate(SingleQubitGate):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.single_qubit_unitary = pauli([1, 0, 0])
+        self.single_qubit_unitary = pauli_x()
 
 class MatrixProductYGate(SingleQubitGate):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.single_qubit_unitary = pauli([0, 1, 0])
+        self.single_qubit_unitary = pauli_y()
 
 class MatrixProductZGate(SingleQubitGate):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.single_qubit_unitary = pauli([0, 0, 1])
+        self.single_qubit_unitary = pauli_z()
 
 class MatrixProductHadamard(SingleQubitGate):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         self.single_qubit_unitary = (1/np.sqrt(2))*np.array([[1, 1], [1, -1]], dtype=complex)
+
+class MatrixProductCNOT(TwoQubitGate):
+    """
+    CNOT gate is a sum of do_nothing when the control qubit is 0, and flip_target when the control qubit is 1.
+    """
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def unitary(self):
+        control_qubit = self.reindexed_targeted_qubits[0]
+        target_qubit = self.reindexed_targeted_qubits[1]
+
+        control_is_zero = np.array([[1, 0], [0, 0]], dtype=complex)
+        control_is_one = np.array([[0, 0], [0, 1]], dtype=complex)
+
+        # Operation conditioned on the control qubit being zero
+        project_control_onto_zero = insert_gate(control_is_zero, control_qubit, self.backend.n_qubits)
+
+        # Operation conditioned on the control qubit being one
+        project_control_onto_one = insert_gate(control_is_one, control_qubit, self.backend.n_qubits)
+        flip_target = insert_gate(pauli_x(), target_qubit, self.backend.n_qubits)
+
+        return project_control_onto_zero + project_control_onto_one @ flip_target

@@ -1,6 +1,6 @@
 import numpy as np
 from backends.component import Component
-from backends.utils import pauli
+from backends.utils import insert_gate
 
 class SingleQubitGate(Component):
     def __init__(self, backend, *, qubit):
@@ -13,17 +13,7 @@ class SingleQubitGate(Component):
             raise ValueError("Invalid qubit choice.")
         
     def unitary(self):
-        if self.reindexed_targeted_qubit == 0:
-            unitary = self.single_qubit_unitary
-        else:
-            unitary = np.eye(2)
-
-        for qubit in range(1, self.backend.n_qubits):
-            if qubit == self.reindexed_targeted_qubit:
-                unitary = np.kron(unitary, self.single_qubit_unitary)
-            else:
-                unitary = np.kron(unitary, np.eye(2))
-        return unitary
+        return insert_gate(self.single_qubit_unitary, self.reindexed_targeted_qubit, self.backend.n_qubits)
 
     def apply(self):
         unitary = self.unitary()

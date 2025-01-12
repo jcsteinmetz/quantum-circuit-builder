@@ -891,3 +891,44 @@ class Qubit(Component):
 
     def add_to_sim(self):
         pass
+
+class CNOT(Component):
+    def __init__(self, window):
+        super().__init__(window)
+
+        # Style
+        self.shape_scale = 0.5
+        self.shape_type = ["circle", "X"]
+
+        # Properties
+        self.create_property_box()
+        self.direction = "V"
+
+    @property
+    def length(self):
+        return 2
+
+    def create_property_box(self):
+        pass
+
+    @property
+    def placeable(self):
+        if self.overlaps_a_component(self.potential_placement):
+            return False
+        if self.overlaps_itself(self.potential_placement):
+            return False
+        if self.spans_a_component(self.potential_placement):
+            return False
+        if self.overlaps_a_wire_edge(self.potential_placement):
+            return False
+        if self.overlaps_a_wire(self.potential_placement):
+            return True
+        return False
+    
+    def add_to_console(self):
+        wire_indices = [self.get_wire_index(wire) for wire in self.connected_wires]
+        self.window.console.code += "circuit.add_CNOT(qubits = "+str(wire_indices)+")\n"
+    
+    def add_to_sim(self):
+        wires = [self.window.canvas.placed_components["wires"].index(w) + 1 for w in self.connected_wires]
+        self.window.interface.circuit.add_CNOT(qubits = wires)

@@ -49,3 +49,7 @@ def pauli_y():
 
 def pauli_z():
     return np.array([[1, 0], [0, -1]], dtype=complex)
+
+def insert_gate(gate, qubit, n_qubits):
+    """Inserts a 2x2 matrix acting on a specific qubit into the N-qubit product space"""
+    return np.kron(np.kron(np.eye(2**qubit), gate), np.eye(2**(n_qubits-qubit-1)))

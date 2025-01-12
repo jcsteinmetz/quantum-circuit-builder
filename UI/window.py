@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QFileDialog, QLabel, QMainWindow, QWidget, QVBoxLayout, QSplitter
+from PySide6.QtWidgets import QLabel, QMainWindow, QWidget, QVBoxLayout, QSplitter
 from PySide6.QtGui import QIcon
 from PySide6.QtCore import Qt
 from UI.canvas import Canvas
@@ -9,9 +9,7 @@ from UI.interface import Interface
 from UI.toolbar import ToolBar
 from UI.style import StyleManager
 from copy import deepcopy
-import os
 import pickle
-import numpy as np
 
 class MainWindow(QMainWindow):
     def __init__(self, simulation_type, file_path_to_open):

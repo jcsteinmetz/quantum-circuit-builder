@@ -6,6 +6,121 @@ from PySide6.QtGui import QPixmap
 from PySide6.QtCore import Qt
 import os
 
+class StartupDialog(QDialog):
+    """
+    Dialog that appears immediately on starting the application. Contains options for 
+    creating new circuits and opening .circ files.
+    """
+    NEW_CIRCUIT = "New circuit"
+    OPEN = "Open"
+    WIDTH = 600
+    HEIGHT = 200
+    NAV_WIDTH = 150
+
+    def __init__(self):
+        super().__init__()
+        self.setup_ui()
+
+    def setup_ui(self):
+        self.setWindowTitle("Choose a circuit")
+        self.set_geometry()
+        main_layout = QVBoxLayout(self)
+
+        # Initialize confirm button first so it can be passed to pages
+        self.confirm_button = self.create_confirm_button()
+        confirm_layout = QHBoxLayout()
+        confirm_layout.addStretch()
+        confirm_layout.addWidget(self.confirm_button)
+
+        # Initialize content and navigation
+        self.content = self.create_content_widget()
+        self.navigation = self.create_navigation_widget([self.NEW_CIRCUIT, self.OPEN])
+
+        # Layouts for navigation and content
+        nav_content_layout = QHBoxLayout()
+        nav_content_layout.addWidget(self.navigation)
+        nav_content_layout.addWidget(self.content)
+
+        # Assemble layouts
+        main_layout.addLayout(nav_content_layout)
+        main_layout.addLayout(confirm_layout)
+
+        # Initial confirm button state
+        self.update_confirm_button_state()
+
+    def set_geometry(self):
+        screen = QApplication.primaryScreen().geometry()
+        self.setGeometry(
+            (screen.width() - self.WIDTH) // 2,
+            (screen.height() - self.HEIGHT) // 4,
+            self.WIDTH, self.HEIGHT
+        )
+
+    def create_navigation_widget(self, items):
+        """Create the navigation panel on the left hand side, which is used to choose between pages."""
+        nav = QListWidget()
+        nav.addItems(items)
+        nav.setFixedWidth(self.NAV_WIDTH)
+        nav.setCurrentRow(0)
+        nav.currentRowChanged.connect(self.content.setCurrentIndex)
+        nav.currentRowChanged.connect(self.update_confirm_button_state)
+        return nav
+
+    def create_content_widget(self):
+        """Create the main content area which displays the current page."""
+        content = QStackedWidget()
+
+        # Create individual pages
+        self.new_circuit_page = NewCircuitPage()
+        self.open_circuit_page = OpenCircuitPage()
+
+        # Add pages to the stack
+        content.addWidget(self.new_circuit_page)
+        content.addWidget(self.open_circuit_page)
+
+        # Associate confirm button with pages
+        self.new_circuit_page.set_confirm_button(self.confirm_button)
+        self.open_circuit_page.set_confirm_button(self.confirm_button)
+
+        return content
+
+    def create_confirm_button(self):
+        button = QPushButton("Confirm")
+        button.clicked.connect(self.on_confirm_clicked)
+        return button
+
+    def on_confirm_clicked(self):
+        """
+        Determines the action to take when the confirm button is clicked. The action
+        varies depending on which page is currently selected.
+        """
+        if self.current_page == self.NEW_CIRCUIT:
+            self.new_circuit_page.on_confirm_clicked()
+            self.accept()
+        elif self.current_page == self.OPEN:
+            self.open_circuit_page.on_confirm_clicked()
+            self.accept()
+
+    @property
+    def current_page(self):
+        return self.navigation.currentItem().text()
+
+    def update_confirm_button_state(self):
+        if self.current_page == self.NEW_CIRCUIT:
+            self.new_circuit_page.update_confirm_button_state()
+        elif self.current_page == self.OPEN:
+            self.open_circuit_page.update_confirm_button_state()
+
+    def get_selected_data(self):
+        """
+        Return the selected data (simulation type and/or file path).
+        This method is called after the dialog is accepted.
+        """
+        if self.current_page == self.NEW_CIRCUIT:
+            return self.new_circuit_page.simulation_type, None
+        elif self.current_page == self.OPEN:
+            return None, self.open_circuit_page.file_path_input.text().strip()
+
 
 class BasePage(QWidget):
     """Base class for pages in the dialog."""
@@ -102,147 +217,3 @@ class OpenCircuitPage(BasePage):
 
     def on_confirm_clicked(self):
         self.file_path_to_open = self.file_path_input.text().strip()
-
-
-class StartupDialog(QDialog):
-    """
-    Dialog that appears immediately on starting the application. Contains options for 
-    creating new circuits and opening .circ files.
-    """
-    NEW_CIRCUIT = "New circuit"
-    OPEN = "Open"
-    WIDTH = 600
-    HEIGHT = 200
-    NAV_WIDTH = 150
-
-    def __init__(self):
-        super().__init__()
-        self.setWindowTitle("Choose a circuit")
-        self.setup_ui()
-
-    def setup_ui(self):
-        self.set_geometry()
-        main_layout = QVBoxLayout(self)
-
-        title_layout = self.create_title_layout()
-
-        # Initialize confirm button first so it can be passed to pages
-        self.confirm_button = self.create_confirm_button()
-        confirm_layout = QHBoxLayout()
-        confirm_layout.addStretch()
-        confirm_layout.addWidget(self.confirm_button)
-
-        # Initialize content and navigation
-        self.content = self.create_content_widget()
-        self.navigation = self.create_navigation_widget([self.NEW_CIRCUIT, self.OPEN])
-
-        # Layouts for navigation and content
-        nav_content_layout = QHBoxLayout()
-        nav_content_layout.addWidget(self.navigation)
-        nav_content_layout.addWidget(self.content)
-
-        # Assemble layouts
-        main_layout.addLayout(title_layout)
-        main_layout.addLayout(nav_content_layout)
-        main_layout.addLayout(confirm_layout)
-
-        # Initial confirm button state
-        self.update_confirm_button_state()
-
-    def set_geometry(self):
-        screen = QApplication.primaryScreen().geometry()
-        self.setGeometry(
-            (screen.width() - self.WIDTH) // 2,
-            (screen.height() - self.HEIGHT) // 4,
-            self.WIDTH, self.HEIGHT
-        )
-
-    def create_title_layout(self):
-        """Create widget displaying the name and logo of the application"""
-        title_layout = QHBoxLayout()
-
-        # Create logo
-        logo = QLabel()
-        pixmap = QPixmap("assets/logo.png")
-        logo.setPixmap(pixmap)
-        logo.setScaledContents(True)
-        logo.setFixedSize(50, 50)
-
-        # Create text
-        title_text = QLabel("Quantum Circuit Builder v1.0")
-        title_text.setStyleSheet("font-family: 'Helvetica'; font-size: 24px; font-weight: bold;")
-        title_text.setAlignment(Qt.AlignCenter) 
-
-        # Add widgets to the layout
-        title_layout.addStretch()
-        title_layout.addWidget(logo)
-        title_layout.addWidget(title_text)
-        title_layout.addStretch()
-        title_layout.setContentsMargins(0, 0, 0, 0)
-
-        return title_layout
-
-    def create_navigation_widget(self, items):
-        """Create the navigation panel on the left hand side, which is used to choose between pages."""
-        nav = QListWidget()
-        nav.addItems(items)
-        nav.setFixedWidth(self.NAV_WIDTH)
-        nav.setCurrentRow(0)
-        nav.currentRowChanged.connect(self.content.setCurrentIndex)
-        nav.currentRowChanged.connect(self.update_confirm_button_state)
-        return nav
-
-    def create_content_widget(self):
-        """Create the main content area which displays the current page."""
-        content = QStackedWidget()
-
-        # Create individual pages
-        self.new_circuit_page = NewCircuitPage()
-        self.open_circuit_page = OpenCircuitPage()
-
-        # Add pages to the stack
-        content.addWidget(self.new_circuit_page)
-        content.addWidget(self.open_circuit_page)
-
-        # Associate confirm button with pages
-        self.new_circuit_page.set_confirm_button(self.confirm_button)
-        self.open_circuit_page.set_confirm_button(self.confirm_button)
-
-        return content
-
-    def create_confirm_button(self):
-        button = QPushButton("Confirm")
-        button.clicked.connect(self.on_confirm_clicked)
-        return button
-
-    def on_confirm_clicked(self):
-        """
-        Determines the action to take when the confirm button is clicked. The action
-        varies depending on which page is currently selected.
-        """
-        if self.current_page == self.NEW_CIRCUIT:
-            self.new_circuit_page.on_confirm_clicked()
-            self.accept()
-        elif self.current_page == self.OPEN:
-            self.open_circuit_page.on_confirm_clicked()
-            self.accept()
-
-    @property
-    def current_page(self):
-        return self.navigation.currentItem().text()
-
-    def update_confirm_button_state(self):
-        if self.current_page == self.NEW_CIRCUIT:
-            self.new_circuit_page.update_confirm_button_state()
-        elif self.current_page == self.OPEN:
-            self.open_circuit_page.update_confirm_button_state()
-
-    def get_selected_data(self):
-        """
-        Return the selected data (simulation type and/or file path).
-        This method is called after the dialog is accepted.
-        """
-        if self.current_page == self.NEW_CIRCUIT:
-            return self.new_circuit_page.simulation_type, None
-        elif self.current_page == self.OPEN:
-            return None, self.open_circuit_page.file_path_input.text().strip()
