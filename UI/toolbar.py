@@ -2,10 +2,11 @@
 Contains the ToolBar class.
 """
 
+import os
 from functools import partial
-from PySide6.QtWidgets import QSizePolicy, QWidget, QToolBar, QApplication, QComboBox, QStyle
+from PySide6.QtWidgets import QFileDialog, QSizePolicy, QWidget, QToolBar, QApplication, QComboBox, QStyle
 from PySide6.QtGui import QAction, QActionGroup, QIcon
-from UI.component import Wire, BeamSplitter, Switch, Loss, Detector, PhaseShift
+from UI.component import Wire, BeamSplitter, Switch, Loss, Detector, PhaseShift, XGate, YGate, ZGate, Hadamard
 from UI.canvas_tools import Select, Grab
 from backends.fock import Fock
 from backends.permanent import Permanent
@@ -22,23 +23,36 @@ class ToolBar(QToolBar):
         self.window = window
 
         # Tools (name of tool class, tool icon)
-        tools = {
-            "Select": (Select, QIcon("assets/select.png")),
-            "Grab": (Grab, QIcon("assets/grab.png")),
-            "Wire": (Wire, QIcon("assets/wire.png")),
-            "Beam splitter": (BeamSplitter, QIcon("assets/beamsplitter.png")),
-            "Switch": (Switch, QIcon("assets/switch.png")),
-            "Phase shift": (PhaseShift, QIcon("assets/phaseshift.png")),
-            "Loss": (Loss, QIcon("assets/loss.png")),
-            "Detector": (Detector, QIcon("assets/detector.png"))
-        }
-
-        backend_options = {
-            "Fock backend": Fock,
-            "Permanent backend": Permanent,
-            "Strawberry fields": Xanadu,
-            "Perceval": Quandela
-        }
+        if self.window.simulation_type == "photonic":
+            tools = {
+                "Select": (Select, QIcon("assets/select.png")),
+                "Grab": (Grab, QIcon("assets/grab.png")),
+                "Wire": (Wire, QIcon("assets/wire.png")),
+                "Beam splitter": (BeamSplitter, QIcon("assets/beamsplitter.png")),
+                "Switch": (Switch, QIcon("assets/switch.png")),
+                "Phase shift": (PhaseShift, QIcon("assets/phaseshift.png")),
+                "Loss": (Loss, QIcon("assets/loss.png")),
+                "Detector": (Detector, QIcon("assets/detector.png"))
+            }
+            backend_options = {
+                "Fock backend": Fock,
+                "Permanent backend": Permanent,
+                "Strawberry fields": Xanadu,
+                "Perceval": Quandela
+            }
+        else:
+            tools = {
+                "Select": (Select, QIcon("assets/select.png")),
+                "Grab": (Grab, QIcon("assets/grab.png")),
+                "Wire": (Wire, QIcon("assets/wire.png")),
+                "X gate": (XGate, None),
+                "Y gate": (YGate, None),
+                "Z gate": (ZGate, None),
+                "Hadamard": (Hadamard, None)
+            }
+            backend_options = {
+                "Placeholder backend": None
+            }
         
         # Button icons
         open_icon = self.style().standardIcon(QStyle.StandardPixmap.SP_DialogOpenButton)
@@ -145,10 +159,16 @@ class ToolBar(QToolBar):
         self.window.clear()
 
     def save_trigger(self):
-        self.window.save_file()
+        current_path = os.path.dirname(os.path.abspath(__file__))
+        file_path, _ = QFileDialog.getSaveFileName(self, "Save circuit", current_path, "Circ Files (*.circ);;All Files (*)")
+        self.window.save_file(file_path)
 
     def open_trigger(self):
-        self.window.open_file()
+        # File open dialog
+        current_path = os.path.dirname(os.path.abspath(__file__))
+        file_path, _ = QFileDialog.getOpenFileName(self, "Open circuit", current_path, "Circ Files (*.circ);;All Files (*)")
+
+        self.window.open_file(file_path)
 
     def quit_trigger(self):
         """

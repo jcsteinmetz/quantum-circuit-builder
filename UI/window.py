@@ -14,8 +14,13 @@ import pickle
 import numpy as np
 
 class MainWindow(QMainWindow):
-    def __init__(self):
+    def __init__(self, simulation_type, file_path_to_open):
         super().__init__()
+
+        if simulation_type not in ["photonic", "gate-based"]:
+            raise ValueError("Invalid simulation type.")
+
+        self.simulation_type = simulation_type
 
         self.active_file = "Untitled.circ"
         self.unsaved_changes = False
@@ -64,6 +69,9 @@ class MainWindow(QMainWindow):
         self.setFocus()
 
         self.update_undo_stack()
+
+        if file_path_to_open:
+            self.open_file(file_path_to_open)
 
     def mark_unsaved_changes(self):
         if self.redo_stack:
@@ -151,10 +159,8 @@ class MainWindow(QMainWindow):
         self.canvas.repaint()
         self.mark_unsaved_changes()
 
-    def save_file(self):
+    def save_file(self, file_path):
         # Save to circ file
-        current_path = os.path.dirname(os.path.abspath(__file__))
-        file_path, _ = QFileDialog.getSaveFileName(self, "Save circuit", current_path, "Circ Files (*.circ);;All Files (*)")
         if file_path and not file_path.endswith(".circ"):
             file_path += ".circ"
         if file_path:
@@ -162,7 +168,8 @@ class MainWindow(QMainWindow):
                 self.canvas.placed_components,
                 self.canvas.gram_matrix,
                 self.canvas.grid.offset,
-                self.canvas.grid.size
+                self.canvas.grid.size,
+                self.simulation_type
             )
             with open(file_path, "wb") as file:
                 pickle.dump(save_data, file)
@@ -171,11 +178,7 @@ class MainWindow(QMainWindow):
         self.unsaved_changes = False
         self.update_title()
 
-    def open_file(self):
-        # File open dialog
-        current_path = os.path.dirname(os.path.abspath(__file__))
-        file_path, _ = QFileDialog.getOpenFileName(self, "Open circuit", current_path, "Circ Files (*.circ);;All Files (*)")
-
+    def open_file(self, file_path):
         # Open file
         if file_path:
             self.clear()
@@ -186,7 +189,8 @@ class MainWindow(QMainWindow):
                 self.canvas.placed_components,
                 self.canvas.gram_matrix,
                 self.canvas.grid.offset,
-                self.canvas.grid.size
+                self.canvas.grid.size,
+                self.simulation_type
             ) = load_data
 
             # Set unserializable attributes

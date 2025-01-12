@@ -699,3 +699,135 @@ class PhaseShift(Component):
     def add_to_sim(self):
         wires = [self.window.canvas.placed_components["wires"].index(w) + 1 for w in self.connected_wires]
         self.window.interface.circuit.add_phaseshift(wire = wires[0], phase = self.phase)
+
+class XGate(Component):
+    def __init__(self, window):
+        super().__init__(window)
+
+        # Style
+        self.shape_scale = 0.5
+        self.shape_type = ["square"]
+
+        # Properties
+        self.create_property_box()
+
+    @property
+    def length(self):
+        return 1
+
+    def create_property_box(self):
+        pass
+    
+    @property
+    def placeable(self):
+        if self.overlaps_a_component(self.potential_placement):
+            return False
+        if self.overlaps_a_wire(self.potential_placement):
+            return True
+        
+    def add_to_console(self):
+        wire_index = self.get_wire_index(self.connected_wires[0])
+        self.window.console.code += "circuit.add_Xgate(qubit = "+str(wire_index)+")\n"
+
+    def add_to_sim(self):
+        wires = [self.window.canvas.placed_components["wires"].index(w) + 1 for w in self.connected_wires]
+        self.window.interface.circuit.add_Xgate(qubit = wires[0])
+
+class YGate(Component):
+    def __init__(self, window):
+        super().__init__(window)
+
+        # Style
+        self.shape_scale = 0.5
+        self.shape_type = ["square"]
+
+        # Properties
+        self.create_property_box()
+
+    @property
+    def length(self):
+        return 1
+
+    def create_property_box(self):
+        pass
+    
+    @property
+    def placeable(self):
+        if self.overlaps_a_component(self.potential_placement):
+            return False
+        if self.overlaps_a_wire(self.potential_placement):
+            return True
+        
+    def add_to_console(self):
+        wire_index = self.get_wire_index(self.connected_wires[0])
+        self.window.console.code += "circuit.add_Ygate(qubit = "+str(wire_index)+")\n"
+
+    def add_to_sim(self):
+        wires = [self.window.canvas.placed_components["wires"].index(w) + 1 for w in self.connected_wires]
+        self.window.interface.circuit.add_Ygate(qubit = wires[0])
+
+class ZGate(Component):
+    def __init__(self, window):
+        super().__init__(window)
+
+        # Style
+        self.shape_scale = 0.5
+        self.shape_type = ["square"]
+
+        # Properties
+        self.create_property_box()
+
+    @property
+    def length(self):
+        return 1
+
+    def create_property_box(self):
+        pass
+    
+    @property
+    def placeable(self):
+        if self.overlaps_a_component(self.potential_placement):
+            return False
+        if self.overlaps_a_wire(self.potential_placement):
+            return True
+        
+    def add_to_console(self):
+        wire_index = self.get_wire_index(self.connected_wires[0])
+        self.window.console.code += "circuit.add_Zgate(qubit = "+str(wire_index)+")\n"
+
+    def add_to_sim(self):
+        wires = [self.window.canvas.placed_components["wires"].index(w) + 1 for w in self.connected_wires]
+        self.window.interface.circuit.add_Zgate(qubit = wires[0])
+
+class Hadamard(Component):
+    def __init__(self, window):
+        super().__init__(window)
+
+        # Style
+        self.shape_scale = 0.5
+        self.shape_type = ["square"]
+
+        # Properties
+        self.create_property_box()
+
+    @property
+    def length(self):
+        return 1
+
+    def create_property_box(self):
+        pass
+    
+    @property
+    def placeable(self):
+        if self.overlaps_a_component(self.potential_placement):
+            return False
+        if self.overlaps_a_wire(self.potential_placement):
+            return True
+        
+    def add_to_console(self):
+        wire_index = self.get_wire_index(self.connected_wires[0])
+        self.window.console.code += "circuit.add_hadamard(qubit = "+str(wire_index)+")\n"
+
+    def add_to_sim(self):
+        wires = [self.window.canvas.placed_components["wires"].index(w) + 1 for w in self.connected_wires]
+        self.window.interface.circuit.add_hadamard(qubit = wires[0])
