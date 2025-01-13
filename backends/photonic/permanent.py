@@ -7,11 +7,7 @@ import scipy
 import math
 import numpy as np
 from backends.backend import PhotonicBackend
-from backends.photonic.components.beamsplitter import BeamSplitter
-from backends.photonic.components.switch import Switch
-from backends.photonic.components.detector import Detector
-from backends.photonic.components.phaseshift import PhaseShift
-from backends.photonic.components.loss import Loss
+from backends.photonic.components import BeamSplitter, Switch, PhaseShift, Loss, Detector
 from backends.utils import rank_to_basis, spin_y_matrix
 
 

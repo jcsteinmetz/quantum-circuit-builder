@@ -2,8 +2,6 @@ from PySide6.QtWidgets import (
     QApplication, QFileDialog, QLineEdit, QRadioButton, QGroupBox, QDialog,
     QVBoxLayout, QHBoxLayout, QListWidget, QStackedWidget, QWidget, QLabel, QPushButton
 )
-from PySide6.QtGui import QPixmap
-from PySide6.QtCore import Qt
 import os
 
 class StartupDialog(QDialog):

@@ -1,8 +1,7 @@
 import sys
 from PySide6.QtWidgets import QApplication, QDialog
-from UI.startup_dialog import StartupDialog
+from UI import MainWindow, StartupDialog
 import qdarktheme
-from UI.window import MainWindow
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

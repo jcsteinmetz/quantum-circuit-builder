@@ -3,10 +3,9 @@ Basic matrix product model
 """
 
 import numpy as np
-from backends.gatebased.components.single_qubit_gate import SingleQubitGate
-from backends.gatebased.components.two_qubit_gate import TwoQubitGate
 from backends.utils import bloch_to_rho, insert_gate, pauli_x, pauli_y, pauli_z
 from backends.backend import GateBasedBackend
+from backends.gatebased.components import SingleQubitGate, TwoQubitGate
 
 class MatrixProduct(GateBasedBackend):
     def __init__(self, n_qubits):

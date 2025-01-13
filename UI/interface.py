@@ -1,5 +1,4 @@
-from backends.photonic.fock import Fock
-from backends.gatebased.matrixproduct import MatrixProduct
+from backends import Fock, MatrixProduct
 
 class Interface:
     """

@@ -6,11 +6,7 @@ import numpy as np
 import math
 import scipy
 from backends.backend import PhotonicBackend
-from backends.photonic.components.beamsplitter import BeamSplitter
-from backends.photonic.components.switch import Switch
-from backends.photonic.components.loss import Loss
-from backends.photonic.components.detector import Detector
-from backends.photonic.components.phaseshift import PhaseShift
+from backends.photonic.components import BeamSplitter, Switch, PhaseShift, Loss, Detector
 from backends.utils import basis_to_rank, rank_to_basis, calculate_fock_hilbert_dimension, spin_y_matrix
 
 class Fock(PhotonicBackend):

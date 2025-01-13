@@ -6,12 +6,8 @@ from functools import partial
 from PySide6.QtWidgets import QFileDialog, QSizePolicy, QWidget, QToolBar, QApplication, QComboBox, QStyle
 from PySide6.QtGui import QAction, QActionGroup, QIcon
 from UI.component import Wire, BeamSplitter, Switch, Loss, Detector, PhaseShift, XGate, YGate, ZGate, Hadamard, Qubit, CNOT
-from UI.canvas_tools import Select, Grab
-from backends.photonic.fock import Fock
-from backends.photonic.permanent import Permanent
-from backends.photonic.xanadu import Xanadu
-from backends.photonic.quandela import Quandela
-from backends.gatebased.matrixproduct import MatrixProduct
+from UI.canvas import Select, Grab
+from backends import Fock, Permanent, Xanadu, Quandela, MatrixProduct
 
 class ToolBar(QToolBar):
     """
