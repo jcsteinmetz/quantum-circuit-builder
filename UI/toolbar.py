@@ -154,7 +154,7 @@ class ToolBar(QToolBar):
         self.window.canvas.recenter()
 
     def delete_trigger(self):
-        for comp in self.window.canvas.all_placed_components():
+        for comp in reversed(list(self.window.canvas.all_placed_components())):
             if comp.is_selected:
                 comp.delete()
         self.window.control_panel.components_tab.refresh()

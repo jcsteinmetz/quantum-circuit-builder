@@ -15,9 +15,6 @@ class MainWindow(QMainWindow):
     def __init__(self, simulation_type, file_path_to_open):
         super().__init__()
 
-        if simulation_type not in ["photonic", "gate-based"]:
-            raise ValueError("Invalid simulation type.")
-
         self.simulation_type = simulation_type
 
         self.active_file = "Untitled.circ"
@@ -149,7 +146,7 @@ class MainWindow(QMainWindow):
         return compound_widget
     
     def clear(self):
-        for comp in self.canvas.all_placed_components():
+        for comp in reversed(list(self.canvas.all_placed_components())):
             comp.delete()
         self.console.refresh()
         self.control_panel.components_tab.clear_components()
