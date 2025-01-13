@@ -1,8 +1,8 @@
 from PySide6.QtWidgets import QWidget
 from PySide6.QtGui import QPainter, QWheelEvent, QMouseEvent
 from PySide6.QtCore import QEvent, Qt
-from UI.grid import Grid
-from UI.canvas_tools import Select, CanvasTool
+from UI.canvas.grid import Grid
+from UI.canvas.canvas_tools import Select, CanvasTool
 from UI.component import Detector, ComponentRenderer
 import numpy as np
 
