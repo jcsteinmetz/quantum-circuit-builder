@@ -30,9 +30,7 @@ pip install .
 ```
 
 ## Usage
-To use the GUI, open `main.py`.
-
-It is also possible to create a circuit without using the GUI. All backends use the same syntax, with slight differences between gate-based and photonic backends. 
+To use the GUI, run `main.py`. It is also possible to create a circuit without using the GUI, which is useful if you want to iterate over circuits or benchmark different backends. The same syntax is used to access all backends, with slight differences between gate-based and photonic backends. 
 
 ### Gate-based circuits
 To create a gate-based circuit using the matrix product demo backend, we create a MatrixProduct object with a number of qubits:
