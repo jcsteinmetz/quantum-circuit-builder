@@ -1,4 +1,4 @@
-from backends.components.component import Component
+from backends.component import Component
 
 class Loss(Component):
     def __init__(self, backend, *, wire, eta = 1):

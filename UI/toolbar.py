@@ -1,16 +1,13 @@
 """
 Contains the ToolBar class.
 """
-
+import os
 from functools import partial
-from PySide6.QtWidgets import QSizePolicy, QWidget, QToolBar, QApplication, QComboBox, QStyle
+from PySide6.QtWidgets import QFileDialog, QSizePolicy, QWidget, QToolBar, QApplication, QComboBox, QStyle
 from PySide6.QtGui import QAction, QActionGroup, QIcon
-from UI.component import Wire, BeamSplitter, Switch, Loss, Detector, PhaseShift
-from UI.canvas_tools import Select, Grab
-from backends.fock import Fock
-from backends.permanent import Permanent
-from backends.xanadu import Xanadu
-from backends.quandela import Quandela
+from UI.component import Wire, BeamSplitter, Switch, Loss, Detector, PhaseShift, XGate, YGate, ZGate, Hadamard, Qubit, CNOT
+from UI.canvas import Select, Grab
+from backends import Fock, Permanent, Xanadu, Quandela, MatrixProduct
 
 class ToolBar(QToolBar):
     """
@@ -21,25 +18,11 @@ class ToolBar(QToolBar):
 
         self.window = window
 
-        # Tools (name of tool class, tool icon)
-        tools = {
-            "Select": (Select, QIcon("assets/select.png")),
-            "Grab": (Grab, QIcon("assets/grab.png")),
-            "Wire": (Wire, QIcon("assets/wire.png")),
-            "Beam splitter": (BeamSplitter, QIcon("assets/beamsplitter.png")),
-            "Switch": (Switch, QIcon("assets/switch.png")),
-            "Phase shift": (PhaseShift, QIcon("assets/phaseshift.png")),
-            "Loss": (Loss, QIcon("assets/loss.png")),
-            "Detector": (Detector, QIcon("assets/detector.png"))
-        }
+        self.setup_toolbar()
 
-        backend_options = {
-            "Fock backend": Fock,
-            "Permanent backend": Permanent,
-            "Strawberry fields": Xanadu,
-            "Perceval": Quandela
-        }
-        
+    def setup_toolbar(self):
+        self.clear() # clear the toolbar in case it has previously been set up
+
         # Button icons
         open_icon = self.style().standardIcon(QStyle.StandardPixmap.SP_DialogOpenButton)
         save_icon = self.style().standardIcon(QStyle.StandardPixmap.SP_DialogSaveButton)
@@ -51,6 +34,39 @@ class ToolBar(QToolBar):
         darkmode_icon = QIcon("assets/darkmode.png")
         clear_icon = self.style().standardIcon(QStyle.StandardPixmap.SP_DialogDiscardButton)
         quit_icon = self.style().standardIcon(QStyle.StandardPixmap.SP_DialogCloseButton)
+
+        # Tools (name of tool class, tool icon)
+        if self.window.simulation_type == "photonic":
+            tools = {
+                "Select": (Select, QIcon("assets/select.png")),
+                "Grab": (Grab, QIcon("assets/grab.png")),
+                "Wire": (Wire, QIcon("assets/wire.png")),
+                "Beam splitter": (BeamSplitter, QIcon("assets/beamsplitter.png")),
+                "Switch": (Switch, QIcon("assets/switch.png")),
+                "Phase shift": (PhaseShift, QIcon("assets/phaseshift.png")),
+                "Loss": (Loss, QIcon("assets/loss.png")),
+                "Detector": (Detector, QIcon("assets/detector.png"))
+            }
+            backend_options = {
+                "Fock backend": Fock,
+                "Permanent backend": Permanent,
+                "Strawberry fields": Xanadu,
+                "Perceval": Quandela
+            }
+        else:
+            tools = {
+                "Select": (Select, QIcon("assets/select.png")),
+                "Grab": (Grab, QIcon("assets/grab.png")),
+                "Qubit": (Qubit, QIcon("assets/wire.png")),
+                "X gate": (XGate, QIcon("assets/xgate.png")),
+                "Y gate": (YGate, QIcon("assets/ygate.png")),
+                "Z gate": (ZGate, QIcon("assets/zgate.png")),
+                "Hadamard": (Hadamard, QIcon("assets/hadamard.png")),
+                "CNOT": (CNOT, QIcon("assets/CNOT.png"))
+            }
+            backend_options = {
+                "Matrix product backend": MatrixProduct
+            }
 
         # Buttons
         self.add_button("Open", self.open_trigger, open_icon)
@@ -108,6 +124,9 @@ class ToolBar(QToolBar):
         dropdown.currentIndexChanged.connect(lambda index: dropdown_trigger(options[dropdown.currentText()]))
         self.addWidget(dropdown)
 
+        # Trigger first option
+        dropdown_trigger(options[dropdown.currentText()])
+
     def add_button(self, name, trigger, icon, checkable=False, checked=False):
         """
         Add a button to the toolbar. Buttons perform a one-time action when clicked.
@@ -135,7 +154,7 @@ class ToolBar(QToolBar):
         self.window.canvas.recenter()
 
     def delete_trigger(self):
-        for comp in self.window.canvas.all_placed_components():
+        for comp in reversed(list(self.window.canvas.all_placed_components())):
             if comp.is_selected:
                 comp.delete()
         self.window.control_panel.components_tab.refresh()
@@ -145,13 +164,23 @@ class ToolBar(QToolBar):
         self.window.clear()
 
     def save_trigger(self):
-        self.window.save_file()
+        current_path = os.path.dirname(os.path.abspath(__file__))
+        file_path, _ = QFileDialog.getSaveFileName(self, "Save circuit", current_path, "Circ Files (*.circ);;All Files (*)")
+        self.window.save_file(file_path)
 
     def open_trigger(self):
-        self.window.open_file()
+        # File open dialog
+        current_path = os.path.dirname(os.path.abspath(__file__))
+        file_path, _ = QFileDialog.getOpenFileName(self, "Open circuit", current_path, "Circ Files (*.circ);;All Files (*)")
+
+        self.window.open_file(file_path)
 
     def quit_trigger(self):
         """
         Quits the application
         """
         QApplication.instance().quit()
+
+    def clear(self):
+        for action in self.actions():
+            self.removeAction(action)

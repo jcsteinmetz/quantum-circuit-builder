@@ -1,7 +1,4 @@
-import numpy as np
-from backends.fock import Fock
-from backends.permanent import Permanent
-from backends.xanadu import Xanadu
+from backends import Fock, MatrixProduct
 
 class Interface:
     """
@@ -11,13 +8,19 @@ class Interface:
     def __init__(self, window):
         self.window = window
         self.circuit = None
-        self.chosen_backend = Fock
+        if self.window.simulation_type == "photonic":
+            self.chosen_backend = Fock
+        else:
+            self.chosen_backend = MatrixProduct
 
     def build_circuit(self):
         """Creates a circuit in the chosen backend and adds all drawn components."""
-        self.circuit = self.chosen_backend(self.window.canvas.n_wires, self.window.canvas.n_photons)
-        
-        self.circuit.set_input_state(self.input_fock_state)
+        if self.window.simulation_type == "photonic":
+            self.circuit = self.chosen_backend(self.window.canvas.n_wires, self.window.canvas.n_photons)
+            self.circuit.set_input_state(self.input_fock_state)
+        else:
+            self.circuit = self.chosen_backend(self.window.canvas.n_wires)
+            self.circuit.set_input_state(self.input_qubit_state)
 
         for comp in self.window.canvas.placed_components["components"]:
             comp.add_to_sim()
@@ -43,3 +46,8 @@ class Interface:
     def input_fock_state(self):
         """The Fock state at the beginning of the circuit, taken from the wires' properties entered by the user."""
         return tuple(wire.n_photons for wire in self.window.canvas.placed_components["wires"])
+    
+    @property
+    def input_qubit_state(self):
+        """The state of N qubits at the beginning of the circuit. Equivalent of input_fock_state but in a gate-based backend."""
+        return tuple(qubit.initial_state for qubit in self.window.canvas.placed_components["wires"])

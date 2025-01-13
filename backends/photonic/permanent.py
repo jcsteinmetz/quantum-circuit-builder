@@ -6,16 +6,12 @@ import itertools
 import scipy
 import math
 import numpy as np
-from backends.backend import Backend
-from backends.components.beamsplitter import BeamSplitter
-from backends.components.switch import Switch
-from backends.components.detector import Detector
-from backends.components.phaseshift import PhaseShift
-from backends.components.loss import Loss
+from backends.backend import PhotonicBackend
+from backends.photonic.components import BeamSplitter, Switch, PhaseShift, Loss, Detector
 from backends.utils import rank_to_basis, spin_y_matrix
 
 
-class Permanent(Backend):
+class Permanent(PhotonicBackend):
     def __init__(self, n_wires, n_photons):
         super().__init__(n_wires, n_photons)
 

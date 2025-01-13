@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QFileDialog, QLabel, QMainWindow, QWidget, QVBoxLayout, QSplitter
+from PySide6.QtWidgets import QLabel, QMainWindow, QWidget, QVBoxLayout, QSplitter
 from PySide6.QtGui import QIcon
 from PySide6.QtCore import Qt
 from UI.canvas import Canvas
@@ -9,13 +9,13 @@ from UI.interface import Interface
 from UI.toolbar import ToolBar
 from UI.style import StyleManager
 from copy import deepcopy
-import os
 import pickle
-import numpy as np
 
 class MainWindow(QMainWindow):
-    def __init__(self):
+    def __init__(self, simulation_type, file_path_to_open):
         super().__init__()
+
+        self.simulation_type = simulation_type
 
         self.active_file = "Untitled.circ"
         self.unsaved_changes = False
@@ -38,7 +38,7 @@ class MainWindow(QMainWindow):
         self.console = Console(self)
         self.canvas = Canvas(self)
         self.canvas.initialize_active_tool()
-        toolbar = ToolBar(self)
+        self.toolbar = ToolBar(self)
 
         # Progress bar
         self.progress_bar = ProgressBar(self)
@@ -51,7 +51,7 @@ class MainWindow(QMainWindow):
         splitter.addWidget(right_widget)
         splitter.setSizes([100, 700])
 
-        central_widget = self.qvbox_widget([toolbar, splitter])
+        central_widget = self.qvbox_widget([self.toolbar, splitter])
         self.setCentralWidget(central_widget)
         self.setWindowState(Qt.WindowMaximized)
         self.resize(800, 600)
@@ -64,6 +64,9 @@ class MainWindow(QMainWindow):
         self.setFocus()
 
         self.update_undo_stack()
+
+        if file_path_to_open:
+            self.open_file(file_path_to_open)
 
     def mark_unsaved_changes(self):
         if self.redo_stack:
@@ -143,7 +146,7 @@ class MainWindow(QMainWindow):
         return compound_widget
     
     def clear(self):
-        for comp in self.canvas.all_placed_components():
+        for comp in reversed(list(self.canvas.all_placed_components())):
             comp.delete()
         self.console.refresh()
         self.control_panel.components_tab.clear_components()
@@ -151,10 +154,8 @@ class MainWindow(QMainWindow):
         self.canvas.repaint()
         self.mark_unsaved_changes()
 
-    def save_file(self):
+    def save_file(self, file_path):
         # Save to circ file
-        current_path = os.path.dirname(os.path.abspath(__file__))
-        file_path, _ = QFileDialog.getSaveFileName(self, "Save circuit", current_path, "Circ Files (*.circ);;All Files (*)")
         if file_path and not file_path.endswith(".circ"):
             file_path += ".circ"
         if file_path:
@@ -162,7 +163,8 @@ class MainWindow(QMainWindow):
                 self.canvas.placed_components,
                 self.canvas.gram_matrix,
                 self.canvas.grid.offset,
-                self.canvas.grid.size
+                self.canvas.grid.size,
+                self.simulation_type
             )
             with open(file_path, "wb") as file:
                 pickle.dump(save_data, file)
@@ -171,11 +173,7 @@ class MainWindow(QMainWindow):
         self.unsaved_changes = False
         self.update_title()
 
-    def open_file(self):
-        # File open dialog
-        current_path = os.path.dirname(os.path.abspath(__file__))
-        file_path, _ = QFileDialog.getOpenFileName(self, "Open circuit", current_path, "Circ Files (*.circ);;All Files (*)")
-
+    def open_file(self, file_path):
         # Open file
         if file_path:
             self.clear()
@@ -186,7 +184,8 @@ class MainWindow(QMainWindow):
                 self.canvas.placed_components,
                 self.canvas.gram_matrix,
                 self.canvas.grid.offset,
-                self.canvas.grid.size
+                self.canvas.grid.size,
+                self.simulation_type
             ) = load_data
 
             # Set unserializable attributes
@@ -204,3 +203,6 @@ class MainWindow(QMainWindow):
             self.unsaved_changes = False
             self.update_title()
             self.update_undo_stack()
+
+            # Refresh toolbar
+            self.toolbar.setup_toolbar()

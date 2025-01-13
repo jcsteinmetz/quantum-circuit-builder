@@ -1,14 +1,10 @@
 import numpy as np
 import perceval as pcvl
 from perceval.components import BS, PS, PERM, LC
-from backends.backend import Backend
-from backends.components.beamsplitter import BeamSplitter
-from backends.components.switch import Switch
-from backends.components.phaseshift import PhaseShift
-from backends.components.loss import Loss
-from backends.components.detector import Detector
+from backends.backend import PhotonicBackend
+from backends.photonic.components import BeamSplitter, Switch, PhaseShift, Loss, Detector
 
-class Quandela(Backend):
+class Quandela(PhotonicBackend):
     def __init__(self, n_wires, n_photons):
         super().__init__(n_wires, n_photons)
 

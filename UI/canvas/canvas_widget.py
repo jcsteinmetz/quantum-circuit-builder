@@ -1,9 +1,9 @@
 from PySide6.QtWidgets import QWidget
 from PySide6.QtGui import QPainter, QWheelEvent, QMouseEvent
 from PySide6.QtCore import QEvent, Qt
-from UI.grid import Grid
-from UI.canvas_tools import Select, CanvasTool
-from UI.component import Wire, Detector, ComponentRenderer
+from UI.canvas.grid import Grid
+from UI.canvas.canvas_tools import Select, CanvasTool
+from UI.component import Detector, ComponentRenderer
 import numpy as np
 
 class Canvas(QWidget):
@@ -181,7 +181,7 @@ class Canvas(QWidget):
         Place a component on the canvas. The component is drawn and saved in placed_components.
         """
         self.active_tool = comp.__class__(self.window)
-        if isinstance(comp, Wire):
+        if comp.direction == "H":
             self.placed_components["wires"].append(comp)
         elif isinstance(comp, Detector):
             self.placed_components["detectors"].append(comp)

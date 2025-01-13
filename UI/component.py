@@ -286,7 +286,7 @@ class Component(ABC):
         if len(self.node_positions) > 1:
             if self.node_positions[0]:
                 start_position = self.node_positions[0]
-                if isinstance(self, Wire):
+                if self.direction == "H":
                     # enforce wire being horizontal
                     x = snapped_mouse_position[0]
                     y = start_position[1]
@@ -699,3 +699,236 @@ class PhaseShift(Component):
     def add_to_sim(self):
         wires = [self.window.canvas.placed_components["wires"].index(w) + 1 for w in self.connected_wires]
         self.window.interface.circuit.add_phaseshift(wire = wires[0], phase = self.phase)
+
+class XGate(Component):
+    def __init__(self, window):
+        super().__init__(window)
+
+        # Style
+        self.shape_scale = 0.5
+        self.shape_type = ["square"]
+
+        # Properties
+        self.create_property_box()
+
+    @property
+    def length(self):
+        return 1
+
+    def create_property_box(self):
+        pass
+    
+    @property
+    def placeable(self):
+        if self.overlaps_a_component(self.potential_placement):
+            return False
+        if self.overlaps_a_wire(self.potential_placement):
+            return True
+        
+    def add_to_console(self):
+        wire_index = self.get_wire_index(self.connected_wires[0])
+        self.window.console.code += "circuit.add_Xgate(qubit = "+str(wire_index)+")\n"
+
+    def add_to_sim(self):
+        wires = [self.window.canvas.placed_components["wires"].index(w) + 1 for w in self.connected_wires]
+        self.window.interface.circuit.add_Xgate(qubit = wires[0])
+
+class YGate(Component):
+    def __init__(self, window):
+        super().__init__(window)
+
+        # Style
+        self.shape_scale = 0.5
+        self.shape_type = ["square"]
+
+        # Properties
+        self.create_property_box()
+
+    @property
+    def length(self):
+        return 1
+
+    def create_property_box(self):
+        pass
+    
+    @property
+    def placeable(self):
+        if self.overlaps_a_component(self.potential_placement):
+            return False
+        if self.overlaps_a_wire(self.potential_placement):
+            return True
+        
+    def add_to_console(self):
+        wire_index = self.get_wire_index(self.connected_wires[0])
+        self.window.console.code += "circuit.add_Ygate(qubit = "+str(wire_index)+")\n"
+
+    def add_to_sim(self):
+        wires = [self.window.canvas.placed_components["wires"].index(w) + 1 for w in self.connected_wires]
+        self.window.interface.circuit.add_Ygate(qubit = wires[0])
+
+class ZGate(Component):
+    def __init__(self, window):
+        super().__init__(window)
+
+        # Style
+        self.shape_scale = 0.5
+        self.shape_type = ["square"]
+
+        # Properties
+        self.create_property_box()
+
+    @property
+    def length(self):
+        return 1
+
+    def create_property_box(self):
+        pass
+    
+    @property
+    def placeable(self):
+        if self.overlaps_a_component(self.potential_placement):
+            return False
+        if self.overlaps_a_wire(self.potential_placement):
+            return True
+        
+    def add_to_console(self):
+        wire_index = self.get_wire_index(self.connected_wires[0])
+        self.window.console.code += "circuit.add_Zgate(qubit = "+str(wire_index)+")\n"
+
+    def add_to_sim(self):
+        wires = [self.window.canvas.placed_components["wires"].index(w) + 1 for w in self.connected_wires]
+        self.window.interface.circuit.add_Zgate(qubit = wires[0])
+
+class Hadamard(Component):
+    def __init__(self, window):
+        super().__init__(window)
+
+        # Style
+        self.shape_scale = 0.5
+        self.shape_type = ["square"]
+
+        # Properties
+        self.create_property_box()
+
+    @property
+    def length(self):
+        return 1
+
+    def create_property_box(self):
+        pass
+    
+    @property
+    def placeable(self):
+        if self.overlaps_a_component(self.potential_placement):
+            return False
+        if self.overlaps_a_wire(self.potential_placement):
+            return True
+        
+    def add_to_console(self):
+        wire_index = self.get_wire_index(self.connected_wires[0])
+        self.window.console.code += "circuit.add_hadamard(qubit = "+str(wire_index)+")\n"
+
+    def add_to_sim(self):
+        wires = [self.window.canvas.placed_components["wires"].index(w) + 1 for w in self.connected_wires]
+        self.window.interface.circuit.add_hadamard(qubit = wires[0])
+
+class Qubit(Component):
+    def __init__(self, window):
+        super().__init__(window)
+
+        # Style
+        self.shape_scale = 0.75
+        self.shape_type = ["square", None]
+
+        # Properties
+        self.initial_state = 0
+        self.create_property_box()
+        self.direction = "H"
+
+    @property
+    def length(self):
+        return 2
+
+    def create_property_box(self):
+        self.property_box.add_property("initial_state", self.initial_state, QIntValidator(0, 1))
+
+    def update_property(self, property_name):
+        if property_name == "initial_state":
+            self.initial_state = int(self.property_box.properties["initial_state"].text())
+            self.window.console.refresh()
+
+    @property
+    def placeable(self):
+        if self.overlaps_a_wire(self.potential_placement):
+            return False
+        if self.overlaps_a_wire_edge(self.potential_placement):
+            return False
+        if self.overlaps_a_component(self.potential_placement):
+            return False
+        if self.spans_a_component(self.potential_placement):
+            return False
+        
+        # Rules for the start point
+        if not self.node_positions[0]:
+            # Can't place it on the point immediately to the left of another wire, which would leave no room for the end point
+            for wire in self.window.canvas.placed_components["wires"]:
+                wire.snap()
+                wire_start = wire.node_positions[0]
+                if self.potential_placement[1] == wire_start[1]:
+                    if self.window.canvas.grid.snap((self.potential_placement[0] + self.window.canvas.grid.size, self.potential_placement[1])) == wire_start:
+                        return False
+        
+        # Rules for the end point
+        if self.node_positions[0] and not self.node_positions[1]:
+            # The end point must be to the right of the start point
+            if self.potential_placement[0] <= self.window.canvas.grid.snap(self.node_positions[0])[0]:
+                return False
+
+        return True
+    
+    def add_to_console(self):
+        pass
+
+    def add_to_sim(self):
+        pass
+
+class CNOT(Component):
+    def __init__(self, window):
+        super().__init__(window)
+
+        # Style
+        self.shape_scale = 0.5
+        self.shape_type = ["circle", "X"]
+
+        # Properties
+        self.create_property_box()
+        self.direction = "V"
+
+    @property
+    def length(self):
+        return 2
+
+    def create_property_box(self):
+        pass
+
+    @property
+    def placeable(self):
+        if self.overlaps_a_component(self.potential_placement):
+            return False
+        if self.overlaps_itself(self.potential_placement):
+            return False
+        if self.spans_a_component(self.potential_placement):
+            return False
+        if self.overlaps_a_wire_edge(self.potential_placement):
+            return False
+        if self.overlaps_a_wire(self.potential_placement):
+            return True
+        return False
+    
+    def add_to_console(self):
+        wire_indices = [self.get_wire_index(wire) for wire in self.connected_wires]
+        self.window.console.code += "circuit.add_CNOT(qubits = "+str(wire_indices)+")\n"
+    
+    def add_to_sim(self):
+        wires = [self.window.canvas.placed_components["wires"].index(w) + 1 for w in self.connected_wires]
+        self.window.interface.circuit.add_CNOT(qubits = wires)

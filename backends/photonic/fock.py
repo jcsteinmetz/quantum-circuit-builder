@@ -5,15 +5,11 @@ Basic Fock state model for fixed photon number
 import numpy as np
 import math
 import scipy
-from backends.backend import Backend
-from backends.components.beamsplitter import BeamSplitter
-from backends.components.switch import Switch
-from backends.components.loss import Loss
-from backends.components.detector import Detector
-from backends.components.phaseshift import PhaseShift
-from backends.utils import basis_to_rank, rank_to_basis, calculate_hilbert_dimension, spin_y_matrix
+from backends.backend import PhotonicBackend
+from backends.photonic.components import BeamSplitter, Switch, PhaseShift, Loss, Detector
+from backends.utils import basis_to_rank, rank_to_basis, calculate_fock_hilbert_dimension, spin_y_matrix
 
-class Fock(Backend):
+class Fock(PhotonicBackend):
     def __init__(self, n_wires, n_photons):
         super().__init__(n_wires, n_photons)
 
@@ -130,7 +126,7 @@ class FockBeamSplitter(BeamSplitter):
 
         # Generate all possible combinations of occupation numbers within self.wires
         photons = self.photon_count_per_rank[rank]
-        wire_hilbert = calculate_hilbert_dimension(2, photons)
+        wire_hilbert = calculate_fock_hilbert_dimension(2, photons)
         wire_combinations = [rank_to_basis(2, photons, rank) for rank in range(wire_hilbert) if sum(rank_to_basis(2, photons, rank)) == photons]
 
         # Shuffle the occupation numbers within self.wires, and return the ranks of the resulting basis elements
