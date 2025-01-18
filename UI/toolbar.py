@@ -7,7 +7,7 @@ from PySide6.QtWidgets import QFileDialog, QSizePolicy, QWidget, QToolBar, QAppl
 from PySide6.QtGui import QAction, QActionGroup, QIcon
 from UI.component import Wire, BeamSplitter, Switch, Loss, Detector, PhaseShift, XGate, YGate, ZGate, Hadamard, Qubit, CNOT
 from UI.canvas import Select, Grab
-from backends import Fock, Permanent, Xanadu, Quandela, MatrixProduct
+from backends import Fock, Permanent, Xanadu, Quandela, MatrixProduct, IBM
 
 class ToolBar(QToolBar):
     """
@@ -65,7 +65,8 @@ class ToolBar(QToolBar):
                 "CNOT": (CNOT, QIcon("assets/CNOT.png"))
             }
             backend_options = {
-                "Matrix product backend": MatrixProduct
+                "Matrix product backend": MatrixProduct,
+                "Qiskit": IBM
             }
 
         # Buttons

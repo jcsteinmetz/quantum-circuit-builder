@@ -87,3 +87,8 @@ class GateBasedBackend(ABC):
     @abstractmethod
     def set_input_state(self, input_basis_element):
         pass
+
+    @property
+    @abstractmethod
+    def output_data(self):
+        pass

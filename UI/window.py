@@ -127,7 +127,7 @@ class MainWindow(QMainWindow):
             self.update_undo_stack()
 
     def update_title(self):
-        title = "Quantum Circuit Designer v1.0 - "+self.active_file
+        title = "Quantum Circuit Builder v1.0 - "+self.active_file
         if self.unsaved_changes:
             title += " - Unsaved changes"
         if self.running:

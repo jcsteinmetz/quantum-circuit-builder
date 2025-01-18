@@ -50,6 +50,7 @@ class MatrixProduct(GateBasedBackend):
         prob_vector = np.real(self.density_matrix.diagonal())
         table_length = np.count_nonzero(prob_vector)
         table_data = np.zeros((table_length, 2), dtype=object)
+        print(self.density_matrix)
         for row, rank in enumerate(self.occupied_ranks):
             basis_element_string = str(bin(rank)[2:].zfill(self.n_qubits))
             basis_element_string = basis_element_string.replace("(", "")
@@ -78,25 +79,61 @@ class MatrixProductXGate(SingleQubitGate):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.single_qubit_unitary = pauli_x()
+    @property
+    def single_qubit_unitary(self):
+        return pauli_x()
+
+    def apply(self):
+        unitary = self.unitary()
+        self.backend.density_matrix = unitary @ self.backend.density_matrix @ np.conjugate(unitary).T
+
+    def unitary(self):
+        return insert_gate(self.single_qubit_unitary, self.reindexed_targeted_qubit, self.backend.n_qubits)
 
 class MatrixProductYGate(SingleQubitGate):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.single_qubit_unitary = pauli_y()
+    @property
+    def single_qubit_unitary(self):
+        return pauli_y()
+
+    def apply(self):
+        unitary = self.unitary()
+        self.backend.density_matrix = unitary @ self.backend.density_matrix @ np.conjugate(unitary).T
+
+    def unitary(self):
+        return insert_gate(self.single_qubit_unitary, self.reindexed_targeted_qubit, self.backend.n_qubits)
 
 class MatrixProductZGate(SingleQubitGate):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.single_qubit_unitary = pauli_z()
+    @property
+    def single_qubit_unitary(self):
+        return pauli_z()
+
+    def apply(self):
+        unitary = self.unitary()
+        self.backend.density_matrix = unitary @ self.backend.density_matrix @ np.conjugate(unitary).T
+
+    def unitary(self):
+        return insert_gate(self.single_qubit_unitary, self.reindexed_targeted_qubit, self.backend.n_qubits)
 
 class MatrixProductHadamard(SingleQubitGate):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.single_qubit_unitary = (1/np.sqrt(2))*np.array([[1, 1], [1, -1]], dtype=complex)
+    @property
+    def single_qubit_unitary(self):
+        return (1/np.sqrt(2))*np.array([[1, 1], [1, -1]], dtype=complex)
+
+    def apply(self):
+        unitary = self.unitary()
+        self.backend.density_matrix = unitary @ self.backend.density_matrix @ np.conjugate(unitary).T
+
+    def unitary(self):
+        return insert_gate(self.single_qubit_unitary, self.reindexed_targeted_qubit, self.backend.n_qubits)
 
 class MatrixProductCNOT(TwoQubitGate):
     """
@@ -120,3 +157,7 @@ class MatrixProductCNOT(TwoQubitGate):
         flip_target = insert_gate(pauli_x(), target_qubit, self.backend.n_qubits)
 
         return project_control_onto_zero + project_control_onto_one @ flip_target
+    
+    def apply(self):
+        unitary = self.unitary()
+        self.backend.density_matrix = unitary @ self.backend.density_matrix @ np.conjugate(unitary).T
