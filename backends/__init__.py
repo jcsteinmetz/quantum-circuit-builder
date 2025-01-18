@@ -1,2 +1,2 @@
-from .photonic import Fock, Permanent, Xanadu, Quandela
-from .gatebased import MatrixProduct, IBM
+from .photonic import FockBackend, PermanentBackend, SFBackend, PercevalBackend
+from .gatebased import MPBackend, QiskitBackend

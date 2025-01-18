@@ -3,9 +3,9 @@ from qiskit_aer.aerprovider import AerSimulator
 import numpy as np
 from backends.backend import GateBasedBackend
 from backends.gatebased.components import SingleQubitGate, TwoQubitGate
-from backends.utils import bloch_to_rho
+from backends.utils import computational_basis_to_rho
 
-class IBM(GateBasedBackend):
+class QiskitBackend(GateBasedBackend):
     def __init__(self, n_qubits):
         super().__init__(n_qubits)
         self.circuit = QuantumCircuit(self.n_qubits)
@@ -15,14 +15,9 @@ class IBM(GateBasedBackend):
         self.set_density_matrix(input_basis_element)
 
     def set_density_matrix(self, input_basis_element):
-        for qubit_state in input_basis_element:
-            if qubit_state not in [0, 1]:
-                raise ValueError("Input state must consist of 0s and 1s.")
-
-        input_z = [1 if qubit_state == 0 else -1 for qubit_state in input_basis_element]
-        self.density_matrix = bloch_to_rho([0, 0, input_z[0]])
+        self.density_matrix = computational_basis_to_rho(input_basis_element[0])
         for qubit in reversed(range(1, self.n_qubits)): # qiskit uses a reversed tensor product space
-            self.density_matrix = np.kron(self.density_matrix, bloch_to_rho([0, 0, input_z[qubit]]))
+            self.density_matrix = np.kron(self.density_matrix, computational_basis_to_rho(input_basis_element[qubit]))
 
         self.circuit.set_density_matrix(self.density_matrix)
 

@@ -11,7 +11,7 @@ from backends.photonic.components import BeamSplitter, Switch, PhaseShift, Loss,
 from backends.utils import rank_to_basis, spin_y_matrix
 
 
-class Permanent(PhotonicBackend):
+class PermanentBackend(PhotonicBackend):
     def __init__(self, n_wires, n_photons):
         super().__init__(n_wires, n_photons)
 

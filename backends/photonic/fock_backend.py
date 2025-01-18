@@ -9,7 +9,7 @@ from backends.backend import PhotonicBackend
 from backends.photonic.components import BeamSplitter, Switch, PhaseShift, Loss, Detector
 from backends.utils import basis_to_rank, rank_to_basis, calculate_fock_hilbert_dimension, spin_y_matrix
 
-class Fock(PhotonicBackend):
+class FockBackend(PhotonicBackend):
     def __init__(self, n_wires, n_photons):
         super().__init__(n_wires, n_photons)
 

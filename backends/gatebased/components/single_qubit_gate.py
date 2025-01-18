@@ -1,6 +1,4 @@
-from abc import abstractmethod
 from backends.component import Component
-from backends.utils import insert_gate
 
 class SingleQubitGate(Component):
     def __init__(self, backend, *, qubit):

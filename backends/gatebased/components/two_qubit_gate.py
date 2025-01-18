@@ -1,5 +1,3 @@
-import numpy as np
-from abc import abstractmethod
 from backends.component import Component
 
 class TwoQubitGate(Component):

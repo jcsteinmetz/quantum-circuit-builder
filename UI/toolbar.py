@@ -7,7 +7,7 @@ from PySide6.QtWidgets import QFileDialog, QSizePolicy, QWidget, QToolBar, QAppl
 from PySide6.QtGui import QAction, QActionGroup, QIcon
 from UI.component import Wire, BeamSplitter, Switch, Loss, Detector, PhaseShift, XGate, YGate, ZGate, Hadamard, Qubit, CNOT
 from UI.canvas import Select, Grab
-from backends import Fock, Permanent, Xanadu, Quandela, MatrixProduct, IBM
+from backends import FockBackend, PermanentBackend, SFBackend, PercevalBackend, MPBackend, QiskitBackend
 
 class ToolBar(QToolBar):
     """
@@ -48,10 +48,10 @@ class ToolBar(QToolBar):
                 "Detector": (Detector, QIcon("assets/detector.png"))
             }
             backend_options = {
-                "Fock backend": Fock,
-                "Permanent backend": Permanent,
-                "Strawberry fields": Xanadu,
-                "Perceval": Quandela
+                "Fock backend": FockBackend,
+                "Permanent backend": PermanentBackend,
+                "Strawberry fields": SFBackend,
+                "Perceval": PercevalBackend
             }
         else:
             tools = {
@@ -65,8 +65,8 @@ class ToolBar(QToolBar):
                 "CNOT": (CNOT, QIcon("assets/CNOT.png"))
             }
             backend_options = {
-                "Matrix product backend": MatrixProduct,
-                "Qiskit": IBM
+                "Matrix product backend": MPBackend,
+                "Qiskit": QiskitBackend
             }
 
         # Buttons

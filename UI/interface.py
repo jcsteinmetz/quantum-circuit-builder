@@ -1,5 +1,3 @@
-from backends import Fock, MatrixProduct
-
 class Interface:
     """
     Class containing communications between the UI and the backend. Translates the list of drawn components
@@ -8,10 +6,7 @@ class Interface:
     def __init__(self, window):
         self.window = window
         self.circuit = None
-        if self.window.simulation_type == "photonic":
-            self.chosen_backend = Fock
-        else:
-            self.chosen_backend = MatrixProduct
+        self.chosen_backend = None
 
     def build_circuit(self):
         """Creates a circuit in the chosen backend and adds all drawn components."""

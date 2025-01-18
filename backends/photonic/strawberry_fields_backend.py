@@ -6,7 +6,7 @@ import math
 from backends.utils import rank_to_basis
 from backends.photonic.components import BeamSplitter, Switch, PhaseShift, Loss, Detector
 
-class Xanadu(PhotonicBackend):
+class SFBackend(PhotonicBackend):
     def __init__(self, n_wires, n_photons):
         super().__init__(n_wires, n_photons)
 

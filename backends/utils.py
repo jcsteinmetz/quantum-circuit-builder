@@ -38,6 +38,13 @@ def degrees_to_radians(deg):
 def bloch_to_rho(bloch):
     return 0.5*np.array([[1 + bloch[2], bloch[0] - 1j*bloch[1]], [bloch[0] - 1j*bloch[1], 1 - bloch[2]]], dtype=complex)
 
+def computational_basis_to_rho(comp):
+    if comp == 0:
+        z_coord = 1
+    else:
+        z_coord = -1
+    return bloch_to_rho([0, 0, z_coord])
+
 def pauli(direction):
     return direction[0]*pauli_x() + direction[1]*pauli_y() + direction[2]*pauli_z()
 

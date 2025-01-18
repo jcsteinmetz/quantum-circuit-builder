@@ -1,2 +1,2 @@
-from .matrixproduct import MatrixProduct
-from .ibm import IBM
+from .matrix_product_backend import MPBackend
+from .qiskit_backend import QiskitBackend
