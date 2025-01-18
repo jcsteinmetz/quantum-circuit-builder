@@ -3,7 +3,7 @@ import perceval as pcvl
 from perceval.components import BS, PS, PERM, LC
 from backends.backend import PhotonicBackend
 from backends.photonic.components import BeamSplitter, Switch, PhaseShift, Loss, Detector
-from backends.utils import tuple_to_str
+from backends.utils import tuple_to_str, fill_table
 
 class PercevalBackend(PhotonicBackend):
     def __init__(self, n_wires, n_photons):
@@ -32,18 +32,21 @@ class PercevalBackend(PhotonicBackend):
         self.circuit.min_detected_photons_filter(-1) # this should really be zero, but the current version of Perceval seems to have a mistake
         self.circuit.with_input(pcvl.BasicState(list(input_basis_element)))
 
-    def get_output_data(self):
-
-        table_length = len(self.output_dict)
-        table_data = np.zeros((table_length, 2), dtype=object)
-
-        row = 0
-        for key, value in self.output_dict.items():
-            table_data[row, 0] = tuple_to_str(key)
-            table_data[row, 1] = value
-            row += 1
-
-        return table_data
+    @property
+    def probabilities(self):
+        pass
+    
+    @property
+    def occupied_ranks(self):
+        pass
+    
+    @property
+    def nonzero_probabilities(self):
+        return self.output_dict.values()
+    
+    @property
+    def basis_strings(self):
+        return [tuple_to_str(key) for key in self.output_dict.keys()]
 
     def add_beamsplitter(self, **kwargs):
         comp = PercevalBeamSplitter(self, **kwargs)

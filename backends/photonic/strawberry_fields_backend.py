@@ -2,8 +2,7 @@ from backends.backend import PhotonicBackend
 import strawberryfields as sf
 from strawberryfields.ops import Fock, Vac, BSgate, Interferometer, LossChannel, MeasureFock, Rgate
 import numpy as np
-import math
-from backends.utils import rank_to_basis, tuple_to_str, fock_hilbert_dimension_fixed_number
+from backends.utils import rank_to_basis, tuple_to_str, fock_hilbert_dimension_fixed_number, fill_table
 from backends.photonic.components import BeamSplitter, Switch, PhaseShift, Loss, Detector
 
 class SFBackend(PhotonicBackend):
@@ -37,20 +36,21 @@ class SFBackend(PhotonicBackend):
                     Vac | q[wire]
                 else:
                     Fock(n_photons) | q[wire]
-
-    def get_output_data(self):
-        prob_vector = self.get_prob_vector()
-
-        table_length = np.count_nonzero(prob_vector)
-        table_data = np.zeros((table_length, 2), dtype=object)
-        for row, rank in enumerate(np.nonzero(prob_vector)[0]):
-            basis_element = rank_to_basis(self.n_wires, self.n_photons, rank)
-            table_data[row, 0] = tuple_to_str(basis_element)
-            table_data[row, 1] = prob_vector[rank]
-
-        return table_data
     
-    def get_prob_vector(self):
+    @property
+    def occupied_ranks(self):
+        return np.nonzero(self.probabilities)[0]
+    
+    @property
+    def nonzero_probabilities(self):
+        return self.probabilities[self.occupied_ranks]
+    
+    @property
+    def basis_strings(self):
+        return [tuple_to_str(rank_to_basis(self.n_wires, self.n_photons, rank)) for rank in self.occupied_ranks]
+    
+    @property
+    def probabilities(self):
         """
         Strawberry Fields stores density matrix elements in a multidimensional array, where the
         indices are occupation numbers for each wire. For example, output_probabilities[0, 3] is

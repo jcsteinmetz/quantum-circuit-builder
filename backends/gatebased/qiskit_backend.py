@@ -3,7 +3,7 @@ from qiskit_aer.aerprovider import AerSimulator
 import numpy as np
 from backends.backend import GateBasedBackend
 from backends.gatebased.components import SingleQubitGate, TwoQubitGate
-from backends.utils import computational_basis_to_rho, tuple_to_str
+from backends.utils import computational_basis_to_rho, tuple_to_str, fill_table
 
 class QiskitBackend(GateBasedBackend):
     def __init__(self, n_qubits):
@@ -43,19 +43,20 @@ class QiskitBackend(GateBasedBackend):
         self.density_matrix = result.data().get('density_matrix')
 
     @property
+    def probabilities(self):
+        return np.real(self.density_matrix.diagonal())
+    
+    @property
     def occupied_ranks(self):
-        return [rank for rank in range(self.hilbert_dimension) if self.density_matrix[rank, rank] != 0]
-
-    def get_output_data(self):
-        prob_vector = np.real(self.density_matrix.diagonal())
-        table_length = np.count_nonzero(prob_vector)
-        table_data = np.zeros((table_length, 2), dtype=object)
-        for row, rank in enumerate(self.occupied_ranks):
-            basis_element = bin(rank)[2:].zfill(self.n_qubits)[::-1] # qiskit uses a reversed tensor product space
-            table_data[row, 0] = tuple_to_str(basis_element)
-            table_data[row, 1] = prob_vector[rank]
-
-        return table_data
+        return np.nonzero(self.probabilities)[0]
+    
+    @property
+    def nonzero_probabilities(self):
+        return self.probabilities[self.occupied_ranks]
+    
+    @property
+    def basis_strings(self):
+        return [tuple_to_str(bin(rank)[2:].zfill(self.n_qubits)[::-1]) for rank in self.occupied_ranks] # qiskit uses a reversed tensor product space
 
 class QiskitXGate(SingleQubitGate):
     def __init__(self, *args, **kwargs):

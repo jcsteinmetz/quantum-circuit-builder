@@ -7,7 +7,7 @@ import math
 import scipy
 from backends.backend import PhotonicBackend
 from backends.photonic.components import BeamSplitter, Switch, PhaseShift, Loss, Detector
-from backends.utils import basis_to_rank, rank_to_basis, fock_hilbert_dimension, spin_y_matrix, tuple_to_str
+from backends.utils import basis_to_rank, rank_to_basis, fock_hilbert_dimension, spin_y_matrix, tuple_to_str, fill_table
 
 class FockBackend(PhotonicBackend):
     def __init__(self, n_wires, n_photons):
@@ -30,20 +30,21 @@ class FockBackend(PhotonicBackend):
             comp.apply()
             self.eliminate_tolerance()
 
-    def get_output_data(self):
-        prob_vector = np.real(self.density_matrix.diagonal())
-        table_length = np.count_nonzero(prob_vector)
-        table_data = np.zeros((table_length, 2), dtype=object)
-        for row, rank in enumerate(self.occupied_ranks):
-            basis_element = rank_to_basis(self.n_wires, self.n_photons, rank)
-            table_data[row, 0] = tuple_to_str(basis_element)
-            table_data[row, 1] = prob_vector[rank]
-
-        return table_data
+    @property
+    def probabilities(self):
+        return np.real(self.density_matrix.diagonal())
     
     @property
     def occupied_ranks(self):
-        return [rank for rank in range(self.hilbert_dimension) if self.density_matrix[rank, rank] != 0]
+        return np.nonzero(self.probabilities)[0]
+    
+    @property
+    def nonzero_probabilities(self):
+        return self.probabilities[self.occupied_ranks]
+    
+    @property
+    def basis_strings(self):
+        return [tuple_to_str(rank_to_basis(self.n_wires, self.n_photons, rank)) for rank in self.occupied_ranks]
     
     def set_density_matrix(self, input_basis_element):
         input_basis_rank = basis_to_rank(input_basis_element)

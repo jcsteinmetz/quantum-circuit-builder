@@ -3,20 +3,29 @@ Contains backend templates.
 """
 
 from abc import ABC, abstractmethod
-from backends.utils import fock_hilbert_dimension
+from backends.utils import fock_hilbert_dimension, fill_table
 
 class BaseBackend(ABC):
-    """
-    Base class for simulator backends.
-    """
+    """Base class for simulator backends."""
     def __init__(self):
         self.component_list = []
 
     def add_component(self, comp):
-        """
-        Add a component to the circuit.
-        """
+        """Add a component to the circuit."""
         self.component_list.append(comp)
+
+    def get_output_data(self):
+        return fill_table(self.basis_strings, self.nonzero_probabilities)
+
+    @property
+    @abstractmethod
+    def basis_strings(self):
+        raise NotImplementedError
+    
+    @property
+    @abstractmethod
+    def nonzero_probabilities(self):
+        raise NotImplementedError
 
     @property
     @abstractmethod
@@ -25,10 +34,6 @@ class BaseBackend(ABC):
 
     @abstractmethod
     def set_input_state(self, input_basis_element):
-        pass
-
-    @abstractmethod
-    def get_output_data(self):
         pass
 
     @abstractmethod

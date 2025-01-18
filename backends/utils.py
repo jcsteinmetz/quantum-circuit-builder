@@ -76,3 +76,6 @@ def tuple_to_str(tup):
     string = string.replace("|", "")
     string = string.replace(">", "")
     return "".join(string)
+
+def fill_table(col1, col2):
+    return np.array(list(zip(col1, col2)), dtype=object)

@@ -8,7 +8,7 @@ import math
 import numpy as np
 from backends.backend import PhotonicBackend
 from backends.photonic.components import BeamSplitter, Switch, PhaseShift, Loss, Detector
-from backends.utils import rank_to_basis, spin_y_matrix, tuple_to_str
+from backends.utils import rank_to_basis, spin_y_matrix, tuple_to_str, fill_table
 
 
 class PermanentBackend(PhotonicBackend):
@@ -99,17 +99,21 @@ class PermanentBackend(PhotonicBackend):
             total += product
         return total
     
-    def get_output_data(self):
-        prob_vector = self.output_probabilities
-
-        table_length = np.count_nonzero(prob_vector)
-        table_data = np.zeros((table_length, 2), dtype=object)
-        for row, rank in enumerate(np.nonzero(prob_vector)[0]):
-            basis_element = rank_to_basis(self.n_wires, self.n_photons, rank)
-            table_data[row, 0] = tuple_to_str(basis_element)
-            table_data[row, 1] = prob_vector[rank]
-
-        return table_data
+    @property
+    def probabilities(self):
+        return self.output_probabilities
+    
+    @property
+    def occupied_ranks(self):
+        return np.nonzero(self.probabilities)[0]
+    
+    @property
+    def nonzero_probabilities(self):
+        return self.probabilities[self.occupied_ranks]
+    
+    @property
+    def basis_strings(self):
+        return [tuple_to_str(rank_to_basis(self.n_wires, self.n_photons, rank)) for rank in self.occupied_ranks]
     
     def eliminate_tolerance(self, tol=1E-10):
         self.output_probabilities[np.abs(self.output_probabilities) < tol] = 0

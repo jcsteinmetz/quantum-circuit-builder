@@ -3,7 +3,7 @@ Basic matrix product model
 """
 
 import numpy as np
-from backends.utils import insert_gate, pauli_x, pauli_y, pauli_z, computational_basis_to_rho, tuple_to_str
+from backends.utils import insert_gate, pauli_x, pauli_y, pauli_z, computational_basis_to_rho, tuple_to_str, fill_table
 from backends.backend import GateBasedBackend
 from backends.gatebased.components import SingleQubitGate, TwoQubitGate
 
@@ -29,19 +29,20 @@ class MPBackend(GateBasedBackend):
             self.eliminate_tolerance()
 
     @property
-    def occupied_ranks(self):
-        return [rank for rank in range(self.hilbert_dimension) if self.density_matrix[rank, rank] != 0]
+    def probabilities(self):
+        return np.real(self.density_matrix.diagonal())
     
-    def get_output_data(self):
-        prob_vector = np.real(self.density_matrix.diagonal())
-        table_length = np.count_nonzero(prob_vector)
-        table_data = np.zeros((table_length, 2), dtype=object)
-        for row, rank in enumerate(self.occupied_ranks):
-            basis_element = bin(rank)[2:].zfill(self.n_qubits)
-            table_data[row, 0] = tuple_to_str(basis_element)
-            table_data[row, 1] = prob_vector[rank]
-
-        return table_data
+    @property
+    def occupied_ranks(self):
+        return np.nonzero(self.probabilities)[0]
+    
+    @property
+    def nonzero_probabilities(self):
+        return self.probabilities[self.occupied_ranks]
+    
+    @property
+    def basis_strings(self):
+        return [tuple_to_str(bin(rank)[2:].zfill(self.n_qubits)) for rank in self.occupied_ranks]
 
     def set_density_matrix(self, input_basis_element):
         self.density_matrix = computational_basis_to_rho(input_basis_element[0])
