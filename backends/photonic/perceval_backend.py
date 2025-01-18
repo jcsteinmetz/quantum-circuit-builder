@@ -5,6 +5,65 @@ from backends.backend import PhotonicBackend
 from backends.photonic.components import BeamSplitter, Switch, PhaseShift, Loss, Detector
 from backends.utils import tuple_to_str
 
+class PercevalBackend(PhotonicBackend):
+    def __init__(self, n_wires, n_photons):
+        super().__init__(n_wires, n_photons)
+
+        # Register components
+        self.component_registry["beamsplitter"] = PercevalBeamSplitter
+        self.component_registry["switch"] = PercevalSwitch
+        self.component_registry["phaseshift"] = PercevalPhaseShift
+        self.component_registry["loss"] = PercevalLoss
+        self.component_registry["detector"] = PercevalDetector
+
+        self.circuit = pcvl.Processor("SLOS", self.n_wires)
+
+        self.output_dict = {}
+
+        self.sampler = pcvl.algorithm.Sampler(self.circuit)
+
+    def run(self):
+        for comp in self.component_list:
+            comp.apply()
+
+        self.output_dict = self.sampler.probs()["results"]
+
+    def set_input_state(self, input_basis_element):
+        self.circuit.min_detected_photons_filter(-1) # this should really be zero, but the current version of Perceval seems to have a mistake
+        self.circuit.with_input(pcvl.BasicState(list(input_basis_element)))
+
+    def get_output_data(self):
+
+        table_length = len(self.output_dict)
+        table_data = np.zeros((table_length, 2), dtype=object)
+
+        row = 0
+        for key, value in self.output_dict.items():
+            table_data[row, 0] = tuple_to_str(key)
+            table_data[row, 1] = value
+            row += 1
+
+        return table_data
+
+    def add_beamsplitter(self, **kwargs):
+        comp = PercevalBeamSplitter(self, **kwargs)
+        self.add_component(comp)
+    
+    def add_switch(self, **kwargs):
+        comp = PercevalSwitch(self, **kwargs)
+        self.add_component(comp)
+
+    def add_phaseshift(self, **kwargs):
+        comp = PercevalPhaseShift(self, **kwargs)
+        self.add_component(comp)
+    
+    def add_loss(self, **kwargs):
+        comp = PercevalLoss(self, **kwargs)
+        self.add_component(comp)
+    
+    def add_detector(self, **kwargs):
+        comp = PercevalDetector(self, **kwargs)
+        self.add_component(comp)
 
 class PercevalBeamSplitter(BeamSplitter):
     def __init__(self, *args, **kwargs):
@@ -59,45 +118,3 @@ class PercevalDetector(Detector):
     def apply(self):
         for w, h in zip(self.reindexed_wires, self.herald):
             self.backend.circuit.add_herald(w, h)
-
-class PercevalBackend(PhotonicBackend):
-
-    component_registry = {
-        "beamsplitter": PercevalBeamSplitter,
-        "phaseshift": PercevalPhaseShift,
-        "switch": PercevalSwitch,
-        "loss": PercevalLoss,
-        "detector": PercevalDetector,
-    }
-
-    def __init__(self, n_wires, n_photons):
-        super().__init__(n_wires, n_photons)
-
-        self.circuit = pcvl.Processor("SLOS", self.n_wires)
-
-        self.output_dict = {}
-
-        self.sampler = pcvl.algorithm.Sampler(self.circuit)
-
-    def run(self):
-        for comp in self.component_list:
-            comp.apply()
-
-        self.output_dict = self.sampler.probs()["results"]
-
-    def set_input_state(self, input_basis_element):
-        self.circuit.min_detected_photons_filter(-1) # this should really be zero, but the current version of Perceval seems to have a mistake
-        self.circuit.with_input(pcvl.BasicState(list(input_basis_element)))
-
-    def get_output_data(self):
-
-        table_length = len(self.output_dict)
-        table_data = np.zeros((table_length, 2), dtype=object)
-
-        row = 0
-        for key, value in self.output_dict.items():
-            table_data[row, 0] = tuple_to_str(key)
-            table_data[row, 1] = value
-            row += 1
-
-        return table_data

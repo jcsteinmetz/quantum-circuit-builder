@@ -509,7 +509,7 @@ class Loss(Component):
 
     def add_to_sim(self):
         wires = [self.window.canvas.placed_components["wires"].index(w) + 1 for w in self.connected_wires]
-        self.window.interface.circuit.add_component_by_type(component_type = "loss", wire = wires[0], eta = self.eta)
+        self.window.interface.circuit.add_loss(wire = wires[0], eta = self.eta)
 
 class Wire(Component):
     def __init__(self, window):
@@ -620,7 +620,7 @@ class BeamSplitter(Component):
     
     def add_to_sim(self):
         wires = [self.window.canvas.placed_components["wires"].index(w) + 1 for w in self.connected_wires]
-        self.window.interface.circuit.add_component_by_type(component_type = "beamsplitter", wires = wires, theta = self.theta)
+        self.window.interface.circuit.add_beamsplitter(wires = wires, theta = self.theta)
 
 class Switch(Component):
     def __init__(self, window):
@@ -656,7 +656,7 @@ class Switch(Component):
 
     def add_to_sim(self):
         wires = [self.window.canvas.placed_components["wires"].index(w) + 1 for w in self.connected_wires]
-        self.window.interface.circuit.add_component_by_type(component_type = "switch", wires = wires)
+        self.window.interface.circuit.add_switch(wires = wires)
 
 class PhaseShift(Component):
     def __init__(self, window):
@@ -698,7 +698,7 @@ class PhaseShift(Component):
 
     def add_to_sim(self):
         wires = [self.window.canvas.placed_components["wires"].index(w) + 1 for w in self.connected_wires]
-        self.window.interface.circuit.add_component_by_type(component_type = "phaseshift", wire = wires[0], phase = self.phase)
+        self.window.interface.circuit.add_phaseshift(wire = wires[0], phase = self.phase)
 
 class XGate(Component):
     def __init__(self, window):
@@ -731,7 +731,7 @@ class XGate(Component):
 
     def add_to_sim(self):
         wires = [self.window.canvas.placed_components["wires"].index(w) + 1 for w in self.connected_wires]
-        self.window.interface.circuit.add_component_by_type(component_type = "xgate", qubit = wires[0])
+        self.window.interface.circuit.add_Xgate(qubit = wires[0])
 
 class YGate(Component):
     def __init__(self, window):
@@ -764,7 +764,7 @@ class YGate(Component):
 
     def add_to_sim(self):
         wires = [self.window.canvas.placed_components["wires"].index(w) + 1 for w in self.connected_wires]
-        self.window.interface.circuit.add_component_by_type(component_type = "ygate", qubit = wires[0])
+        self.window.interface.circuit.add_Ygate(qubit = wires[0])
 
 class ZGate(Component):
     def __init__(self, window):
@@ -797,7 +797,7 @@ class ZGate(Component):
 
     def add_to_sim(self):
         wires = [self.window.canvas.placed_components["wires"].index(w) + 1 for w in self.connected_wires]
-        self.window.interface.circuit.add_component_by_type(component_type = "zgate", qubit = wires[0])
+        self.window.interface.circuit.add_Zgate(qubit = wires[0])
 
 class Hadamard(Component):
     def __init__(self, window):
@@ -830,7 +830,7 @@ class Hadamard(Component):
 
     def add_to_sim(self):
         wires = [self.window.canvas.placed_components["wires"].index(w) + 1 for w in self.connected_wires]
-        self.window.interface.circuit.add_component_by_type(component_type = "hadamard", qubit = wires[0])
+        self.window.interface.circuit.add_hadamard(qubit = wires[0])
 
 class Qubit(Component):
     def __init__(self, window):
@@ -931,4 +931,4 @@ class CNOT(Component):
     
     def add_to_sim(self):
         wires = [self.window.canvas.placed_components["wires"].index(w) + 1 for w in self.connected_wires]
-        self.window.interface.circuit.add_component_by_type(component_type = "cnot", qubits = wires)
+        self.window.interface.circuit.add_CNOT(qubits = wires)

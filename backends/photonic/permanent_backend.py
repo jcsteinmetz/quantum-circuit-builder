@@ -10,6 +10,110 @@ from backends.backend import PhotonicBackend
 from backends.photonic.components import BeamSplitter, Switch, PhaseShift, Loss, Detector
 from backends.utils import rank_to_basis, spin_y_matrix, tuple_to_str
 
+
+class PermanentBackend(PhotonicBackend):
+    def __init__(self, n_wires, n_photons):
+        super().__init__(n_wires, n_photons)
+
+        # Register components
+        self.component_registry["beamsplitter"] = PermanentBeamSplitter
+        self.component_registry["switch"] = PermanentSwitch
+        self.component_registry["phaseshift"] = PermanentPhaseShift
+        self.component_registry["loss"] = PermanentLoss
+        self.component_registry["detector"] = PermanentDetector
+
+        self.input_basis_element = ()
+        self.output_probabilities = np.zeros(self.hilbert_dimension)
+
+        self.circuit_unitary = np.eye(self.n_wires)
+
+    def set_input_state(self, input_basis_element):
+        self.input_basis_element = input_basis_element
+
+    def run(self):
+        for comp in self.component_list:
+            if not isinstance(comp, PermanentDetector):
+                comp.apply()
+
+        for rank in range(self.hilbert_dimension):
+            output_basis_element = rank_to_basis(self.n_wires, self.n_photons, rank)
+            self.output_probabilities[rank] = self.output_probability(self.circuit_unitary, output_basis_element)
+
+        for comp in self.component_list:
+            if isinstance(comp, PermanentDetector):
+                comp.apply()
+
+        self.eliminate_tolerance()
+
+    def output_probability(self, circuit_unitary, output_basis_element):
+        circuit_submatrix = self.submatrix(circuit_unitary, output_basis_element)
+        norm_input = np.prod([math.factorial(n) for n in self.input_basis_element])
+        norm_output = np.prod([math.factorial(n) for n in output_basis_element])
+        return np.abs(self.matrix_permanent(circuit_submatrix))**2/(norm_input * norm_output)
+
+    def submatrix(self, circuit_unitary, output_basis_element):
+        UT = np.zeros((self.n_wires, self.n_photons), dtype=complex)
+        used_photons = 0
+        for j, tj in enumerate(self.input_basis_element):
+            for n in range(used_photons, used_photons + tj):
+                UT[:, n] = circuit_unitary[:, j]
+            used_photons += tj
+
+        used_photons = 0
+        UST = np.zeros((self.n_photons, self.n_photons), dtype=complex)
+        for i, si in enumerate(output_basis_element):
+            for n in range(used_photons, used_photons + si):
+                UST[n, :] = UT[i, :]
+            used_photons += si
+
+        return UST
+
+    def add_beamsplitter(self, **kwargs):
+        comp = PermanentBeamSplitter(self, **kwargs)
+        self.add_component(comp)
+
+    def add_switch(self, **kwargs):
+        comp = PermanentSwitch(self, **kwargs)
+        self.add_component(comp)
+
+    def add_phaseshift(self, **kwargs):
+        comp = PermanentPhaseShift(self, **kwargs)
+        self.add_component(comp)
+
+    def add_loss(self, **kwargs):
+        comp = PermanentLoss(self, **kwargs)
+        self.add_component(comp)
+
+    def add_detector(self, **kwargs):
+        comp = PermanentDetector(self, **kwargs)
+        self.add_component(comp)
+        
+    def matrix_permanent(self, matrix):
+        n = len(matrix)
+        perms = itertools.permutations(range(n))
+        total = 0
+        for perm in perms:
+            product = 1
+            for i in range(n):
+                product *= matrix[i, perm[i]]
+            total += product
+        return total
+    
+    def get_output_data(self):
+        prob_vector = self.output_probabilities
+
+        table_length = np.count_nonzero(prob_vector)
+        table_data = np.zeros((table_length, 2), dtype=object)
+        for row, rank in enumerate(np.nonzero(prob_vector)[0]):
+            basis_element = rank_to_basis(self.n_wires, self.n_photons, rank)
+            table_data[row, 0] = tuple_to_str(basis_element)
+            table_data[row, 1] = prob_vector[rank]
+
+        return table_data
+    
+    def eliminate_tolerance(self, tol=1E-10):
+        self.output_probabilities[np.abs(self.output_probabilities) < tol] = 0
+
 class PermanentBeamSplitter(BeamSplitter):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -90,88 +194,3 @@ class PermanentDetector(Detector):
             keep = np.all(basis_element[reindexed_wires] == self.herald)
             if not keep:
                 self.backend.output_probabilities[rank] = 0
-
-class PermanentBackend(PhotonicBackend):
-
-    component_registry = {
-        "beamsplitter": PermanentBeamSplitter,
-        "phaseshift": PermanentPhaseShift,
-        "switch": PermanentSwitch,
-        "loss": PermanentLoss,
-        "detector": PermanentDetector,
-    }
-
-    def __init__(self, n_wires, n_photons):
-        super().__init__(n_wires, n_photons)
-
-        self.input_basis_element = ()
-        self.output_probabilities = np.zeros(self.hilbert_dimension)
-
-        self.circuit_unitary = np.eye(self.n_wires)
-
-    def set_input_state(self, input_basis_element):
-        self.input_basis_element = input_basis_element
-
-    def run(self):
-        for comp in self.component_list:
-            if not isinstance(comp, PermanentDetector):
-                comp.apply()
-
-        for rank in range(self.hilbert_dimension):
-            output_basis_element = rank_to_basis(self.n_wires, self.n_photons, rank)
-            self.output_probabilities[rank] = self.output_probability(self.circuit_unitary, output_basis_element)
-
-        for comp in self.component_list:
-            if isinstance(comp, PermanentDetector):
-                comp.apply()
-
-        self.eliminate_tolerance()
-
-    def output_probability(self, circuit_unitary, output_basis_element):
-        circuit_submatrix = self.submatrix(circuit_unitary, output_basis_element)
-        norm_input = np.prod([math.factorial(n) for n in self.input_basis_element])
-        norm_output = np.prod([math.factorial(n) for n in output_basis_element])
-        return np.abs(self.matrix_permanent(circuit_submatrix))**2/(norm_input * norm_output)
-
-    def submatrix(self, circuit_unitary, output_basis_element):
-        UT = np.zeros((self.n_wires, self.n_photons), dtype=complex)
-        used_photons = 0
-        for j, tj in enumerate(self.input_basis_element):
-            for n in range(used_photons, used_photons + tj):
-                UT[:, n] = circuit_unitary[:, j]
-            used_photons += tj
-
-        used_photons = 0
-        UST = np.zeros((self.n_photons, self.n_photons), dtype=complex)
-        for i, si in enumerate(output_basis_element):
-            for n in range(used_photons, used_photons + si):
-                UST[n, :] = UT[i, :]
-            used_photons += si
-
-        return UST
-
-    def matrix_permanent(self, matrix):
-        n = len(matrix)
-        perms = itertools.permutations(range(n))
-        total = 0
-        for perm in perms:
-            product = 1
-            for i in range(n):
-                product *= matrix[i, perm[i]]
-            total += product
-        return total
-    
-    def get_output_data(self):
-        prob_vector = self.output_probabilities
-
-        table_length = np.count_nonzero(prob_vector)
-        table_data = np.zeros((table_length, 2), dtype=object)
-        for row, rank in enumerate(np.nonzero(prob_vector)[0]):
-            basis_element = rank_to_basis(self.n_wires, self.n_photons, rank)
-            table_data[row, 0] = tuple_to_str(basis_element)
-            table_data[row, 1] = prob_vector[rank]
-
-        return table_data
-    
-    def eliminate_tolerance(self, tol=1E-10):
-        self.output_probabilities[np.abs(self.output_probabilities) < tol] = 0

@@ -7,6 +7,50 @@ from backends.utils import insert_gate, pauli_x, pauli_y, pauli_z, computational
 from backends.backend import GateBasedBackend
 from backends.gatebased.components import SingleQubitGate, TwoQubitGate
 
+class MPBackend(GateBasedBackend):
+    def __init__(self, n_qubits):
+        super().__init__(n_qubits)
+
+        # Register components
+        self.component_registry["xgate"] = MPXGate
+        self.component_registry["ygate"] = MPYGate
+        self.component_registry["zgate"] = MPZGate
+        self.component_registry["hadamard"] = MPHadamard
+        self.component_registry["cnot"] = MPCNOT
+
+        self.density_matrix = None
+
+    def set_input_state(self, input_basis_element):
+        self.set_density_matrix(input_basis_element)
+
+    def run(self):
+        for comp in self.component_list:
+            comp.apply()
+            self.eliminate_tolerance()
+
+    @property
+    def occupied_ranks(self):
+        return [rank for rank in range(self.hilbert_dimension) if self.density_matrix[rank, rank] != 0]
+    
+    def get_output_data(self):
+        prob_vector = np.real(self.density_matrix.diagonal())
+        table_length = np.count_nonzero(prob_vector)
+        table_data = np.zeros((table_length, 2), dtype=object)
+        for row, rank in enumerate(self.occupied_ranks):
+            basis_element = bin(rank)[2:].zfill(self.n_qubits)
+            table_data[row, 0] = tuple_to_str(basis_element)
+            table_data[row, 1] = prob_vector[rank]
+
+        return table_data
+
+    def set_density_matrix(self, input_basis_element):
+        self.density_matrix = computational_basis_to_rho(input_basis_element[0])
+        for qubit in range(1, self.n_qubits):
+            self.density_matrix = np.kron(self.density_matrix, computational_basis_to_rho(input_basis_element[qubit]))
+        
+    def eliminate_tolerance(self, tol=1E-10):
+        self.density_matrix[np.abs(self.density_matrix) < tol] = 0
+
 class MPXGate(SingleQubitGate):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -93,49 +137,3 @@ class MPCNOT(TwoQubitGate):
     def apply(self):
         unitary = self.unitary()
         self.backend.density_matrix = unitary @ self.backend.density_matrix @ np.conjugate(unitary).T
-
-class MPBackend(GateBasedBackend):
-
-    component_registry = {
-        "xgate": MPXGate,
-        "ygate": MPYGate,
-        "zgate": MPZGate,
-        "hadamard": MPHadamard,
-        "cnot": MPCNOT,
-    }
-
-    def __init__(self, n_qubits):
-        super().__init__(n_qubits)
-
-        self.density_matrix = None
-
-    def set_input_state(self, input_basis_element):
-        self.set_density_matrix(input_basis_element)
-
-    def run(self):
-        for comp in self.component_list:
-            comp.apply()
-            self.eliminate_tolerance()
-
-    @property
-    def occupied_ranks(self):
-        return [rank for rank in range(self.hilbert_dimension) if self.density_matrix[rank, rank] != 0]
-    
-    def get_output_data(self):
-        prob_vector = np.real(self.density_matrix.diagonal())
-        table_length = np.count_nonzero(prob_vector)
-        table_data = np.zeros((table_length, 2), dtype=object)
-        for row, rank in enumerate(self.occupied_ranks):
-            basis_element = bin(rank)[2:].zfill(self.n_qubits)
-            table_data[row, 0] = tuple_to_str(basis_element)
-            table_data[row, 1] = prob_vector[rank]
-
-        return table_data
-
-    def set_density_matrix(self, input_basis_element):
-        self.density_matrix = computational_basis_to_rho(input_basis_element[0])
-        for qubit in range(1, self.n_qubits):
-            self.density_matrix = np.kron(self.density_matrix, computational_basis_to_rho(input_basis_element[qubit]))
-        
-    def eliminate_tolerance(self, tol=1E-10):
-        self.density_matrix[np.abs(self.density_matrix) < tol] = 0
