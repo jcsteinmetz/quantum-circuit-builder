@@ -9,50 +9,6 @@ from backends.backend import PhotonicBackend
 from backends.photonic.components import BeamSplitter, Switch, PhaseShift, Loss, Detector
 from backends.utils import basis_to_rank, rank_to_basis, fock_hilbert_dimension, spin_y_matrix, tuple_to_str
 
-class FockBackend(PhotonicBackend):
-    def __init__(self, n_wires, n_photons):
-        super().__init__(n_wires, n_photons)
-
-        # Register components
-        self.component_registry["beamsplitter"] = FockBeamSplitter
-        self.component_registry["switch"] = FockSwitch
-        self.component_registry["phaseshift"] = FockPhaseShift
-        self.component_registry["loss"] = FockLoss
-        self.component_registry["detector"] = FockDetector
-
-        self.density_matrix = np.zeros((self.hilbert_dimension, self.hilbert_dimension))
-
-    def set_input_state(self, input_basis_element):
-        self.set_density_matrix(input_basis_element)
-
-    def run(self):
-        for comp in self.component_list:
-            comp.apply()
-            self.eliminate_tolerance()
-
-    def get_output_data(self):
-        prob_vector = np.real(self.density_matrix.diagonal())
-        table_length = np.count_nonzero(prob_vector)
-        table_data = np.zeros((table_length, 2), dtype=object)
-        for row, rank in enumerate(self.occupied_ranks):
-            basis_element = rank_to_basis(self.n_wires, self.n_photons, rank)
-            table_data[row, 0] = tuple_to_str(basis_element)
-            table_data[row, 1] = prob_vector[rank]
-
-        return table_data
-    
-    @property
-    def occupied_ranks(self):
-        return [rank for rank in range(self.hilbert_dimension) if self.density_matrix[rank, rank] != 0]
-    
-    def set_density_matrix(self, input_basis_element):
-        input_basis_rank = basis_to_rank(input_basis_element)
-        self.density_matrix[:] = 0
-        self.density_matrix[input_basis_rank, input_basis_rank] = 1
-        
-    def eliminate_tolerance(self, tol=1E-10):
-        self.density_matrix[np.abs(self.density_matrix) < tol] = 0
-
 class FockBeamSplitter(BeamSplitter):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -117,6 +73,7 @@ class FockBeamSplitter(BeamSplitter):
             basis_element[self.reindexed_wires] = combination
             connected_ranks.append(basis_to_rank(tuple(basis_element)))
         return connected_ranks
+
     
 class FockSwitch(Switch):
     def __init__(self, *args, **kwargs):
@@ -140,7 +97,8 @@ class FockSwitch(Switch):
             unitary[switched_rank, rank] = 1
 
         return unitary
-    
+
+
 class FockPhaseShift(PhaseShift):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -167,7 +125,8 @@ class FockPhaseShift(PhaseShift):
             unitary[rank, rank] = np.exp(1j*self.phase*photons_in_wire)
 
         return unitary
-    
+
+
 class FockLoss(Loss):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -190,7 +149,8 @@ class FockLoss(Loss):
 
                     kraus_operators[lost_photons][new_rank, rank] = np.sqrt(math.comb(photons_in_wire, lost_photons))*self.eta**((photons_in_wire - lost_photons)/2)*(1 - self.eta)**(lost_photons / 2)
         return kraus_operators
-    
+
+
 class FockDetector(Detector):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -203,3 +163,50 @@ class FockDetector(Detector):
             if not keep:
                 self.backend.density_matrix[rank, :] = 0
                 self.backend.density_matrix[:, rank] = 0
+
+
+class FockBackend(PhotonicBackend):
+
+    component_registry = {
+        "beamsplitter": FockBeamSplitter,
+        "phaseshift": FockPhaseShift,
+        "switch": FockSwitch,
+        "loss": FockLoss,
+        "detector": FockDetector,
+    }
+
+    def __init__(self, n_wires, n_photons):
+        super().__init__(n_wires, n_photons)
+
+        self.density_matrix = np.zeros((self.hilbert_dimension, self.hilbert_dimension))
+
+    def set_input_state(self, input_basis_element):
+        self.set_density_matrix(input_basis_element)
+
+    def run(self):
+        for comp in self.component_list:
+            comp.apply()
+            self.eliminate_tolerance()
+
+    def get_output_data(self):
+        prob_vector = np.real(self.density_matrix.diagonal())
+        table_length = np.count_nonzero(prob_vector)
+        table_data = np.zeros((table_length, 2), dtype=object)
+        for row, rank in enumerate(self.occupied_ranks):
+            basis_element = rank_to_basis(self.n_wires, self.n_photons, rank)
+            table_data[row, 0] = tuple_to_str(basis_element)
+            table_data[row, 1] = prob_vector[rank]
+
+        return table_data
+    
+    @property
+    def occupied_ranks(self):
+        return [rank for rank in range(self.hilbert_dimension) if self.density_matrix[rank, rank] != 0]
+    
+    def set_density_matrix(self, input_basis_element):
+        input_basis_rank = basis_to_rank(input_basis_element)
+        self.density_matrix[:] = 0
+        self.density_matrix[input_basis_rank, input_basis_rank] = 1
+        
+    def eliminate_tolerance(self, tol=1E-10):
+        self.density_matrix[np.abs(self.density_matrix) < tol] = 0

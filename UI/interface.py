@@ -40,7 +40,7 @@ class Interface:
             herald.append(detector.herald)
 
         # Add the whole list of detectors at once
-        self.circuit.add_detector(wires = wires, herald = herald)
+        self.circuit.add_component_by_type("detector", wires = wires, herald = herald)
 
     def run_circuit(self):
         self.circuit.run()
