@@ -17,6 +17,7 @@ Quantum Circuit Builder is a GUI for designing and simulating quantum linear opt
 * `Quandela`: [Perceval](https://github.com/Quandela/Perceval) Naive backend
 ### Gate-based
 * `MatrixProduct`: Matrix product demo backend
+* `IBM`: [Qiskit](https://github.com/qiskit) density matrix backend
 
 ## Installation
 Clone the repository using
