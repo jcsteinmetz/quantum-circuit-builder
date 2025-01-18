@@ -22,15 +22,21 @@ def basis_to_rank(element):
         rank += sum(math.comb(n_pp + remaining_modes - 1, n_pp) for n_pp in range(int(remaining_photons)))
     return rank
 
-def calculate_fock_hilbert_dimension(n_wires, n_photons):
-    return sum(math.comb(n + n_wires - 1, n) for n in range(n_photons + 1))
+def fock_hilbert_dimension(n_wires, n_photons):
+    """Total Hilbert space dimension, including all photon numbers up to n_photons."""
+    return sum(fock_hilbert_dimension_fixed_number(n_wires, n) for n in range(n_photons + 1))
+
+def fock_hilbert_dimension_fixed_number(n_wires, n_photons):
+    """Hilbert space dimension when there is a fixed number of photons."""
+    return math.comb(n_photons + n_wires - 1, n_photons)
 
 def spin_y_matrix(size):
-    spin_y_matrix = np.zeros((size, size), dtype=complex)
+    """Spin-Y matrix for a given dimension. Returns pauli_y when size is 2."""
+    sy = np.zeros((size, size), dtype=complex)
     for a in range(size):
         for b in range(size):
-            spin_y_matrix[a, b] = 1j*(int(a == (b+1)) - int((a+1) == b)) * np.sqrt(((size + 1)/2)*(a+b+1) - (a+1)*(b+1))
-    return spin_y_matrix
+            sy[a, b] = 1j*(int(a == (b+1)) - int((a+1) == b)) * np.sqrt(((size + 1)/2)*(a+b+1) - (a+1)*(b+1))
+    return sy
 
 def degrees_to_radians(deg):
     return (np.pi/180)*deg
@@ -60,3 +66,13 @@ def pauli_z():
 def insert_gate(gate, qubit, n_qubits):
     """Inserts a 2x2 matrix acting on a specific qubit into the N-qubit product space"""
     return np.kron(np.kron(np.eye(2**qubit), gate), np.eye(2**(n_qubits-qubit-1)))
+
+def tuple_to_str(tup):
+    string = str(tup)
+    string = string.replace("(", "")
+    string = string.replace(")", "")
+    string = string.replace(" ", "")
+    string = string.replace(",", "")
+    string = string.replace("|", "")
+    string = string.replace(">", "")
+    return "".join(string)

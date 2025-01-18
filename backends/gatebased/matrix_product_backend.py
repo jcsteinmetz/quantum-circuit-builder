@@ -3,7 +3,7 @@ Basic matrix product model
 """
 
 import numpy as np
-from backends.utils import insert_gate, pauli_x, pauli_y, pauli_z, computational_basis_to_rho
+from backends.utils import insert_gate, pauli_x, pauli_y, pauli_z, computational_basis_to_rho, tuple_to_str
 from backends.backend import GateBasedBackend
 from backends.gatebased.components import SingleQubitGate, TwoQubitGate
 
@@ -22,42 +22,37 @@ class MPBackend(GateBasedBackend):
             self.eliminate_tolerance()
 
     def add_Xgate(self, **kwargs):
-        comp = MatrixProductXGate(self, **kwargs)
+        comp = MPXGate(self, **kwargs)
         self.add_component(comp)
 
     def add_Ygate(self, **kwargs):
-        comp = MatrixProductYGate(self, **kwargs)
+        comp = MPYGate(self, **kwargs)
         self.add_component(comp)
 
     def add_Zgate(self, **kwargs):
-        comp = MatrixProductZGate(self, **kwargs)
+        comp = MPZGate(self, **kwargs)
         self.add_component(comp)
 
     def add_hadamard(self, **kwargs):
-        comp = MatrixProductHadamard(self, **kwargs)
+        comp = MPHadamard(self, **kwargs)
         self.add_component(comp)
 
     def add_CNOT(self, **kwargs):
-        comp = MatrixProductCNOT(self, **kwargs)
+        comp = MPCNOT(self, **kwargs)
         self.add_component(comp)
 
     @property
     def occupied_ranks(self):
         return [rank for rank in range(self.hilbert_dimension) if self.density_matrix[rank, rank] != 0]
     
-    @property
-    def output_data(self):
+    def get_output_data(self):
         prob_vector = np.real(self.density_matrix.diagonal())
         table_length = np.count_nonzero(prob_vector)
         table_data = np.zeros((table_length, 2), dtype=object)
         print(self.density_matrix)
         for row, rank in enumerate(self.occupied_ranks):
-            basis_element_string = str(bin(rank)[2:].zfill(self.n_qubits))
-            basis_element_string = basis_element_string.replace("(", "")
-            basis_element_string = basis_element_string.replace(")", "")
-            basis_element_string = basis_element_string.replace(" ", "")
-            basis_element_string = basis_element_string.replace(",", "")
-            table_data[row, 0] = "".join(basis_element_string)
+            basis_element = bin(rank)[2:].zfill(self.n_qubits)
+            table_data[row, 0] = tuple_to_str(basis_element)
             table_data[row, 1] = prob_vector[rank]
 
         return table_data
@@ -70,7 +65,7 @@ class MPBackend(GateBasedBackend):
     def eliminate_tolerance(self, tol=1E-10):
         self.density_matrix[np.abs(self.density_matrix) < tol] = 0
 
-class MatrixProductXGate(SingleQubitGate):
+class MPXGate(SingleQubitGate):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -85,7 +80,7 @@ class MatrixProductXGate(SingleQubitGate):
     def unitary(self):
         return insert_gate(self.single_qubit_unitary, self.reindexed_targeted_qubit, self.backend.n_qubits)
 
-class MatrixProductYGate(SingleQubitGate):
+class MPYGate(SingleQubitGate):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -100,7 +95,7 @@ class MatrixProductYGate(SingleQubitGate):
     def unitary(self):
         return insert_gate(self.single_qubit_unitary, self.reindexed_targeted_qubit, self.backend.n_qubits)
 
-class MatrixProductZGate(SingleQubitGate):
+class MPZGate(SingleQubitGate):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -115,7 +110,7 @@ class MatrixProductZGate(SingleQubitGate):
     def unitary(self):
         return insert_gate(self.single_qubit_unitary, self.reindexed_targeted_qubit, self.backend.n_qubits)
 
-class MatrixProductHadamard(SingleQubitGate):
+class MPHadamard(SingleQubitGate):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -130,7 +125,7 @@ class MatrixProductHadamard(SingleQubitGate):
     def unitary(self):
         return insert_gate(self.single_qubit_unitary, self.reindexed_targeted_qubit, self.backend.n_qubits)
 
-class MatrixProductCNOT(TwoQubitGate):
+class MPCNOT(TwoQubitGate):
     """
     CNOT gate is a sum of do_nothing when the control qubit is 0, and flip_target when the control qubit is 1.
     """

@@ -30,7 +30,7 @@ class OutputTab(QWidget):
 
     def print_output(self):
         try:
-            self.table_data = self.window.interface.circuit.output_data
+            self.table_data = self.window.interface.circuit.get_output_data()
 
             total_prob = sum(float(i) for i in self.table_data[:, 1])
 

@@ -3,7 +3,7 @@ from qiskit_aer.aerprovider import AerSimulator
 import numpy as np
 from backends.backend import GateBasedBackend
 from backends.gatebased.components import SingleQubitGate, TwoQubitGate
-from backends.utils import computational_basis_to_rho
+from backends.utils import computational_basis_to_rho, tuple_to_str
 
 class QiskitBackend(GateBasedBackend):
     def __init__(self, n_qubits):
@@ -35,75 +35,69 @@ class QiskitBackend(GateBasedBackend):
         self.density_matrix = result.data().get('density_matrix')
 
     def add_Xgate(self, **kwargs):
-        comp = IBMXGate(self, **kwargs)
+        comp = QiskitXGate(self, **kwargs)
         self.add_component(comp)
 
     def add_Ygate(self, **kwargs):
-        comp = IBMYGate(self, **kwargs)
+        comp = QiskitYGate(self, **kwargs)
         self.add_component(comp)
 
     def add_Zgate(self, **kwargs):
-        comp = IBMZGate(self, **kwargs)
+        comp = QiskitZGate(self, **kwargs)
         self.add_component(comp)
 
     def add_hadamard(self, **kwargs):
-        comp = IBMHadamard(self, **kwargs)
+        comp = QiskitHadamard(self, **kwargs)
         self.add_component(comp)
 
     def add_CNOT(self, **kwargs):
-        comp = IBMCNOT(self, **kwargs)
+        comp = QiskitCNOT(self, **kwargs)
         self.add_component(comp)
 
     @property
     def occupied_ranks(self):
         return [rank for rank in range(self.hilbert_dimension) if self.density_matrix[rank, rank] != 0]
 
-    @property
-    def output_data(self):
+    def get_output_data(self):
         prob_vector = np.real(self.density_matrix.diagonal())
         table_length = np.count_nonzero(prob_vector)
         table_data = np.zeros((table_length, 2), dtype=object)
         for row, rank in enumerate(self.occupied_ranks):
-            binary = bin(rank)[2:].zfill(self.n_qubits)
-            basis_element_string = str(binary[::-1]) # qiskit uses a reversed tensor product space
-            basis_element_string = basis_element_string.replace("(", "")
-            basis_element_string = basis_element_string.replace(")", "")
-            basis_element_string = basis_element_string.replace(" ", "")
-            basis_element_string = basis_element_string.replace(",", "")
-            table_data[row, 0] = "".join(basis_element_string)
+            basis_element = bin(rank)[2:].zfill(self.n_qubits)[::-1] # qiskit uses a reversed tensor product space
+            table_data[row, 0] = tuple_to_str(basis_element)
             table_data[row, 1] = prob_vector[rank]
 
         return table_data
 
-class IBMXGate(SingleQubitGate):
+class QiskitXGate(SingleQubitGate):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
     def apply(self):
         self.backend.circuit.x(self.reindexed_targeted_qubit)
 
-class IBMYGate(SingleQubitGate):
+class QiskitYGate(SingleQubitGate):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
     def apply(self):
         self.backend.circuit.y(self.reindexed_targeted_qubit)
 
-class IBMZGate(SingleQubitGate):
+class QiskitZGate(SingleQubitGate):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
     def apply(self):
         self.backend.circuit.z(self.reindexed_targeted_qubit)
 
-class IBMHadamard(SingleQubitGate):
+class QiskitHadamard(SingleQubitGate):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
     def apply(self):
         self.backend.circuit.h(self.reindexed_targeted_qubit)
 
-class IBMCNOT(TwoQubitGate):
+class QiskitCNOT(TwoQubitGate):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 

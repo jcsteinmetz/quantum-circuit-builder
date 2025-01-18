@@ -7,7 +7,7 @@ import math
 import scipy
 from backends.backend import PhotonicBackend
 from backends.photonic.components import BeamSplitter, Switch, PhaseShift, Loss, Detector
-from backends.utils import basis_to_rank, rank_to_basis, calculate_fock_hilbert_dimension, spin_y_matrix
+from backends.utils import basis_to_rank, rank_to_basis, fock_hilbert_dimension, spin_y_matrix, tuple_to_str
 
 class FockBackend(PhotonicBackend):
     def __init__(self, n_wires, n_photons):
@@ -42,19 +42,14 @@ class FockBackend(PhotonicBackend):
     def add_detector(self, **kwargs):
         comp = FockDetector(self, **kwargs)
         self.add_component(comp)
-    
-    @property
-    def output_data(self):
+
+    def get_output_data(self):
         prob_vector = np.real(self.density_matrix.diagonal())
         table_length = np.count_nonzero(prob_vector)
         table_data = np.zeros((table_length, 2), dtype=object)
         for row, rank in enumerate(self.occupied_ranks):
-            basis_element_string = str(rank_to_basis(self.n_wires, self.n_photons, rank))
-            basis_element_string = basis_element_string.replace("(", "")
-            basis_element_string = basis_element_string.replace(")", "")
-            basis_element_string = basis_element_string.replace(" ", "")
-            basis_element_string = basis_element_string.replace(",", "")
-            table_data[row, 0] = "".join(basis_element_string)
+            basis_element = rank_to_basis(self.n_wires, self.n_photons, rank)
+            table_data[row, 0] = tuple_to_str(basis_element)
             table_data[row, 1] = prob_vector[rank]
 
         return table_data
@@ -126,7 +121,7 @@ class FockBeamSplitter(BeamSplitter):
 
         # Generate all possible combinations of occupation numbers within self.wires
         photons = self.photon_count_per_rank[rank]
-        wire_hilbert = calculate_fock_hilbert_dimension(2, photons)
+        wire_hilbert = fock_hilbert_dimension(2, photons)
         wire_combinations = [rank_to_basis(2, photons, rank) for rank in range(wire_hilbert) if sum(rank_to_basis(2, photons, rank)) == photons]
 
         # Shuffle the occupation numbers within self.wires, and return the ranks of the resulting basis elements

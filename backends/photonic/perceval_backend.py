@@ -3,6 +3,7 @@ import perceval as pcvl
 from perceval.components import BS, PS, PERM, LC
 from backends.backend import PhotonicBackend
 from backends.photonic.components import BeamSplitter, Switch, PhaseShift, Loss, Detector
+from backends.utils import tuple_to_str
 
 class PercevalBackend(PhotonicBackend):
     def __init__(self, n_wires, n_photons):
@@ -24,46 +25,40 @@ class PercevalBackend(PhotonicBackend):
         self.circuit.min_detected_photons_filter(-1) # this should really be zero, but the current version of Perceval seems to have a mistake
         self.circuit.with_input(pcvl.BasicState(list(input_basis_element)))
 
-    @property
-    def output_data(self):
+    def get_output_data(self):
 
         table_length = len(self.output_dict)
         table_data = np.zeros((table_length, 2), dtype=object)
 
         row = 0
         for key, value in self.output_dict.items():
-            # Remove Perceval's formatting
-            basis_element_string = str(key)
-            basis_element_string = basis_element_string.replace("|", "")
-            basis_element_string = basis_element_string.replace(">", "")
-            basis_element_string = basis_element_string.replace(",", "")
-            table_data[row, 0] = basis_element_string
+            table_data[row, 0] = tuple_to_str(key)
             table_data[row, 1] = value
             row += 1
 
         return table_data
 
     def add_beamsplitter(self, **kwargs):
-        comp = QuandelaBeamSplitter(self, **kwargs)
+        comp = PercevalBeamSplitter(self, **kwargs)
         self.add_component(comp)
     
     def add_switch(self, **kwargs):
-        comp = QuandelaSwitch(self, **kwargs)
+        comp = PercevalSwitch(self, **kwargs)
         self.add_component(comp)
 
     def add_phaseshift(self, **kwargs):
-        comp = QuandelaPhaseShift(self, **kwargs)
+        comp = PercevalPhaseShift(self, **kwargs)
         self.add_component(comp)
     
     def add_loss(self, **kwargs):
-        comp = QuandelaLoss(self, **kwargs)
+        comp = PercevalLoss(self, **kwargs)
         self.add_component(comp)
     
     def add_detector(self, **kwargs):
-        comp = QuandelaDetector(self, **kwargs)
+        comp = PercevalDetector(self, **kwargs)
         self.add_component(comp)
 
-class QuandelaBeamSplitter(BeamSplitter):
+class PercevalBeamSplitter(BeamSplitter):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -84,21 +79,21 @@ class QuandelaBeamSplitter(BeamSplitter):
         if switched:
             self.backend.circuit.add(all_wires, PERM(permuted_wires))
 
-class QuandelaSwitch(Switch):
+class PercevalSwitch(Switch):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
     def apply(self):
         self.backend.circuit.add(tuple(self.reindexed_wires), PERM([1, 0]))
 
-class QuandelaPhaseShift(PhaseShift):
+class PercevalPhaseShift(PhaseShift):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
     def apply(self):
         self.backend.circuit.add(self.reindexed_wire, PS(phi = self.phase))
 
-class QuandelaLoss(Loss):
+class PercevalLoss(Loss):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -109,7 +104,7 @@ class QuandelaLoss(Loss):
             else:
                 self.backend.circuit.add(wire, LC(0)) # perceval seems to have a problem with applying loss to only 1 wire
 
-class QuandelaDetector(Detector):
+class PercevalDetector(Detector):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
