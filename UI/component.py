@@ -299,7 +299,7 @@ class Component(ABC):
 
     @property
     def name(self):
-        all_components = self.window.canvas.placed_components["wires"] + self.window.canvas.placed_components["components"] + self.window.canvas.placed_components["detectors"]
+        all_components = list(self.window.canvas.all_placed_components())
         overall_index = all_components.index(self)
         type_index = sum(isinstance(i, self.__class__) for i in all_components[:overall_index])
         child_name = type(self).__name__[0] + str(type_index+1)

@@ -13,6 +13,13 @@ class FockBackend(PhotonicBackend):
     def __init__(self, n_wires, n_photons):
         super().__init__(n_wires, n_photons)
 
+        # Register components
+        self.component_registry["beamsplitter"] = FockBeamSplitter
+        self.component_registry["switch"] = FockSwitch
+        self.component_registry["phaseshift"] = FockPhaseShift
+        self.component_registry["loss"] = FockLoss
+        self.component_registry["detector"] = FockDetector
+
         self.density_matrix = np.zeros((self.hilbert_dimension, self.hilbert_dimension))
 
     def set_input_state(self, input_basis_element):
@@ -22,26 +29,6 @@ class FockBackend(PhotonicBackend):
         for comp in self.component_list:
             comp.apply()
             self.eliminate_tolerance()
-
-    def add_beamsplitter(self, **kwargs):
-        comp = FockBeamSplitter(self, **kwargs)
-        self.add_component(comp)
-
-    def add_switch(self, **kwargs):
-        comp = FockSwitch(self, **kwargs)
-        self.add_component(comp)
-
-    def add_phaseshift(self, **kwargs):
-        comp = FockPhaseShift(self, **kwargs)
-        self.add_component(comp)
-
-    def add_loss(self, **kwargs):
-        comp = FockLoss(self, **kwargs)
-        self.add_component(comp)
-
-    def add_detector(self, **kwargs):
-        comp = FockDetector(self, **kwargs)
-        self.add_component(comp)
 
     def get_output_data(self):
         prob_vector = np.real(self.density_matrix.diagonal())

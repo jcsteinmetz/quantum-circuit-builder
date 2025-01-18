@@ -43,6 +43,14 @@ class PhotonicBackend(BaseBackend):
     The basis states are Fock states, (n_1, n_2, ..., n_M), where each n_i is the occupation
     number for mode i.
     """
+    component_registry = {
+        "beamsplitter": None,
+        "switch": None,
+        "phaseshift": None,
+        "loss": None,
+        "detector": None,
+    }
+
     def __init__(self, n_wires, n_photons):
         super().__init__()
 
@@ -56,25 +64,30 @@ class PhotonicBackend(BaseBackend):
     def hilbert_dimension(self):
         return fock_hilbert_dimension(self.n_wires, self.n_photons)
 
-    @abstractmethod
     def add_beamsplitter(self, **kwargs):
-        raise NotImplementedError
-    
-    @abstractmethod
+        component_type = self.component_registry["beamsplitter"]
+        comp = component_type(self, **kwargs)
+        self.add_component(comp)
+
     def add_switch(self, **kwargs):
-        raise NotImplementedError
-    
-    @abstractmethod
+        component_type = self.component_registry["switch"]
+        comp = component_type(self, **kwargs)
+        self.add_component(comp)
+
     def add_phaseshift(self, **kwargs):
-        raise NotImplementedError
-    
-    @abstractmethod
+        component_type = self.component_registry["phaseshift"]
+        comp = component_type(self, **kwargs)
+        self.add_component(comp)
+
     def add_loss(self, **kwargs):
-        raise NotImplementedError
-    
-    @abstractmethod
+        component_type = self.component_registry["loss"]
+        comp = component_type(self, **kwargs)
+        self.add_component(comp)
+
     def add_detector(self, **kwargs):
-        raise NotImplementedError
+        component_type = self.component_registry["detector"]
+        comp = component_type(self, **kwargs)
+        self.add_component(comp)
 
 
 class GateBasedBackend(BaseBackend):
@@ -83,6 +96,13 @@ class GateBasedBackend(BaseBackend):
     using logic gates. The basis states are computational states, i.e. lists of
     zeros and ones.
     """
+    component_registry = {
+        "Xgate": None,
+        "Ygate": None,
+        "Zgate": None,
+        "hadamard": None,
+        "CNOT": None,
+    }
     def __init__(self, n_qubits):
         super().__init__()
 
@@ -95,22 +115,27 @@ class GateBasedBackend(BaseBackend):
     def hilbert_dimension(self):
         return 2**self.n_qubits
 
-    @abstractmethod
     def add_Xgate(self, **kwargs):
-        raise NotImplementedError
-    
-    @abstractmethod
+        component_type = self.component_registry["xgate"]
+        comp = component_type(self, **kwargs)
+        self.add_component(comp)
+
     def add_Ygate(self, **kwargs):
-        raise NotImplementedError
-    
-    @abstractmethod
+        component_type = self.component_registry["ygate"]
+        comp = component_type(self, **kwargs)
+        self.add_component(comp)
+
     def add_Zgate(self, **kwargs):
-        raise NotImplementedError
-    
-    @abstractmethod
+        component_type = self.component_registry["zgate"]
+        comp = component_type(self, **kwargs)
+        self.add_component(comp)
+
     def add_hadamard(self, **kwargs):
-        raise NotImplementedError
-    
-    @abstractmethod
+        component_type = self.component_registry["hadamard"]
+        comp = component_type(self, **kwargs)
+        self.add_component(comp)
+
     def add_CNOT(self, **kwargs):
-        raise NotImplementedError
+        component_type = self.component_registry["cnot"]
+        comp = component_type(self, **kwargs)
+        self.add_component(comp)

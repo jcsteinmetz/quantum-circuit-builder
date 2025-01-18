@@ -8,6 +8,14 @@ from backends.utils import computational_basis_to_rho, tuple_to_str
 class QiskitBackend(GateBasedBackend):
     def __init__(self, n_qubits):
         super().__init__(n_qubits)
+
+        # Register components
+        self.component_registry["xgate"] = QiskitXGate
+        self.component_registry["ygate"] = QiskitYGate
+        self.component_registry["zgate"] = QiskitZGate
+        self.component_registry["hadamard"] = QiskitHadamard
+        self.component_registry["cnot"] = QiskitCNOT
+
         self.circuit = QuantumCircuit(self.n_qubits)
         self.density_matrix = None
 
@@ -33,26 +41,6 @@ class QiskitBackend(GateBasedBackend):
 
         result = simulator.run(self.circuit).result()
         self.density_matrix = result.data().get('density_matrix')
-
-    def add_Xgate(self, **kwargs):
-        comp = QiskitXGate(self, **kwargs)
-        self.add_component(comp)
-
-    def add_Ygate(self, **kwargs):
-        comp = QiskitYGate(self, **kwargs)
-        self.add_component(comp)
-
-    def add_Zgate(self, **kwargs):
-        comp = QiskitZGate(self, **kwargs)
-        self.add_component(comp)
-
-    def add_hadamard(self, **kwargs):
-        comp = QiskitHadamard(self, **kwargs)
-        self.add_component(comp)
-
-    def add_CNOT(self, **kwargs):
-        comp = QiskitCNOT(self, **kwargs)
-        self.add_component(comp)
 
     @property
     def occupied_ranks(self):

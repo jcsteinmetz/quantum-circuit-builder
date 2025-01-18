@@ -9,6 +9,13 @@ class PercevalBackend(PhotonicBackend):
     def __init__(self, n_wires, n_photons):
         super().__init__(n_wires, n_photons)
 
+        # Register components
+        self.component_registry["beamsplitter"] = PercevalBeamSplitter
+        self.component_registry["switch"] = PercevalSwitch
+        self.component_registry["phaseshift"] = PercevalPhaseShift
+        self.component_registry["loss"] = PercevalLoss
+        self.component_registry["detector"] = PercevalDetector
+
         self.circuit = pcvl.Processor("SLOS", self.n_wires)
 
         self.output_dict = {}

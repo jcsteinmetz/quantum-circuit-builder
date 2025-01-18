@@ -11,6 +11,13 @@ class MPBackend(GateBasedBackend):
     def __init__(self, n_qubits):
         super().__init__(n_qubits)
 
+        # Register components
+        self.component_registry["xgate"] = MPXGate
+        self.component_registry["ygate"] = MPYGate
+        self.component_registry["zgate"] = MPZGate
+        self.component_registry["hadamard"] = MPHadamard
+        self.component_registry["cnot"] = MPCNOT
+
         self.density_matrix = None
 
     def set_input_state(self, input_basis_element):
@@ -21,26 +28,6 @@ class MPBackend(GateBasedBackend):
             comp.apply()
             self.eliminate_tolerance()
 
-    def add_Xgate(self, **kwargs):
-        comp = MPXGate(self, **kwargs)
-        self.add_component(comp)
-
-    def add_Ygate(self, **kwargs):
-        comp = MPYGate(self, **kwargs)
-        self.add_component(comp)
-
-    def add_Zgate(self, **kwargs):
-        comp = MPZGate(self, **kwargs)
-        self.add_component(comp)
-
-    def add_hadamard(self, **kwargs):
-        comp = MPHadamard(self, **kwargs)
-        self.add_component(comp)
-
-    def add_CNOT(self, **kwargs):
-        comp = MPCNOT(self, **kwargs)
-        self.add_component(comp)
-
     @property
     def occupied_ranks(self):
         return [rank for rank in range(self.hilbert_dimension) if self.density_matrix[rank, rank] != 0]
@@ -49,7 +36,6 @@ class MPBackend(GateBasedBackend):
         prob_vector = np.real(self.density_matrix.diagonal())
         table_length = np.count_nonzero(prob_vector)
         table_data = np.zeros((table_length, 2), dtype=object)
-        print(self.density_matrix)
         for row, rank in enumerate(self.occupied_ranks):
             basis_element = bin(rank)[2:].zfill(self.n_qubits)
             table_data[row, 0] = tuple_to_str(basis_element)
