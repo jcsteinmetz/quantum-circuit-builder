@@ -5,18 +5,18 @@ Basic matrix product model
 import numpy as np
 from backends.utils import insert_gate, pauli_x, pauli_y, pauli_z, computational_basis_to_rho, tuple_to_str, fill_table
 from backends.backend import GateBasedBackend
-from backends.component import Component
+from backends.gatebased.components import PauliGate, Hadamard, CNOT
 
 class MPBackend(GateBasedBackend):
     def __init__(self, n_qubits):
         super().__init__(n_qubits)
 
         # Register components
-        self.component_registry["xgate"] = MPXGate
-        self.component_registry["ygate"] = MPYGate
-        self.component_registry["zgate"] = MPZGate
-        self.component_registry["hadamard"] = MPHadamard
-        self.component_registry["cnot"] = MPCNOT
+        self.register_component("xgate", MPXGate)
+        self.register_component("ygate", MPYGate)
+        self.register_component("zgate", MPZGate)
+        self.register_component("hadamard", MPHadamard)
+        self.register_component("cnot", MPCNOT)
 
         self.density_matrix = None
 
@@ -49,11 +49,9 @@ class MPBackend(GateBasedBackend):
     def eliminate_tolerance(self, tol=1E-10):
         self.density_matrix[np.abs(self.density_matrix) < tol] = 0
 
-class MPXGate(Component):
-    def __init__(self, backend, *, qubit):
-        super().__init__(backend)
-        self.targeted_qubit = qubit
-        self.reindexed_targeted_qubit = qubit - 1
+class MPXGate(PauliGate):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
     @property
     def single_qubit_unitary(self):
@@ -66,11 +64,9 @@ class MPXGate(Component):
     def unitary(self):
         return insert_gate(self.single_qubit_unitary, self.reindexed_targeted_qubit, self.backend.n_qubits)
 
-class MPYGate(Component):
-    def __init__(self, backend, *, qubit):
-        super().__init__(backend)
-        self.targeted_qubit = qubit
-        self.reindexed_targeted_qubit = qubit - 1
+class MPYGate(PauliGate):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
     @property
     def single_qubit_unitary(self):
@@ -83,11 +79,9 @@ class MPYGate(Component):
     def unitary(self):
         return insert_gate(self.single_qubit_unitary, self.reindexed_targeted_qubit, self.backend.n_qubits)
 
-class MPZGate(Component):
-    def __init__(self, backend, *, qubit):
-        super().__init__(backend)
-        self.targeted_qubit = qubit
-        self.reindexed_targeted_qubit = qubit - 1
+class MPZGate(PauliGate):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
     @property
     def single_qubit_unitary(self):
@@ -100,11 +94,9 @@ class MPZGate(Component):
     def unitary(self):
         return insert_gate(self.single_qubit_unitary, self.reindexed_targeted_qubit, self.backend.n_qubits)
 
-class MPHadamard(Component):
-    def __init__(self, backend, *, qubit):
-        super().__init__(backend)
-        self.targeted_qubit = qubit
-        self.reindexed_targeted_qubit = qubit - 1
+class MPHadamard(Hadamard):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
     @property
     def single_qubit_unitary(self):
@@ -117,14 +109,12 @@ class MPHadamard(Component):
     def unitary(self):
         return insert_gate(self.single_qubit_unitary, self.reindexed_targeted_qubit, self.backend.n_qubits)
 
-class MPCNOT(Component):
+class MPCNOT(CNOT):
     """
     CNOT gate is a sum of do_nothing when the control qubit is 0, and flip_target when the control qubit is 1.
     """
-    def __init__(self, backend, *, qubits):
-        super().__init__(backend)
-        self.targeted_qubits = qubits
-        self.reindexed_targeted_qubits = [qubit - 1 for qubit in qubits]
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
     def unitary(self):
         control_qubit = self.reindexed_targeted_qubits[0]

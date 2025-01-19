@@ -14,11 +14,11 @@ class FockBackend(PhotonicBackend):
         super().__init__(n_wires, n_photons)
 
         # Register components
-        self.component_registry["beamsplitter"] = FockBeamSplitter
-        self.component_registry["switch"] = FockSwitch
-        self.component_registry["phaseshift"] = FockPhaseShift
-        self.component_registry["loss"] = FockLoss
-        self.component_registry["detector"] = FockDetector
+        self.register_component("beamsplitter", FockBeamSplitter)
+        self.register_component("switch", FockSwitch)
+        self.register_component("phaseshift", FockPhaseShift)
+        self.register_component("loss", FockLoss)
+        self.register_component("detector", FockDetector)
 
         self.density_matrix = np.zeros((self.hilbert_dimension, self.hilbert_dimension))
 

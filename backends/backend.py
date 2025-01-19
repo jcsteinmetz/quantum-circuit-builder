@@ -7,8 +7,14 @@ from backends.utils import fock_hilbert_dimension, fill_table
 
 class BaseBackend(ABC):
     """Base class for simulator backends."""
+    component_registry = {}
+
     def __init__(self):
         self.component_list = []
+
+    @classmethod
+    def register_component(cls, component_type, component_class):
+        cls.component_registry[component_type] = component_class
 
     def add_component(self, comp):
         """Add a component to the circuit."""
@@ -102,11 +108,11 @@ class GateBasedBackend(BaseBackend):
     zeros and ones.
     """
     component_registry = {
-        "Xgate": None,
-        "Ygate": None,
-        "Zgate": None,
+        "xgate": None,
+        "ygate": None,
+        "zgate": None,
         "hadamard": None,
-        "CNOT": None,
+        "cnot": None,
     }
     def __init__(self, n_qubits):
         super().__init__()
@@ -122,8 +128,11 @@ class GateBasedBackend(BaseBackend):
 
     def add_Xgate(self, **kwargs):
         component_type = self.component_registry["xgate"]
+        print(component_type)
         comp = component_type(self, **kwargs)
+        print(comp)
         self.add_component(comp)
+        print(self.component_list)
 
     def add_Ygate(self, **kwargs):
         component_type = self.component_registry["ygate"]

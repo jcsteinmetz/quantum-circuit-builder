@@ -10,11 +10,11 @@ class SFBackend(PhotonicBackend):
         super().__init__(n_wires, n_photons)
 
         # Register components
-        self.component_registry["beamsplitter"] = SFBeamSplitter
-        self.component_registry["switch"] = SFSwitch
-        self.component_registry["phaseshift"] = SFPhaseShift
-        self.component_registry["loss"] = SFLoss
-        self.component_registry["detector"] = SFDetector
+        self.register_component("beamsplitter", SFBeamSplitter)
+        self.register_component("switch", SFSwitch)
+        self.register_component("phaseshift", SFPhaseShift)
+        self.register_component("loss", SFLoss)
+        self.register_component("detector", SFDetector)
 
         self.eng = sf.Engine("fock", backend_options={"cutoff_dim": self.n_photons+1})
         self.circuit = sf.Program(self.n_wires)

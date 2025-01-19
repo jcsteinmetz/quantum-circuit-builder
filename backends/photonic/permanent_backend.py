@@ -16,11 +16,11 @@ class PermanentBackend(PhotonicBackend):
         super().__init__(n_wires, n_photons)
 
         # Register components
-        self.component_registry["beamsplitter"] = PermanentBeamSplitter
-        self.component_registry["switch"] = PermanentSwitch
-        self.component_registry["phaseshift"] = PermanentPhaseShift
-        self.component_registry["loss"] = PermanentLoss
-        self.component_registry["detector"] = PermanentDetector
+        self.register_component("beamsplitter", PermanentBeamSplitter)
+        self.register_component("switch", PermanentSwitch)
+        self.register_component("phaseshift", PermanentPhaseShift)
+        self.register_component("loss", PermanentLoss)
+        self.register_component("detector", PermanentDetector)
 
         self.input_basis_element = ()
         self.output_probabilities = np.zeros(self.hilbert_dimension)
