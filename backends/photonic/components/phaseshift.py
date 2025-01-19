@@ -3,14 +3,13 @@ from backends.utils import degrees_to_radians
 
 class PhaseShift(Component):
     def __init__(self, backend, *, wire, phase = 180):
-        
-        self.backend = backend
+
         self.wire = wire
         self.reindexed_wire = self.wire - 1
 
         self.phase = degrees_to_radians(phase)
 
-        self.validate_input()
+        super().__init__(backend)
     
     def validate_input(self):
         if not isinstance(self.wire, int):

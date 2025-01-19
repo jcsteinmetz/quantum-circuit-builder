@@ -2,14 +2,13 @@ from backends.component import Component
 
 class Loss(Component):
     def __init__(self, backend, *, wire, eta = 1):
-        self.backend = backend
         
         self.wire = wire
         self.reindexed_wire = self.wire - 1
 
         self.eta = eta
 
-        self.validate_input()
+        super().__init__(backend)
     
     def validate_input(self):
         if not isinstance(self.wire, int):

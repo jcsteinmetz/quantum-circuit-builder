@@ -3,12 +3,11 @@ from backends.component import Component
 class Detector(Component):
     def __init__(self, backend, *, wires, herald):
 
-        self.backend = backend
         self.wires = wires
         self.reindexed_wires = [w-1 for w in self.wires]
         self.herald = herald
 
-        self.validate_input()
+        super().__init__(backend)
     
     def validate_input(self):
         if len(self.wires) >= self.backend.n_wires:

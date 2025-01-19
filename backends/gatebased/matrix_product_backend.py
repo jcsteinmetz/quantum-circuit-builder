@@ -5,7 +5,7 @@ Basic matrix product model
 import numpy as np
 from backends.utils import insert_gate, pauli_x, pauli_y, pauli_z, computational_basis_to_rho, tuple_to_str, fill_table
 from backends.backend import GateBasedBackend
-from backends.gatebased.components import SingleQubitGate, TwoQubitGate
+from backends.component import Component
 
 class MPBackend(GateBasedBackend):
     def __init__(self, n_qubits):
@@ -21,7 +21,9 @@ class MPBackend(GateBasedBackend):
         self.density_matrix = None
 
     def set_input_state(self, input_basis_element):
-        self.set_density_matrix(input_basis_element)
+        self.density_matrix = computational_basis_to_rho(input_basis_element[0])
+        for qubit in range(1, self.n_qubits):
+            self.density_matrix = np.kron(self.density_matrix, computational_basis_to_rho(input_basis_element[qubit]))
 
     def run(self):
         for comp in self.component_list:
@@ -43,18 +45,15 @@ class MPBackend(GateBasedBackend):
     @property
     def basis_strings(self):
         return [tuple_to_str(bin(rank)[2:].zfill(self.n_qubits)) for rank in self.occupied_ranks]
-
-    def set_density_matrix(self, input_basis_element):
-        self.density_matrix = computational_basis_to_rho(input_basis_element[0])
-        for qubit in range(1, self.n_qubits):
-            self.density_matrix = np.kron(self.density_matrix, computational_basis_to_rho(input_basis_element[qubit]))
         
     def eliminate_tolerance(self, tol=1E-10):
         self.density_matrix[np.abs(self.density_matrix) < tol] = 0
 
-class MPXGate(SingleQubitGate):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+class MPXGate(Component):
+    def __init__(self, backend, *, qubit):
+        super().__init__(backend)
+        self.targeted_qubit = qubit
+        self.reindexed_targeted_qubit = qubit - 1
 
     @property
     def single_qubit_unitary(self):
@@ -67,9 +66,11 @@ class MPXGate(SingleQubitGate):
     def unitary(self):
         return insert_gate(self.single_qubit_unitary, self.reindexed_targeted_qubit, self.backend.n_qubits)
 
-class MPYGate(SingleQubitGate):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+class MPYGate(Component):
+    def __init__(self, backend, *, qubit):
+        super().__init__(backend)
+        self.targeted_qubit = qubit
+        self.reindexed_targeted_qubit = qubit - 1
 
     @property
     def single_qubit_unitary(self):
@@ -82,9 +83,11 @@ class MPYGate(SingleQubitGate):
     def unitary(self):
         return insert_gate(self.single_qubit_unitary, self.reindexed_targeted_qubit, self.backend.n_qubits)
 
-class MPZGate(SingleQubitGate):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+class MPZGate(Component):
+    def __init__(self, backend, *, qubit):
+        super().__init__(backend)
+        self.targeted_qubit = qubit
+        self.reindexed_targeted_qubit = qubit - 1
 
     @property
     def single_qubit_unitary(self):
@@ -97,9 +100,11 @@ class MPZGate(SingleQubitGate):
     def unitary(self):
         return insert_gate(self.single_qubit_unitary, self.reindexed_targeted_qubit, self.backend.n_qubits)
 
-class MPHadamard(SingleQubitGate):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+class MPHadamard(Component):
+    def __init__(self, backend, *, qubit):
+        super().__init__(backend)
+        self.targeted_qubit = qubit
+        self.reindexed_targeted_qubit = qubit - 1
 
     @property
     def single_qubit_unitary(self):
@@ -112,12 +117,14 @@ class MPHadamard(SingleQubitGate):
     def unitary(self):
         return insert_gate(self.single_qubit_unitary, self.reindexed_targeted_qubit, self.backend.n_qubits)
 
-class MPCNOT(TwoQubitGate):
+class MPCNOT(Component):
     """
     CNOT gate is a sum of do_nothing when the control qubit is 0, and flip_target when the control qubit is 1.
     """
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, backend, *, qubits):
+        super().__init__(backend)
+        self.targeted_qubits = qubits
+        self.reindexed_targeted_qubits = [qubit - 1 for qubit in qubits]
 
     def unitary(self):
         control_qubit = self.reindexed_targeted_qubits[0]

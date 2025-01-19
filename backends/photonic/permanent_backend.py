@@ -192,9 +192,11 @@ class PermanentDetector(Detector):
         super().__init__(*args, **kwargs)
 
     def apply(self):
-        reindexed_wires = [w-1 for w in self.wires]
         for rank in range(self.backend.hilbert_dimension):
             basis_element = np.array(rank_to_basis(self.backend.n_wires, self.backend.n_photons, rank))
-            keep = np.all(basis_element[reindexed_wires] == self.herald)
+            keep = np.all(basis_element[self.reindexed_wires] == self.herald)
             if not keep:
                 self.backend.output_probabilities[rank] = 0
+
+            if len(self.backend.occupied_ranks) == 0:
+                raise ValueError("No population remaining.")

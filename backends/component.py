@@ -2,7 +2,8 @@ from abc import ABC, abstractmethod
 
 class Component(ABC):
     @abstractmethod
-    def __init__(self):
+    def __init__(self, backend):
+        self.backend = backend
         self.validate_input()
 
     def apply(self):

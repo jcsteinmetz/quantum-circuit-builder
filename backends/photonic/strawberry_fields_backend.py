@@ -129,6 +129,14 @@ class SFLoss(Loss):
         with self.backend.circuit.context as q:
             LossChannel(self.eta) | (q[self.reindexed_wire])
 
+class SFPhaseShift(PhaseShift):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def apply(self):
+        with self.backend.circuit.context as q:
+            Rgate(self.phase) | q[self.reindexed_wire]
+
 class SFDetector(Detector):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -137,11 +145,3 @@ class SFDetector(Detector):
         with self.backend.circuit.context as q:
             for wire, herald in zip(self.reindexed_wires, self.herald):
                 MeasureFock(select=herald) | q[wire]
-
-class SFPhaseShift(PhaseShift):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-    def apply(self):
-        with self.backend.circuit.context as q:
-            Rgate(self.phase) | q[self.reindexed_wire]

@@ -197,10 +197,13 @@ class FockDetector(Detector):
         super().__init__(*args, **kwargs)
 
     def apply(self):
-        reindexed_wires = [w-1 for w in self.wires]
         for rank in self.backend.occupied_ranks:
             basis_element = np.array(rank_to_basis(self.backend.n_wires, self.backend.n_photons, rank))
-            keep = np.all(basis_element[reindexed_wires] == self.herald)
+            keep = np.all(basis_element[self.reindexed_wires] == self.herald)
+            print(basis_element, keep)
             if not keep:
                 self.backend.density_matrix[rank, :] = 0
                 self.backend.density_matrix[:, rank] = 0
+
+        if len(self.backend.occupied_ranks) == 0:
+            raise ValueError("No population remaining.")

@@ -4,12 +4,11 @@ from backends.utils import degrees_to_radians
 class BeamSplitter(Component):
     def __init__(self, backend, *, wires, theta=90):
 
-        self.backend = backend
         self.wires = wires
         self.reindexed_wires = [w - 1 for w in wires]
         self.theta = degrees_to_radians(theta)
 
-        self.validate_input()
+        super().__init__(backend)
     
     def validate_input(self):
         if len(self.wires) != 2:
