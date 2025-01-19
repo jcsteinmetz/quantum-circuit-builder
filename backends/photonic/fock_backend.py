@@ -184,7 +184,7 @@ class FockLoss(Loss):
 
                 if lost_photons <= photons_in_wire:
                     new_basis_element = [n if wire != self.reindexed_wire else n - lost_photons for wire, n in enumerate(basis_element)]
-                    new_rank = self.basis_to_rank(new_basis_element)
+                    new_rank = self.backend.basis_to_rank(new_basis_element)
 
                     kraus_operators[lost_photons][new_rank, rank] = np.sqrt(math.comb(photons_in_wire, lost_photons))*self.eta**((photons_in_wire - lost_photons)/2)*(1 - self.eta)**(lost_photons / 2)
         return kraus_operators

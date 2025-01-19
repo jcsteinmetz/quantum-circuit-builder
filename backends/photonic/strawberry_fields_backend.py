@@ -63,20 +63,15 @@ class SFBackend(PhotonicBackend):
         """
         prob_vector = []
 
+        idx = np.indices(self.output_probabilities.shape)
+        idx_sum = np.sum(idx, axis=0)
+
         # Loop through fixed number sectors
         for n in range(self.n_photons+1):
-            # List of probabilities in the current number sector
-            sector_hilbert_dimension = fock_hilbert_dimension_fixed_number(self.n_wires, n)
-            sector_probabilities = np.zeros((sector_hilbert_dimension))
-
-            sector_index = 0
-            # Iterate through every combination of indices
-            for idx in np.ndindex(self.output_probabilities.shape):
-    
-                 # Check if sum of indices equals the current sector's occupation number
-                if sum(idx) == n:
-                    sector_probabilities[sector_index] = self.output_probabilities[idx]  # Add the corresponding element
-                    sector_index += 1
+            # Find probabilities with indices that add to the current photon number
+            sector_mask = (idx_sum == n)
+            sector_indices = np.argwhere(sector_mask)
+            sector_probabilities = self.output_probabilities[tuple(sector_indices.T)]
 
             prob_vector.extend(sector_probabilities[::-1]) # strawberry fields uses reverse lex order
 

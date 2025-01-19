@@ -20,8 +20,8 @@ class BaseBackend(ABC):
     def add_component_by_type(self, component_type, **kwargs):
         """Add an arbitrary component to the simulation."""
         component_type = self._component_registry[component_type]
-        comp = component_type(self, **kwargs)
-        self.component_list.append(comp)
+        component = component_type(self, **kwargs)
+        self.component_list.append(component)
 
     def get_output_data(self):
         """Returns a 2-column array containing basis elements and their probabilities."""
