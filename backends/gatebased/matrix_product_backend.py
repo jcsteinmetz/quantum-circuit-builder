@@ -3,7 +3,7 @@ Basic matrix product model
 """
 
 import numpy as np
-from backends.utils import insert_gate, pauli_x, pauli_y, pauli_z, computational_basis_to_rho, tuple_to_str, fill_table
+from backends.utils import insert_gate, pauli_x, pauli_y, pauli_z, computational_basis_to_rho, tuple_to_str
 from backends.backend import GateBasedBackend
 from backends.gatebased.components import PauliGate, Hadamard, CNOT
 
@@ -44,7 +44,7 @@ class MPBackend(GateBasedBackend):
     
     @property
     def basis_strings(self):
-        return [tuple_to_str(bin(rank)[2:].zfill(self.n_qubits)) for rank in self.occupied_ranks]
+        return [tuple_to_str(self.rank_to_basis(rank)) for rank in self.occupied_ranks]
         
     def eliminate_tolerance(self, tol=1E-10):
         self.density_matrix[np.abs(self.density_matrix) < tol] = 0

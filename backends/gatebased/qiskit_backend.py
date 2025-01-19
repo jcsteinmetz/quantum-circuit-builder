@@ -20,9 +20,6 @@ class QiskitBackend(GateBasedBackend):
         self.density_matrix = None
 
     def set_input_state(self, input_basis_element):
-        self.set_density_matrix(input_basis_element)
-
-    def set_density_matrix(self, input_basis_element):
         self.density_matrix = computational_basis_to_rho(input_basis_element[0])
         for qubit in reversed(range(1, self.n_qubits)): # qiskit uses a reversed tensor product space
             self.density_matrix = np.kron(self.density_matrix, computational_basis_to_rho(input_basis_element[qubit]))
@@ -56,7 +53,7 @@ class QiskitBackend(GateBasedBackend):
     
     @property
     def basis_strings(self):
-        return [tuple_to_str(bin(rank)[2:].zfill(self.n_qubits)[::-1]) for rank in self.occupied_ranks] # qiskit uses a reversed tensor product space
+        return [tuple_to_str(self.rank_to_basis(rank)[::-1]) for rank in self.occupied_ranks] # qiskit uses a reversed tensor product space
 
 class QiskitXGate(PauliGate):
     def __init__(self, *args, **kwargs):

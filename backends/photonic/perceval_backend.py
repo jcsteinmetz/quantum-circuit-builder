@@ -3,7 +3,7 @@ import perceval as pcvl
 from perceval.components import BS, PS, PERM, LC
 from backends.backend import PhotonicBackend
 from backends.photonic.components import BeamSplitter, Switch, PhaseShift, Loss, Detector
-from backends.utils import tuple_to_str, fill_table
+from backends.utils import tuple_to_str
 
 class PercevalBackend(PhotonicBackend):
     def __init__(self, n_wires, n_photons):
@@ -47,26 +47,6 @@ class PercevalBackend(PhotonicBackend):
     @property
     def basis_strings(self):
         return [tuple_to_str(key) for key in self.output_dict.keys()]
-
-    def add_beamsplitter(self, **kwargs):
-        comp = PercevalBeamSplitter(self, **kwargs)
-        self.add_component(comp)
-    
-    def add_switch(self, **kwargs):
-        comp = PercevalSwitch(self, **kwargs)
-        self.add_component(comp)
-
-    def add_phaseshift(self, **kwargs):
-        comp = PercevalPhaseShift(self, **kwargs)
-        self.add_component(comp)
-    
-    def add_loss(self, **kwargs):
-        comp = PercevalLoss(self, **kwargs)
-        self.add_component(comp)
-    
-    def add_detector(self, **kwargs):
-        comp = PercevalDetector(self, **kwargs)
-        self.add_component(comp)
 
 class PercevalBeamSplitter(BeamSplitter):
     def __init__(self, *args, **kwargs):

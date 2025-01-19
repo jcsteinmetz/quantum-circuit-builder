@@ -8,7 +8,7 @@ import math
 import numpy as np
 from backends.backend import PhotonicBackend
 from backends.photonic.components import BeamSplitter, Switch, PhaseShift, Loss, Detector
-from backends.utils import rank_to_basis, spin_y_matrix, tuple_to_str, fill_table
+from backends.utils import spin_y_matrix, tuple_to_str
 
 
 class PermanentBackend(PhotonicBackend):
@@ -36,7 +36,7 @@ class PermanentBackend(PhotonicBackend):
                 comp.apply()
 
         for rank in range(self.hilbert_dimension):
-            output_basis_element = rank_to_basis(self.n_wires, self.n_photons, rank)
+            output_basis_element = self.rank_to_basis(rank)
             self.output_probabilities[rank] = self.output_probability(self.circuit_unitary, output_basis_element)
 
         for comp in self.component_list:
@@ -67,26 +67,6 @@ class PermanentBackend(PhotonicBackend):
             used_photons += si
 
         return UST
-
-    def add_beamsplitter(self, **kwargs):
-        comp = PermanentBeamSplitter(self, **kwargs)
-        self.add_component(comp)
-
-    def add_switch(self, **kwargs):
-        comp = PermanentSwitch(self, **kwargs)
-        self.add_component(comp)
-
-    def add_phaseshift(self, **kwargs):
-        comp = PermanentPhaseShift(self, **kwargs)
-        self.add_component(comp)
-
-    def add_loss(self, **kwargs):
-        comp = PermanentLoss(self, **kwargs)
-        self.add_component(comp)
-
-    def add_detector(self, **kwargs):
-        comp = PermanentDetector(self, **kwargs)
-        self.add_component(comp)
         
     def matrix_permanent(self, matrix):
         n = len(matrix)
@@ -113,7 +93,7 @@ class PermanentBackend(PhotonicBackend):
     
     @property
     def basis_strings(self):
-        return [tuple_to_str(rank_to_basis(self.n_wires, self.n_photons, rank)) for rank in self.occupied_ranks]
+        return [tuple_to_str(self.rank_to_basis(rank)) for rank in self.occupied_ranks]
     
     def eliminate_tolerance(self, tol=1E-10):
         self.output_probabilities[np.abs(self.output_probabilities) < tol] = 0
@@ -193,7 +173,7 @@ class PermanentDetector(Detector):
 
     def apply(self):
         for rank in range(self.backend.hilbert_dimension):
-            basis_element = np.array(rank_to_basis(self.backend.n_wires, self.backend.n_photons, rank))
+            basis_element = np.array(self.backend.rank_to_basis(rank))
             keep = np.all(basis_element[self.reindexed_wires] == self.herald)
             if not keep:
                 self.backend.output_probabilities[rank] = 0

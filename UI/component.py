@@ -727,11 +727,11 @@ class XGate(Component):
         
     def add_to_console(self):
         wire_index = self.get_wire_index(self.connected_wires[0])
-        self.window.console.code += "circuit.add_Xgate(qubit = "+str(wire_index)+")\n"
+        self.window.console.code += "circuit.add_xgate(qubit = "+str(wire_index)+")\n"
 
     def add_to_sim(self):
         wires = [self.window.canvas.placed_components["wires"].index(w) + 1 for w in self.connected_wires]
-        self.window.interface.circuit.add_Xgate(qubit = wires[0])
+        self.window.interface.circuit.add_xgate(qubit = wires[0])
 
 class YGate(Component):
     def __init__(self, window):
@@ -760,11 +760,11 @@ class YGate(Component):
         
     def add_to_console(self):
         wire_index = self.get_wire_index(self.connected_wires[0])
-        self.window.console.code += "circuit.add_Ygate(qubit = "+str(wire_index)+")\n"
+        self.window.console.code += "circuit.add_ygate(qubit = "+str(wire_index)+")\n"
 
     def add_to_sim(self):
         wires = [self.window.canvas.placed_components["wires"].index(w) + 1 for w in self.connected_wires]
-        self.window.interface.circuit.add_Ygate(qubit = wires[0])
+        self.window.interface.circuit.add_ygate(qubit = wires[0])
 
 class ZGate(Component):
     def __init__(self, window):
@@ -793,11 +793,11 @@ class ZGate(Component):
         
     def add_to_console(self):
         wire_index = self.get_wire_index(self.connected_wires[0])
-        self.window.console.code += "circuit.add_Zgate(qubit = "+str(wire_index)+")\n"
+        self.window.console.code += "circuit.add_zgate(qubit = "+str(wire_index)+")\n"
 
     def add_to_sim(self):
         wires = [self.window.canvas.placed_components["wires"].index(w) + 1 for w in self.connected_wires]
-        self.window.interface.circuit.add_Zgate(qubit = wires[0])
+        self.window.interface.circuit.add_zgate(qubit = wires[0])
 
 class Hadamard(Component):
     def __init__(self, window):
@@ -927,8 +927,8 @@ class CNOT(Component):
     
     def add_to_console(self):
         wire_indices = [self.get_wire_index(wire) for wire in self.connected_wires]
-        self.window.console.code += "circuit.add_CNOT(qubits = "+str(wire_indices)+")\n"
+        self.window.console.code += "circuit.add_cnot(qubits = "+str(wire_indices)+")\n"
     
     def add_to_sim(self):
         wires = [self.window.canvas.placed_components["wires"].index(w) + 1 for w in self.connected_wires]
-        self.window.interface.circuit.add_CNOT(qubits = wires)
+        self.window.interface.circuit.add_cnot(qubits = wires)

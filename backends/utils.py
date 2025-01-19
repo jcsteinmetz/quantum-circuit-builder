@@ -2,7 +2,7 @@ import itertools
 import math
 import numpy as np
 
-def rank_to_basis(n_wires, n_photons, rank):
+def rank_to_fock_basis(n_wires, n_photons, rank):
     pool = itertools.combinations_with_replacement(range(n_wires), 0)
     for n_i in range(1, n_photons+1):
         pool = itertools.chain(pool, itertools.combinations_with_replacement(range(n_wires), n_i))
@@ -13,7 +13,7 @@ def rank_to_basis(n_wires, n_photons, rank):
         element[mode] += 1
     return tuple(element)
 
-def basis_to_rank(element):
+def fock_basis_to_rank(element):
     n_photons = int(sum(element))
     n_wires = len(element)
     rank = int(sum(math.comb(n_p + n_wires - 1, n_p) for n_p in range(n_photons)))
@@ -68,14 +68,9 @@ def insert_gate(gate, qubit, n_qubits):
     return np.kron(np.kron(np.eye(2**qubit), gate), np.eye(2**(n_qubits-qubit-1)))
 
 def tuple_to_str(tup):
-    string = str(tup)
-    string = string.replace("(", "")
-    string = string.replace(")", "")
-    string = string.replace(" ", "")
-    string = string.replace(",", "")
-    string = string.replace("|", "")
-    string = string.replace(">", "")
-    return "".join(string)
+    """Convert a basis element into a string."""
+    return str(tup).translate(str.maketrans("", "", " (),|>"))
 
 def fill_table(col1, col2):
+    """Combines two columns of data into a 2-column array."""
     return np.array(list(zip(col1, col2)), dtype=object)

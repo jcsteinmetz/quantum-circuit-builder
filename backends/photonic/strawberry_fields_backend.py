@@ -2,7 +2,7 @@ from backends.backend import PhotonicBackend
 import strawberryfields as sf
 from strawberryfields.ops import Fock, Vac, BSgate, Interferometer, LossChannel, MeasureFock, Rgate
 import numpy as np
-from backends.utils import rank_to_basis, tuple_to_str, fock_hilbert_dimension_fixed_number, fill_table
+from backends.utils import tuple_to_str, fock_hilbert_dimension_fixed_number
 from backends.photonic.components import BeamSplitter, Switch, PhaseShift, Loss, Detector
 
 class SFBackend(PhotonicBackend):
@@ -47,7 +47,7 @@ class SFBackend(PhotonicBackend):
     
     @property
     def basis_strings(self):
-        return [tuple_to_str(rank_to_basis(self.n_wires, self.n_photons, rank)) for rank in self.occupied_ranks]
+        return [tuple_to_str(self.rank_to_basis(rank)) for rank in self.occupied_ranks]
     
     @property
     def probabilities(self):
@@ -81,26 +81,6 @@ class SFBackend(PhotonicBackend):
             prob_vector.extend(sector_probabilities[::-1]) # strawberry fields uses reverse lex order
 
         return np.array(prob_vector)
-    
-    def add_beamsplitter(self, **kwargs):
-        comp = SFBeamSplitter(self, **kwargs)
-        self.add_component(comp)
-    
-    def add_switch(self, **kwargs):
-        comp = SFSwitch(self, **kwargs)
-        self.add_component(comp)
-
-    def add_phaseshift(self, **kwargs):
-        comp = SFPhaseShift(self, **kwargs)
-        self.add_component(comp)
-    
-    def add_loss(self, **kwargs):
-        comp = SFLoss(self, **kwargs)
-        self.add_component(comp)
-    
-    def add_detector(self, **kwargs):
-        comp = SFDetector(self, **kwargs)
-        self.add_component(comp)
 
     def eliminate_tolerance(self, tol=1E-10):
         self.output_probabilities[np.abs(self.output_probabilities) < tol] = 0

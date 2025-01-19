@@ -3,47 +3,70 @@ Contains backend templates.
 """
 
 from abc import ABC, abstractmethod
-from backends.utils import fock_hilbert_dimension, fill_table
+from backends.utils import fock_hilbert_dimension, fill_table, rank_to_fock_basis, fock_basis_to_rank
 
 class BaseBackend(ABC):
     """Base class for simulator backends."""
-    component_registry = {}
+    _component_registry = {}
 
     def __init__(self):
         self.component_list = []
 
     @classmethod
     def register_component(cls, component_type, component_class):
-        cls.component_registry[component_type] = component_class
+        """Connect a component type with its class in a particular backend."""
+        cls._component_registry[component_type] = component_class
 
-    def add_component(self, comp):
-        """Add a component to the circuit."""
+    def add_component_by_type(self, component_type, **kwargs):
+        """Add an arbitrary component to the simulation."""
+        component_type = self._component_registry[component_type]
+        comp = component_type(self, **kwargs)
         self.component_list.append(comp)
 
     def get_output_data(self):
+        """Returns a 2-column array containing basis elements and their probabilities."""
         return fill_table(self.basis_strings, self.nonzero_probabilities)
+
+    @abstractmethod
+    def rank_to_basis(self, rank):
+        """Returns a basis element given its rank (its position in the ordered list of elements)."""
+        raise NotImplementedError
+
+    @abstractmethod
+    def basis_to_rank(self, basis_element):
+        """Returns a basis element's position in the space."""
+        raise NotImplementedError
 
     @property
     @abstractmethod
     def basis_strings(self):
+        """String representations of nonzero basis elements, ex. '0101'."""
         raise NotImplementedError
     
     @property
     @abstractmethod
     def nonzero_probabilities(self):
+        """Probabilities associated with nonzero basis elements, in the same order as basis_strings."""
         raise NotImplementedError
 
     @property
     @abstractmethod
     def hilbert_dimension(self):
+        """Dimension of the Hilbert space."""
         pass
 
     @abstractmethod
     def set_input_state(self, input_basis_element):
+        """
+        Assign an input state to the simulation.
+
+        input_basis_element (list): a single basis element, ex. [0, 1, 0, 1].
+        """
         pass
 
     @abstractmethod
     def run(self):
+        """Run the simulation."""
         raise NotImplementedError
 
 
@@ -54,14 +77,6 @@ class PhotonicBackend(BaseBackend):
     The basis states are Fock states, (n_1, n_2, ..., n_M), where each n_i is the occupation
     number for mode i.
     """
-    component_registry = {
-        "beamsplitter": None,
-        "switch": None,
-        "phaseshift": None,
-        "loss": None,
-        "detector": None,
-    }
-
     def __init__(self, n_wires, n_photons):
         super().__init__()
 
@@ -74,31 +89,31 @@ class PhotonicBackend(BaseBackend):
     @property
     def hilbert_dimension(self):
         return fock_hilbert_dimension(self.n_wires, self.n_photons)
+    
+    def rank_to_basis(self, rank):
+        """Returns a Fock basis element given its rank in the space."""
+        return rank_to_fock_basis(self.n_wires, self.n_photons, rank)
+    
+    def basis_to_rank(self, basis_element):
+        """Returns a Fock basis element's rank."""
+        return fock_basis_to_rank(basis_element)
+    
+    # Add components
 
     def add_beamsplitter(self, **kwargs):
-        component_type = self.component_registry["beamsplitter"]
-        comp = component_type(self, **kwargs)
-        self.add_component(comp)
+        self.add_component_by_type("beamsplitter", **kwargs)
 
     def add_switch(self, **kwargs):
-        component_type = self.component_registry["switch"]
-        comp = component_type(self, **kwargs)
-        self.add_component(comp)
+        self.add_component_by_type("switch", **kwargs)
 
     def add_phaseshift(self, **kwargs):
-        component_type = self.component_registry["phaseshift"]
-        comp = component_type(self, **kwargs)
-        self.add_component(comp)
+        self.add_component_by_type("phaseshift", **kwargs)
 
     def add_loss(self, **kwargs):
-        component_type = self.component_registry["loss"]
-        comp = component_type(self, **kwargs)
-        self.add_component(comp)
+        self.add_component_by_type("loss", **kwargs)
 
     def add_detector(self, **kwargs):
-        component_type = self.component_registry["detector"]
-        comp = component_type(self, **kwargs)
-        self.add_component(comp)
+        self.add_component_by_type("detector", **kwargs)
 
 
 class GateBasedBackend(BaseBackend):
@@ -107,13 +122,6 @@ class GateBasedBackend(BaseBackend):
     using logic gates. The basis states are computational states, i.e. lists of
     zeros and ones.
     """
-    component_registry = {
-        "xgate": None,
-        "ygate": None,
-        "zgate": None,
-        "hadamard": None,
-        "cnot": None,
-    }
     def __init__(self, n_qubits):
         super().__init__()
 
@@ -125,31 +133,27 @@ class GateBasedBackend(BaseBackend):
     @property
     def hilbert_dimension(self):
         return 2**self.n_qubits
+    
+    def rank_to_basis(self, rank):
+        """Returns a computational basis element given its rank in the space by converting decimal to binary."""
+        return bin(rank)[2:].zfill(self.n_qubits)
+    
+    def basis_to_rank(self, basis_element):
+        pass
+    
+    # Add components
 
-    def add_Xgate(self, **kwargs):
-        component_type = self.component_registry["xgate"]
-        print(component_type)
-        comp = component_type(self, **kwargs)
-        print(comp)
-        self.add_component(comp)
-        print(self.component_list)
+    def add_xgate(self, **kwargs):
+        self.add_component_by_type("xgate", **kwargs)
 
-    def add_Ygate(self, **kwargs):
-        component_type = self.component_registry["ygate"]
-        comp = component_type(self, **kwargs)
-        self.add_component(comp)
+    def add_ygate(self, **kwargs):
+        self.add_component_by_type("ygate", **kwargs)
 
-    def add_Zgate(self, **kwargs):
-        component_type = self.component_registry["zgate"]
-        comp = component_type(self, **kwargs)
-        self.add_component(comp)
+    def add_zgate(self, **kwargs):
+        self.add_component_by_type("zgate", **kwargs)
 
     def add_hadamard(self, **kwargs):
-        component_type = self.component_registry["hadamard"]
-        comp = component_type(self, **kwargs)
-        self.add_component(comp)
+        self.add_component_by_type("hadamard", **kwargs)
 
-    def add_CNOT(self, **kwargs):
-        component_type = self.component_registry["cnot"]
-        comp = component_type(self, **kwargs)
-        self.add_component(comp)
+    def add_cnot(self, **kwargs):
+        self.add_component_by_type("cnot", **kwargs)
