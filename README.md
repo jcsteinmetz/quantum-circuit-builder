@@ -48,7 +48,7 @@ Currently, more complicated input states like superpositions must be created wit
 
 Qubits are 1-indexed, so the following adds an X-gate to the first qubit and a Hadamard to the second qubit:
 ```
-circuit.add_Xgate(qubit = 1)
+circuit.add_xgate(qubit = 1)
 circuit.add_hadamard(qubit = 2)
 ```
 Finally, we run the circuit
