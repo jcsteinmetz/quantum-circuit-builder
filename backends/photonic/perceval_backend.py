@@ -81,7 +81,7 @@ class PercevalPhaseShift(PhaseShift):
         super().__init__(*args, **kwargs)
 
     def apply(self):
-        self.backend.circuit.add(self.reindexed_wire, PS(phi = self.phase))
+        self.backend.circuit.add(self.reindexed_wires, PS(phi = self.phase))
 
 class PercevalLoss(Loss):
     def __init__(self, *args, **kwargs):
@@ -89,7 +89,7 @@ class PercevalLoss(Loss):
 
     def apply(self):
         for wire in range(self.backend.n_wires):
-            if wire == self.reindexed_wire:
+            if wire in self.reindexed_wires:
                 self.backend.circuit.add(wire, LC(1 - self.eta))
             else:
                 self.backend.circuit.add(wire, LC(0)) # perceval seems to have a problem with applying loss to only 1 wire

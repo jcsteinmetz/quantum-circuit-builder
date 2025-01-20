@@ -157,7 +157,7 @@ class FockPhaseShift(PhaseShift):
 
         for rank in self.backend.occupied_ranks:
             basis_element = self.backend.rank_to_basis(rank)
-            photons_in_wire = basis_element[self.reindexed_wire]
+            photons_in_wire = basis_element[self.reindexed_wires[0]]
 
             if photons_in_wire == 0:
                 continue
@@ -180,10 +180,10 @@ class FockLoss(Loss):
 
             for rank in self.backend.occupied_ranks:
                 basis_element = self.backend.rank_to_basis(rank)
-                photons_in_wire = basis_element[self.reindexed_wire]
+                photons_in_wire = basis_element[self.reindexed_wires[0]]
 
                 if lost_photons <= photons_in_wire:
-                    new_basis_element = [n if wire != self.reindexed_wire else n - lost_photons for wire, n in enumerate(basis_element)]
+                    new_basis_element = [n if wire != self.reindexed_wires[0] else n - lost_photons for wire, n in enumerate(basis_element)]
                     new_rank = self.backend.basis_to_rank(new_basis_element)
 
                     kraus_operators[lost_photons][new_rank, rank] = np.sqrt(math.comb(photons_in_wire, lost_photons))*self.eta**((photons_in_wire - lost_photons)/2)*(1 - self.eta)**(lost_photons / 2)

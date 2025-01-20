@@ -60,28 +60,28 @@ class QiskitXGate(PauliGate):
         super().__init__(*args, **kwargs)
 
     def apply(self):
-        self.backend.circuit.x(self.reindexed_targeted_qubit)
+        self.backend.circuit.x(self.reindexed_targeted_qubits[0])
 
 class QiskitYGate(PauliGate):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
     def apply(self):
-        self.backend.circuit.y(self.reindexed_targeted_qubit)
+        self.backend.circuit.y(self.reindexed_targeted_qubits[0])
 
 class QiskitZGate(PauliGate):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
     def apply(self):
-        self.backend.circuit.z(self.reindexed_targeted_qubit)
+        self.backend.circuit.z(self.reindexed_targeted_qubits[0])
 
 class QiskitHadamard(Hadamard):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
     def apply(self):
-        self.backend.circuit.h(self.reindexed_targeted_qubit)
+        self.backend.circuit.h(self.reindexed_targeted_qubits[0])
 
 class QiskitCNOT(CNOT):
     def __init__(self, *args, **kwargs):

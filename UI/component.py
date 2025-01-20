@@ -501,15 +501,15 @@ class Loss(Component):
             return True
         
     def add_to_console(self):
-        wire_index = self.get_wire_index(self.connected_wires[0])
+        wire_indices = [self.get_wire_index(wire) for wire in self.connected_wires]
         if self.eta == 1:
-            self.window.console.code += "circuit.add_loss(wire = "+str(wire_index)+")\n"
+            self.window.console.code += "circuit.add_loss(wires = "+str(wire_indices)+")\n"
         else:
-            self.window.console.code += "circuit.add_loss(wire = "+str(wire_index)+", eta = "+str(self.eta)+")\n"
+            self.window.console.code += "circuit.add_loss(wires = "+str(wire_indices)+", eta = "+str(self.eta)+")\n"
 
     def add_to_sim(self):
         wires = [self.window.canvas.placed_components["wires"].index(w) + 1 for w in self.connected_wires]
-        self.window.interface.circuit.add_loss(wire = wires[0], eta = self.eta)
+        self.window.interface.circuit.add_loss(wires = wires, eta = self.eta)
 
 class Wire(Component):
     def __init__(self, window):
@@ -690,15 +690,15 @@ class PhaseShift(Component):
             return True
         
     def add_to_console(self):
-        wire_index = self.get_wire_index(self.connected_wires[0])
+        wire_indices = [self.get_wire_index(wire) for wire in self.connected_wires]
         if self.phase == 180:
-            self.window.console.code += "circuit.add_phaseshift(wire = "+str(wire_index)+")\n"
+            self.window.console.code += "circuit.add_phaseshift(wires = "+str(wire_indices)+")\n"
         else:
-            self.window.console.code += "circuit.add_phaseshift(wire = "+str(wire_index)+", phase = "+str(self.phase)+")\n"
+            self.window.console.code += "circuit.add_phaseshift(wires = "+str(wire_indices)+", phase = "+str(self.phase)+")\n"
 
     def add_to_sim(self):
         wires = [self.window.canvas.placed_components["wires"].index(w) + 1 for w in self.connected_wires]
-        self.window.interface.circuit.add_phaseshift(wire = wires[0], phase = self.phase)
+        self.window.interface.circuit.add_phaseshift(wires = wires, phase = self.phase)
 
 class XGate(Component):
     def __init__(self, window):
@@ -726,12 +726,12 @@ class XGate(Component):
             return True
         
     def add_to_console(self):
-        wire_index = self.get_wire_index(self.connected_wires[0])
-        self.window.console.code += "circuit.add_xgate(qubit = "+str(wire_index)+")\n"
+        wire_indices = [self.get_wire_index(wire) for wire in self.connected_wires]
+        self.window.console.code += "circuit.add_xgate(qubits = "+str(wire_indices)+")\n"
 
     def add_to_sim(self):
         wires = [self.window.canvas.placed_components["wires"].index(w) + 1 for w in self.connected_wires]
-        self.window.interface.circuit.add_xgate(qubit = wires[0])
+        self.window.interface.circuit.add_xgate(qubits = wires)
 
 class YGate(Component):
     def __init__(self, window):
@@ -759,12 +759,12 @@ class YGate(Component):
             return True
         
     def add_to_console(self):
-        wire_index = self.get_wire_index(self.connected_wires[0])
-        self.window.console.code += "circuit.add_ygate(qubit = "+str(wire_index)+")\n"
+        wire_indices = [self.get_wire_index(wire) for wire in self.connected_wires]
+        self.window.console.code += "circuit.add_ygate(qubits = "+str(wire_indices)+")\n"
 
     def add_to_sim(self):
         wires = [self.window.canvas.placed_components["wires"].index(w) + 1 for w in self.connected_wires]
-        self.window.interface.circuit.add_ygate(qubit = wires[0])
+        self.window.interface.circuit.add_ygate(qubits = wires)
 
 class ZGate(Component):
     def __init__(self, window):
@@ -792,12 +792,12 @@ class ZGate(Component):
             return True
         
     def add_to_console(self):
-        wire_index = self.get_wire_index(self.connected_wires[0])
-        self.window.console.code += "circuit.add_zgate(qubit = "+str(wire_index)+")\n"
+        wire_indices = [self.get_wire_index(wire) for wire in self.connected_wires]
+        self.window.console.code += "circuit.add_zgate(qubits = "+str(wire_indices)+")\n"
 
     def add_to_sim(self):
         wires = [self.window.canvas.placed_components["wires"].index(w) + 1 for w in self.connected_wires]
-        self.window.interface.circuit.add_zgate(qubit = wires[0])
+        self.window.interface.circuit.add_zgate(qubits = wires)
 
 class Hadamard(Component):
     def __init__(self, window):
@@ -825,12 +825,12 @@ class Hadamard(Component):
             return True
         
     def add_to_console(self):
-        wire_index = self.get_wire_index(self.connected_wires[0])
-        self.window.console.code += "circuit.add_hadamard(qubit = "+str(wire_index)+")\n"
+        wire_indices = [self.get_wire_index(wire) for wire in self.connected_wires]
+        self.window.console.code += "circuit.add_hadamard(qubits = "+str(wire_indices)+")\n"
 
     def add_to_sim(self):
         wires = [self.window.canvas.placed_components["wires"].index(w) + 1 for w in self.connected_wires]
-        self.window.interface.circuit.add_hadamard(qubit = wires[0])
+        self.window.interface.circuit.add_hadamard(qubits = wires)
 
 class Qubit(Component):
     def __init__(self, window):

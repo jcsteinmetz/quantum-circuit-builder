@@ -62,7 +62,7 @@ class MPXGate(PauliGate):
         self.backend.density_matrix = unitary @ self.backend.density_matrix @ np.conjugate(unitary).T
 
     def unitary(self):
-        return insert_gate(self.single_qubit_unitary, self.reindexed_targeted_qubit, self.backend.n_qubits)
+        return insert_gate(self.single_qubit_unitary, self.reindexed_targeted_qubits[0], self.backend.n_qubits)
 
 class MPYGate(PauliGate):
     def __init__(self, *args, **kwargs):
@@ -77,7 +77,7 @@ class MPYGate(PauliGate):
         self.backend.density_matrix = unitary @ self.backend.density_matrix @ np.conjugate(unitary).T
 
     def unitary(self):
-        return insert_gate(self.single_qubit_unitary, self.reindexed_targeted_qubit, self.backend.n_qubits)
+        return insert_gate(self.single_qubit_unitary, self.reindexed_targeted_qubits[0], self.backend.n_qubits)
 
 class MPZGate(PauliGate):
     def __init__(self, *args, **kwargs):
@@ -92,7 +92,7 @@ class MPZGate(PauliGate):
         self.backend.density_matrix = unitary @ self.backend.density_matrix @ np.conjugate(unitary).T
 
     def unitary(self):
-        return insert_gate(self.single_qubit_unitary, self.reindexed_targeted_qubit, self.backend.n_qubits)
+        return insert_gate(self.single_qubit_unitary, self.reindexed_targeted_qubits[0], self.backend.n_qubits)
 
 class MPHadamard(Hadamard):
     def __init__(self, *args, **kwargs):
@@ -107,7 +107,7 @@ class MPHadamard(Hadamard):
         self.backend.density_matrix = unitary @ self.backend.density_matrix @ np.conjugate(unitary).T
 
     def unitary(self):
-        return insert_gate(self.single_qubit_unitary, self.reindexed_targeted_qubit, self.backend.n_qubits)
+        return insert_gate(self.single_qubit_unitary, self.reindexed_targeted_qubits[0], self.backend.n_qubits)
 
 class MPCNOT(CNOT):
     """

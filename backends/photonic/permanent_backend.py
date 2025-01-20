@@ -143,7 +143,7 @@ class PermanentPhaseShift(PhaseShift):
 
     def unitary(self):
         unitary = np.eye(self.backend.n_wires, dtype=complex)
-        unitary[self.reindexed_wire, self.reindexed_wire] = np.exp(1j*self.phase)
+        unitary[self.reindexed_wires[0], self.reindexed_wires[0]] = np.exp(1j*self.phase)
         return unitary
 
 

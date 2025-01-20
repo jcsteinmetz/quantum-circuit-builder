@@ -102,7 +102,7 @@ class SFLoss(Loss):
 
     def apply(self):
         with self.backend.circuit.context as q:
-            LossChannel(self.eta) | (q[self.reindexed_wire])
+            LossChannel(self.eta) | (q[self.reindexed_wires[0]])
 
 class SFPhaseShift(PhaseShift):
     def __init__(self, *args, **kwargs):
@@ -110,7 +110,7 @@ class SFPhaseShift(PhaseShift):
 
     def apply(self):
         with self.backend.circuit.context as q:
-            Rgate(self.phase) | q[self.reindexed_wire]
+            Rgate(self.phase) | q[self.reindexed_wires[0]]
 
 class SFDetector(Detector):
     def __init__(self, *args, **kwargs):

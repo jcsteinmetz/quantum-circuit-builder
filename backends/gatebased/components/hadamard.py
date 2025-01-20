@@ -1,10 +1,10 @@
 from backends.component import Component
 
 class Hadamard(Component):
-    def __init__(self, backend, *, qubit):
+    def __init__(self, backend, *, qubits):
 
-        self.targeted_qubit = qubit
-        self.reindexed_targeted_qubit = qubit - 1
+        self.targeted_qubits = qubits
+        self.reindexed_targeted_qubits = [q - 1 for q in qubits]
 
         super().__init__(backend)
     
