@@ -1,7 +1,10 @@
+"""
+Qiskit backend
+"""
+
 from qiskit import QuantumCircuit, transpile
 from qiskit_aer.aerprovider import AerSimulator
 import numpy as np
-from abc import abstractmethod
 from backends.component import Component
 from backends.backend import GateBasedBackend
 from backends.utils import computational_basis_to_rho, tuple_to_str
@@ -21,11 +24,14 @@ class QiskitBackend(GateBasedBackend):
         self.density_matrix = None
 
     def set_input_state(self, input_basis_element):
-        self.density_matrix = computational_basis_to_rho(input_basis_element[0])
-        for qubit in reversed(range(1, self.n_qubits)): # qiskit uses a reversed tensor product space
-            self.density_matrix = np.kron(self.density_matrix, computational_basis_to_rho(input_basis_element[qubit]))
-
+        self.density_matrix = self.create_density_matrix(input_basis_element)
         self.circuit.set_density_matrix(self.density_matrix)
+
+    def create_density_matrix(self, input_basis_element):
+        density_matrix = computational_basis_to_rho(input_basis_element[0])
+        for qubit in reversed(range(1, self.n_qubits)): # qiskit uses a reversed tensor product space
+            density_matrix = np.kron(density_matrix, computational_basis_to_rho(input_basis_element[qubit]))
+        return density_matrix
 
     def run(self):
         # add the components

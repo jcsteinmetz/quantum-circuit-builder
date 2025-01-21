@@ -101,10 +101,10 @@ class PermanentBackend(PhotonicBackend):
 
 class PermanentComponent(Component):
     def __init__(self, backend, wires):
-        super().__init__(backend)
-
         self.wires = wires
         self.reindexed_wires = [w - 1 for w in wires]
+
+        super().__init__(backend)
 
     def apply(self):
         unitary = self.unitary()
@@ -123,9 +123,12 @@ class PermanentComponent(Component):
 
 class PermanentBeamSplitter(PermanentComponent):
     def __init__(self, backend, *, wires, theta=90):
+        self.theta = degrees_to_radians(theta)
+
         super().__init__(backend, wires)
 
-        self.theta = degrees_to_radians(theta)
+    def validate(self):
+        self.validate_beamsplitter(self.wires, self.theta)
 
     def sub_unitary(self):
         return scipy.linalg.expm(1j*(self.theta/2)*spin_y_matrix(2))
@@ -134,6 +137,9 @@ class PermanentBeamSplitter(PermanentComponent):
 class PermanentSwitch(PermanentComponent):
     def __init__(self, backend, *, wires):
         super().__init__(backend, wires)
+
+    def validate(self):
+        self.validate_switch(self.wires)
     
     def sub_unitary(self):
         return pauli_x()
@@ -141,9 +147,13 @@ class PermanentSwitch(PermanentComponent):
 
 class PermanentPhaseShift(PermanentComponent):
     def __init__(self, backend, *, wires, phase = 180):
-        super().__init__(backend, wires)
 
         self.phase = degrees_to_radians(phase)
+
+        super().__init__(backend, wires)
+    
+    def validate(self):
+        self.validate_phaseshift(self.wires, self.phase)
     
     def sub_unitary(self):
         return np.exp(1j*self.phase)
@@ -151,9 +161,13 @@ class PermanentPhaseShift(PermanentComponent):
 
 class PermanentLoss(PermanentComponent):
     def __init__(self, backend, *, wires, eta = 1):
-        super().__init__(backend, wires)
 
         self.eta = eta
+
+        super().__init__(backend, wires)
+
+    def validate(self):
+        self.validate_loss(self.wires, self.eta)
 
     def apply(self):
         raise ValueError("Loss is not implemented yet in the permanent backend.")
@@ -164,9 +178,13 @@ class PermanentLoss(PermanentComponent):
 
 class PermanentDetector(PermanentComponent):
     def __init__(self, backend, *, wires, herald):
-        super().__init__(backend, wires)
 
         self.herald = herald
+
+        super().__init__(backend, wires)
+
+    def validate(self):
+        self.validate_detector(self.wires, self.herald)
 
     def apply(self):
         for rank in range(self.backend.hilbert_dimension):

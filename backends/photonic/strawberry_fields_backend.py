@@ -83,10 +83,10 @@ class SFBackend(PhotonicBackend):
 
 class SFComponent(Component):
     def __init__(self, backend, wires):
-        super().__init__(backend)
-
         self.wires = wires
         self.reindexed_wires = [w - 1 for w in wires]
+
+        super().__init__(backend)
 
     @abstractmethod
     def apply(self):
@@ -94,9 +94,12 @@ class SFComponent(Component):
 
 class SFBeamSplitter(SFComponent):
     def __init__(self, backend, *, wires, theta=90):
+        self.theta = degrees_to_radians(theta)
+
         super().__init__(backend, wires)
 
-        self.theta = degrees_to_radians(theta)
+    def validate(self):
+        self.validate_beamsplitter(self.wires, self.theta)
 
     def apply(self):
         with self.backend.circuit.context as q:
@@ -106,15 +109,22 @@ class SFSwitch(SFComponent):
     def __init__(self, backend, *, wires):
         super().__init__(backend, wires)
 
+    def validate(self):
+        self.validate_switch(self.wires)
+
     def apply(self):
         with self.backend.circuit.context as q:
             Interferometer(np.array([[0, 1], [1, 0]])) | (q[self.reindexed_wires[0]], q[self.reindexed_wires[1]])
 
 class SFPhaseShift(SFComponent):
     def __init__(self, backend, *, wires, phase = 180):
-        super().__init__(backend, wires)
 
         self.phase = degrees_to_radians(phase)
+
+        super().__init__(backend, wires)
+
+    def validate(self):
+        self.validate_phaseshift(self.wires, self.phase)
 
     def apply(self):
         with self.backend.circuit.context as q:
@@ -122,9 +132,13 @@ class SFPhaseShift(SFComponent):
 
 class SFLoss(SFComponent):
     def __init__(self, backend, *, wires, eta = 1):
-        super().__init__(backend, wires)
 
         self.eta = eta
+
+        super().__init__(backend, wires)
+
+    def validate(self):
+        self.validate_loss(self.wires, self.eta)
 
     def apply(self):
         with self.backend.circuit.context as q:
@@ -132,9 +146,13 @@ class SFLoss(SFComponent):
 
 class SFDetector(SFComponent):
     def __init__(self, backend, *, wires, herald):
-        super().__init__(backend, wires)
 
         self.herald = herald
+
+        super().__init__(backend, wires)
+
+    def validate(self):
+        self.validate_detector(self.wires, self.herald)
 
     def apply(self):
         with self.backend.circuit.context as q:

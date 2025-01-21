@@ -50,10 +50,10 @@ class PercevalBackend(PhotonicBackend):
     
 class PercevalComponent(Component):
     def __init__(self, backend, wires):
-        super().__init__(backend)
-
         self.wires = wires
         self.reindexed_wires = [w - 1 for w in wires]
+
+        super().__init__(backend)
 
     @abstractmethod
     def apply(self):
@@ -61,9 +61,13 @@ class PercevalComponent(Component):
 
 class PercevalBeamSplitter(PercevalComponent):
     def __init__(self, backend, *, wires, theta=90):
-        super().__init__(backend, wires)
 
         self.theta = degrees_to_radians(theta)
+
+        super().__init__(backend, wires)
+
+    def validate(self):
+        self.validate_beamsplitter(self.wires, self.theta)
 
     def apply(self):
         # Perceval can only do beam splitters and switches on consecutive wires (it claims it can handle non-consecutive wires but it doesn't seem to work)
@@ -86,23 +90,34 @@ class PercevalSwitch(PercevalComponent):
     def __init__(self, backend, *, wires):
         super().__init__(backend, wires)
 
+    def validate(self):
+        self.validate_switch(self.wires)
+
     def apply(self):
         self.backend.circuit.add(tuple(self.reindexed_wires), PERM([1, 0]))
 
 class PercevalPhaseShift(PercevalComponent):
     def __init__(self, backend, *, wires, phase = 180):
-        super().__init__(backend, wires)
 
         self.phase = degrees_to_radians(phase)
+
+        super().__init__(backend, wires)
+
+    def validate(self):
+        self.validate_phaseshift(self.wires, self.phase)
 
     def apply(self):
         self.backend.circuit.add(self.reindexed_wires, PS(phi = self.phase))
 
 class PercevalLoss(PercevalComponent):
     def __init__(self, backend, *, wires, eta = 1):
-        super().__init__(backend, wires)
 
         self.eta = eta
+
+        super().__init__(backend, wires)
+
+    def validate(self):
+        self.validate_loss(self.wires, self.eta)
 
     def apply(self):
         for wire in range(self.backend.n_wires):
@@ -113,9 +128,13 @@ class PercevalLoss(PercevalComponent):
 
 class PercevalDetector(PercevalComponent):
     def __init__(self, backend, *, wires, herald):
-        super().__init__(backend, wires)
 
         self.herald = herald
+
+        super().__init__(backend, wires)
+
+    def validate(self):
+        self.validate_detector(self.wires, self.herald)
 
     def apply(self):
         for w, h in zip(self.reindexed_wires, self.herald):

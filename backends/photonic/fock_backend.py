@@ -54,10 +54,10 @@ class FockBackend(PhotonicBackend):
 
 class FockComponent(Component):
     def __init__(self, backend, wires):
-        super().__init__(backend)
-
         self.wires = wires
         self.reindexed_wires = [w - 1 for w in wires]
+
+        super().__init__(backend)
 
     def apply(self):
         unitary = self.unitary()
@@ -70,13 +70,17 @@ class FockComponent(Component):
 
 class FockBeamSplitter(FockComponent):
     def __init__(self, backend, *, wires, theta=90):
-        super().__init__(backend, wires)
 
         self.theta = degrees_to_radians(theta)
+
+        super().__init__(backend, wires)
 
         self.photon_count_per_rank = {}
 
         self.two_wire_unitaries = {n_photons: self.two_wire_unitary(n_photons) for n_photons in range(self.backend.n_photons+1)}
+
+    def validate(self):
+        self.validate_beamsplitter(self.wires, self.theta)
 
     def unitary(self):
         """Unitary operator in the full Fock space."""
@@ -135,6 +139,9 @@ class FockSwitch(FockComponent):
     def __init__(self, backend, *, wires):
         super().__init__(backend, wires)
 
+    def validate(self):
+        self.validate_switch(self.wires)
+
     def unitary(self):
         """Switch operator in the full Fock space."""
         hilbert = self.backend.hilbert_dimension
@@ -151,9 +158,13 @@ class FockSwitch(FockComponent):
     
 class FockPhaseShift(FockComponent):
     def __init__(self, backend, *, wires, phase = 180):
-        super().__init__(backend, wires)
 
         self.phase = degrees_to_radians(phase)
+
+        super().__init__(backend, wires)
+
+    def validate(self):
+        self.validate_phaseshift(self.wires, self.phase)
 
     def unitary(self):
         """Switch operator in the full Fock space."""
@@ -176,9 +187,13 @@ class FockPhaseShift(FockComponent):
     
 class FockLoss(FockComponent):
     def __init__(self, backend, *, wires, eta = 1):
-        super().__init__(backend, wires)
 
         self.eta = eta
+
+        super().__init__(backend, wires)
+
+    def validate(self):
+        self.validate_loss(self.wires, self.eta)
 
     def apply(self):
         self.backend.density_matrix = sum([kraus @ self.backend.density_matrix @ np.conjugate(kraus).T for kraus in self.kraus_operators().values()])
@@ -204,9 +219,13 @@ class FockLoss(FockComponent):
     
 class FockDetector(FockComponent):
     def __init__(self, backend, *, wires, herald):
-        super().__init__(backend, wires)
 
         self.herald = herald
+
+        super().__init__(backend, wires)
+
+    def validate(self):
+        self.validate_detector(self.wires, self.herald)
 
     def apply(self):
         for rank in self.backend.occupied_ranks:
