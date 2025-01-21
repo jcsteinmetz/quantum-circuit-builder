@@ -64,10 +64,10 @@ class QiskitBackend(GateBasedBackend):
 
 class QiskitComponent(Component):
     def __init__(self, backend, qubits, gate_function):
-        super().__init__(backend)
-
         self.targeted_qubits = qubits
         self.reindexed_targeted_qubits = [q - 1 for q in qubits]
+
+        super().__init__(backend)
 
         self.gate_function = gate_function
 
@@ -78,18 +78,33 @@ class QiskitXGate(QiskitComponent):
     def __init__(self, backend, *, qubits):
         super().__init__(backend, qubits, backend.circuit.x)
 
+    def validate(self):
+        self.validate_single_qubit_gate(self.targeted_qubits)
+
 class QiskitYGate(QiskitComponent):
     def __init__(self, backend, *, qubits):
         super().__init__(backend, qubits, backend.circuit.y)
+
+    def validate(self):
+        self.validate_single_qubit_gate(self.targeted_qubits)
 
 class QiskitZGate(QiskitComponent):
     def __init__(self, backend, *, qubits):
         super().__init__(backend, qubits, backend.circuit.z)
 
+    def validate(self):
+        self.validate_single_qubit_gate(self.targeted_qubits)
+
 class QiskitHadamard(QiskitComponent):
     def __init__(self, backend, *, qubits):
         super().__init__(backend, qubits, backend.circuit.h)
 
+    def validate(self):
+        self.validate_single_qubit_gate(self.targeted_qubits)
+
 class QiskitCNOT(QiskitComponent):
     def __init__(self, backend, *, qubits):
         super().__init__(backend, qubits, backend.circuit.cx)
+
+    def validate(self):
+        self.validate_two_qubit_gate(self.targeted_qubits)

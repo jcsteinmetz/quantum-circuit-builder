@@ -56,10 +56,10 @@ class MPBackend(GateBasedBackend):
 
 class MPComponent(Component):
     def __init__(self, backend, qubits):
-        super().__init__(backend)
-
         self.targeted_qubits = qubits
         self.reindexed_targeted_qubits = [q - 1 for q in qubits]
+
+        super().__init__(backend)
 
     def apply(self):
         unitary = self.unitary()
@@ -73,6 +73,9 @@ class MPXGate(MPComponent):
     def __init__(self, backend, *, qubits):
         super().__init__(backend, qubits)
 
+    def validate(self):
+        self.validate_single_qubit_gate(self.targeted_qubits)
+
     @property
     def single_qubit_unitary(self):
         return pauli_x()
@@ -83,6 +86,9 @@ class MPXGate(MPComponent):
 class MPYGate(MPComponent):
     def __init__(self, backend, *, qubits):
         super().__init__(backend, qubits)
+
+    def validate(self):
+        self.validate_single_qubit_gate(self.targeted_qubits)
 
     @property
     def single_qubit_unitary(self):
@@ -95,6 +101,9 @@ class MPZGate(MPComponent):
     def __init__(self, backend, *, qubits):
         super().__init__(backend, qubits)
 
+    def validate(self):
+        self.validate_single_qubit_gate(self.targeted_qubits)
+
     @property
     def single_qubit_unitary(self):
         return pauli_z()
@@ -106,6 +115,9 @@ class MPHadamard(MPComponent):
     def __init__(self, backend, *, qubits):
         super().__init__(backend, qubits)
 
+    def validate(self):
+        self.validate_single_qubit_gate(self.targeted_qubits)
+
     @property
     def single_qubit_unitary(self):
         return (1/np.sqrt(2))*np.array([[1, 1], [1, -1]], dtype=complex)
@@ -116,6 +128,9 @@ class MPHadamard(MPComponent):
 class MPCNOT(MPComponent):
     def __init__(self, backend, *, qubits):
         super().__init__(backend, qubits)
+
+    def validate(self):
+        self.validate_two_qubit_gate(self.targeted_qubits)
 
     def unitary(self):
         control_qubit = self.reindexed_targeted_qubits[0]

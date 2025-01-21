@@ -78,3 +78,9 @@ class Component(ABC):
             raise ValueError("Qubits must contain two distinct integers.")
         if not all(1 <= qubit <= self.backend.n_qubits for qubit in qubits):
             raise ValueError(f"Each qubit must be an integer between 1 and {self.backend.n_qubits}.")
+        
+    def validate_single_qubit_gate(self, qubits):
+        self.validate_qubits(qubits, 1)
+
+    def validate_two_qubit_gate(self, qubits):
+        self.validate_qubits(qubits, 2)
