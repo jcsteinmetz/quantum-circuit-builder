@@ -24,6 +24,7 @@ class QiskitBackend(GateBasedBackend):
         self.density_matrix = None
 
     def set_input_state(self, input_basis_element):
+        super().set_input_state(input_basis_element)
         self.density_matrix = self.create_density_matrix(input_basis_element)
         self.circuit.set_density_matrix(self.density_matrix)
 

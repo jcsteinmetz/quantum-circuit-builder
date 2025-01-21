@@ -62,12 +62,16 @@ class BaseBackend(ABC):
 
         input_basis_element (list): a single basis element, ex. [0, 1, 0, 1].
         """
-        pass
+        self.validate_input_state(input_basis_element)
 
     @abstractmethod
     def run(self):
         """Run the simulation."""
         raise NotImplementedError
+    
+    @abstractmethod
+    def validate_input_state(self, input_basis_element):
+        pass
 
 
 class PhotonicBackend(BaseBackend):
@@ -89,6 +93,16 @@ class PhotonicBackend(BaseBackend):
     @property
     def hilbert_dimension(self):
         return fock_hilbert_dimension(self.n_wires, self.n_photons)
+    
+    def validate_input_state(self, input_basis_element):
+        if not isinstance(input_basis_element, tuple):
+            raise TypeError("Input state must be a tuple.")
+        if len(input_basis_element) != self.n_wires:
+            raise ValueError(f"Input state must contain exactly {self.n_wires} elements.")
+        if not all(isinstance(occupation_number, int) for occupation_number in input_basis_element):
+            raise TypeError("All elements in input state must be integers.")
+        if not all(0 <= occupation_number <= self.n_photons for occupation_number in input_basis_element):
+            raise ValueError(f"Occupation numbers must be between 0 and {self.n_photons}.")
     
     def rank_to_basis(self, rank):
         """Returns a Fock basis element given its rank in the space."""
@@ -133,6 +147,16 @@ class GateBasedBackend(BaseBackend):
     @property
     def hilbert_dimension(self):
         return 2**self.n_qubits
+    
+    def validate_input_state(self, input_basis_element):
+        if not isinstance(input_basis_element, tuple):
+            raise TypeError("Input state must be a tuple.")
+        if len(input_basis_element) != self.n_qubits:
+            raise ValueError(f"Input state must contain exactly {self.n_qubits} elements.")
+        if not all(isinstance(qubit_state, int) for qubit_state in input_basis_element):
+            raise TypeError("All elements in input state must be integers.")
+        if not all(qubit_state in [0, 1] for qubit_state in input_basis_element):
+            raise ValueError("Each qubit's state must be either 0 or 1.")
     
     def rank_to_basis(self, rank):
         """Returns a computational basis element given its rank in the space by converting decimal to binary."""

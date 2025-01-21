@@ -29,6 +29,7 @@ class PercevalBackend(PhotonicBackend):
         self.output_dict = self.sampler.probs()["results"]
 
     def set_input_state(self, input_basis_element):
+        super().set_input_state(input_basis_element)
         self.circuit.min_detected_photons_filter(-1) # this should really be zero, but the current version of Perceval seems to have a mistake
         self.circuit.with_input(pcvl.BasicState(list(input_basis_element)))
 

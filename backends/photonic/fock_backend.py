@@ -24,6 +24,7 @@ class FockBackend(PhotonicBackend):
         self.density_matrix = np.zeros((self.hilbert_dimension, self.hilbert_dimension))
 
     def set_input_state(self, input_basis_element):
+        super().set_input_state(input_basis_element)
         input_basis_rank = self.basis_to_rank(input_basis_element)
         self.density_matrix[:] = 0
         self.density_matrix[input_basis_rank, input_basis_rank] = 1

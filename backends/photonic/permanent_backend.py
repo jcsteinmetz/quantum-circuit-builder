@@ -29,6 +29,7 @@ class PermanentBackend(PhotonicBackend):
         self.circuit_unitary = np.eye(self.n_wires)
 
     def set_input_state(self, input_basis_element):
+        super().set_input_state(input_basis_element)
         self.input_basis_element = input_basis_element
 
     def run(self):

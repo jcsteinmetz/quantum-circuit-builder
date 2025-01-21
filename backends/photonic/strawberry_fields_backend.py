@@ -31,6 +31,7 @@ class SFBackend(PhotonicBackend):
         self.eliminate_tolerance()
 
     def set_input_state(self, input_basis_element):
+        super().set_input_state(input_basis_element)
         with self.circuit.context as q:
             for wire, n_photons in enumerate(input_basis_element):
                 if n_photons == 0:
