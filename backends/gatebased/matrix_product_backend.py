@@ -3,9 +3,10 @@ Basic matrix product model
 """
 
 import numpy as np
+from abc import abstractmethod
 from backends.utils import insert_gate, pauli_x, pauli_y, pauli_z, computational_basis_to_rho, tuple_to_str
 from backends.backend import GateBasedBackend
-from backends.gatebased.components import PauliGate, Hadamard, CNOT
+from backends.component import Component
 
 class MPBackend(GateBasedBackend):
     def __init__(self, n_qubits):
@@ -49,72 +50,68 @@ class MPBackend(GateBasedBackend):
     def eliminate_tolerance(self, tol=1E-10):
         self.density_matrix[np.abs(self.density_matrix) < tol] = 0
 
-class MPXGate(PauliGate):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+class MPComponent(Component):
+    def __init__(self, backend, qubits):
+        super().__init__(backend)
+
+        self.targeted_qubits = qubits
+        self.reindexed_targeted_qubits = [q - 1 for q in qubits]
+
+    def apply(self):
+        unitary = self.unitary()
+        self.backend.density_matrix = unitary @ self.backend.density_matrix @ np.conjugate(unitary).T
+
+    @abstractmethod
+    def unitary(self):
+        raise NotImplementedError
+
+class MPXGate(MPComponent):
+    def __init__(self, backend, *, qubits):
+        super().__init__(backend, qubits)
 
     @property
     def single_qubit_unitary(self):
         return pauli_x()
 
-    def apply(self):
-        unitary = self.unitary()
-        self.backend.density_matrix = unitary @ self.backend.density_matrix @ np.conjugate(unitary).T
-
     def unitary(self):
         return insert_gate(self.single_qubit_unitary, self.reindexed_targeted_qubits[0], self.backend.n_qubits)
 
-class MPYGate(PauliGate):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+class MPYGate(MPComponent):
+    def __init__(self, backend, *, qubits):
+        super().__init__(backend, qubits)
 
     @property
     def single_qubit_unitary(self):
         return pauli_y()
 
-    def apply(self):
-        unitary = self.unitary()
-        self.backend.density_matrix = unitary @ self.backend.density_matrix @ np.conjugate(unitary).T
-
     def unitary(self):
         return insert_gate(self.single_qubit_unitary, self.reindexed_targeted_qubits[0], self.backend.n_qubits)
 
-class MPZGate(PauliGate):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+class MPZGate(MPComponent):
+    def __init__(self, backend, *, qubits):
+        super().__init__(backend, qubits)
 
     @property
     def single_qubit_unitary(self):
         return pauli_z()
 
-    def apply(self):
-        unitary = self.unitary()
-        self.backend.density_matrix = unitary @ self.backend.density_matrix @ np.conjugate(unitary).T
-
     def unitary(self):
         return insert_gate(self.single_qubit_unitary, self.reindexed_targeted_qubits[0], self.backend.n_qubits)
 
-class MPHadamard(Hadamard):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+class MPHadamard(MPComponent):
+    def __init__(self, backend, *, qubits):
+        super().__init__(backend, qubits)
 
     @property
     def single_qubit_unitary(self):
         return (1/np.sqrt(2))*np.array([[1, 1], [1, -1]], dtype=complex)
 
-    def apply(self):
-        unitary = self.unitary()
-        self.backend.density_matrix = unitary @ self.backend.density_matrix @ np.conjugate(unitary).T
-
     def unitary(self):
         return insert_gate(self.single_qubit_unitary, self.reindexed_targeted_qubits[0], self.backend.n_qubits)
 
-class MPCNOT(CNOT):
-    """
-    CNOT gate is a sum of do_nothing when the control qubit is 0, and flip_target when the control qubit is 1.
-    """
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+class MPCNOT(MPComponent):
+    def __init__(self, backend, *, qubits):
+        super().__init__(backend, qubits)
 
     def unitary(self):
         control_qubit = self.reindexed_targeted_qubits[0]
@@ -131,7 +128,3 @@ class MPCNOT(CNOT):
         flip_target = insert_gate(pauli_x(), target_qubit, self.backend.n_qubits)
 
         return project_control_onto_zero + project_control_onto_one @ flip_target
-    
-    def apply(self):
-        unitary = self.unitary()
-        self.backend.density_matrix = unitary @ self.backend.density_matrix @ np.conjugate(unitary).T

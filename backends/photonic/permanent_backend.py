@@ -6,9 +6,10 @@ import itertools
 import scipy
 import math
 import numpy as np
+from abc import abstractmethod
+from backends.component import Component
 from backends.backend import PhotonicBackend
-from backends.photonic.components import BeamSplitter, Switch, PhaseShift, Loss, Detector
-from backends.utils import spin_y_matrix, tuple_to_str
+from backends.utils import spin_y_matrix, tuple_to_str, degrees_to_radians, pauli_x
 
 
 class PermanentBackend(PhotonicBackend):
@@ -98,9 +99,12 @@ class PermanentBackend(PhotonicBackend):
     def eliminate_tolerance(self, tol=1E-10):
         self.output_probabilities[np.abs(self.output_probabilities) < tol] = 0
 
-class PermanentBeamSplitter(BeamSplitter):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+class PermanentComponent(Component):
+    def __init__(self, backend, wires):
+        super().__init__(backend)
+
+        self.wires = wires
+        self.reindexed_wires = [w - 1 for w in wires]
 
     def apply(self):
         unitary = self.unitary()
@@ -108,56 +112,61 @@ class PermanentBeamSplitter(BeamSplitter):
 
     def unitary(self):
         unitary = np.eye(self.backend.n_wires, dtype=complex)
-        unitary[np.ix_(self.reindexed_wires, self.reindexed_wires)] = self.two_wire_unitary()
+        unitary[np.ix_(self.reindexed_wires, self.reindexed_wires)] = self.sub_unitary()
         return unitary
+    
+    @abstractmethod
+    def sub_unitary(self):
+        """Unitary operator in the subspace of the wires affected by the component."""
+        raise NotImplementedError
 
-    def two_wire_unitary(self):
-        """Unitary operator in the space of the two wires connected by the beam splitter."""
+
+class PermanentBeamSplitter(PermanentComponent):
+    def __init__(self, backend, *, wires, theta=90):
+        super().__init__(backend, wires)
+
+        self.theta = degrees_to_radians(theta)
+
+    def sub_unitary(self):
         return scipy.linalg.expm(1j*(self.theta/2)*spin_y_matrix(2))
 
 
-class PermanentSwitch(Switch):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-    def apply(self):
-        unitary = self.unitary()
-        self.backend.circuit_unitary = unitary @ self.backend.circuit_unitary
-
-    def unitary(self):
-        unitary = np.eye(self.backend.n_wires, dtype=complex)
-        unitary[np.ix_(self.reindexed_wires, self.reindexed_wires)] = self.two_wire_unitary()
-        return unitary
+class PermanentSwitch(PermanentComponent):
+    def __init__(self, backend, *, wires):
+        super().__init__(backend, wires)
     
-    def two_wire_unitary(self):
-        return np.array([[0, 1], [1, 0]])
+    def sub_unitary(self):
+        return pauli_x()
 
 
-class PermanentPhaseShift(PhaseShift):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+class PermanentPhaseShift(PermanentComponent):
+    def __init__(self, backend, *, wires, phase = 180):
+        super().__init__(backend, wires)
 
-    def apply(self):
-        unitary = self.unitary()
-        self.backend.circuit_unitary = unitary @ self.backend.circuit_unitary
-
-    def unitary(self):
-        unitary = np.eye(self.backend.n_wires, dtype=complex)
-        unitary[self.reindexed_wires[0], self.reindexed_wires[0]] = np.exp(1j*self.phase)
-        return unitary
+        self.phase = degrees_to_radians(phase)
+    
+    def sub_unitary(self):
+        return np.exp(1j*self.phase)
 
 
-class PermanentLoss(Loss):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+class PermanentLoss(PermanentComponent):
+    def __init__(self, backend, *, wires, eta = 1):
+        super().__init__(backend, wires)
+
+        self.eta = eta
 
     def apply(self):
         raise ValueError("Loss is not implemented yet in the permanent backend.")
+    
+    def sub_unitary(self):
+        pass
 
 
-class PermanentDetector(Detector):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+class PermanentDetector(PermanentComponent):
+    def __init__(self, backend, *, wires, herald):
+        super().__init__(backend, wires)
+
+        self.herald = herald
 
     def apply(self):
         for rank in range(self.backend.hilbert_dimension):
@@ -168,3 +177,6 @@ class PermanentDetector(Detector):
 
         if len(self.backend.occupied_ranks) == 0:
             raise ValueError("No population remaining.")
+        
+    def sub_unitary(self):
+        pass

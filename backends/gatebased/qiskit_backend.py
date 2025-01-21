@@ -1,8 +1,9 @@
 from qiskit import QuantumCircuit, transpile
 from qiskit_aer.aerprovider import AerSimulator
 import numpy as np
+from abc import abstractmethod
+from backends.component import Component
 from backends.backend import GateBasedBackend
-from backends.gatebased.components import PauliGate, Hadamard, CNOT
 from backends.utils import computational_basis_to_rho, tuple_to_str
 
 class QiskitBackend(GateBasedBackend):
@@ -55,37 +56,34 @@ class QiskitBackend(GateBasedBackend):
     def basis_strings(self):
         return [tuple_to_str(self.rank_to_basis(rank)[::-1]) for rank in self.occupied_ranks] # qiskit uses a reversed tensor product space
 
-class QiskitXGate(PauliGate):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+class QiskitComponent(Component):
+    def __init__(self, backend, qubits, gate_function):
+        super().__init__(backend)
+
+        self.targeted_qubits = qubits
+        self.reindexed_targeted_qubits = [q - 1 for q in qubits]
+
+        self.gate_function = gate_function
 
     def apply(self):
-        self.backend.circuit.x(self.reindexed_targeted_qubits[0])
+        self.gate_function(*self.reindexed_targeted_qubits)
 
-class QiskitYGate(PauliGate):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+class QiskitXGate(QiskitComponent):
+    def __init__(self, backend, *, qubits):
+        super().__init__(backend, qubits, backend.circuit.x)
 
-    def apply(self):
-        self.backend.circuit.y(self.reindexed_targeted_qubits[0])
+class QiskitYGate(QiskitComponent):
+    def __init__(self, backend, *, qubits):
+        super().__init__(backend, qubits, backend.circuit.y)
 
-class QiskitZGate(PauliGate):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+class QiskitZGate(QiskitComponent):
+    def __init__(self, backend, *, qubits):
+        super().__init__(backend, qubits, backend.circuit.z)
 
-    def apply(self):
-        self.backend.circuit.z(self.reindexed_targeted_qubits[0])
+class QiskitHadamard(QiskitComponent):
+    def __init__(self, backend, *, qubits):
+        super().__init__(backend, qubits, backend.circuit.h)
 
-class QiskitHadamard(Hadamard):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-    def apply(self):
-        self.backend.circuit.h(self.reindexed_targeted_qubits[0])
-
-class QiskitCNOT(CNOT):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-    def apply(self):
-        self.backend.circuit.cx(self.reindexed_targeted_qubits[0], self.reindexed_targeted_qubits[1])
+class QiskitCNOT(QiskitComponent):
+    def __init__(self, backend, *, qubits):
+        super().__init__(backend, qubits, backend.circuit.cx)

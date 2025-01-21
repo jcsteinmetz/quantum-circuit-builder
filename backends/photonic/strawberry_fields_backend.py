@@ -2,8 +2,9 @@ from backends.backend import PhotonicBackend
 import strawberryfields as sf
 from strawberryfields.ops import Fock, Vac, BSgate, Interferometer, LossChannel, MeasureFock, Rgate
 import numpy as np
-from backends.utils import tuple_to_str, fock_hilbert_dimension_fixed_number
-from backends.photonic.components import BeamSplitter, Switch, PhaseShift, Loss, Detector
+from abc import abstractmethod
+from backends.component import Component
+from backends.utils import tuple_to_str, degrees_to_radians
 
 class SFBackend(PhotonicBackend):
     def __init__(self, n_wires, n_photons):
@@ -80,41 +81,60 @@ class SFBackend(PhotonicBackend):
     def eliminate_tolerance(self, tol=1E-10):
         self.output_probabilities[np.abs(self.output_probabilities) < tol] = 0
 
-class SFBeamSplitter(BeamSplitter):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+class SFComponent(Component):
+    def __init__(self, backend, wires):
+        super().__init__(backend)
+
+        self.wires = wires
+        self.reindexed_wires = [w - 1 for w in wires]
+
+    @abstractmethod
+    def apply(self):
+        raise NotImplementedError
+
+class SFBeamSplitter(SFComponent):
+    def __init__(self, backend, *, wires, theta=90):
+        super().__init__(backend, wires)
+
+        self.theta = degrees_to_radians(theta)
 
     def apply(self):
         with self.backend.circuit.context as q:
             BSgate(self.theta/2, 0) | (q[self.reindexed_wires[0]], q[self.reindexed_wires[1]])
 
-class SFSwitch(Switch):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+class SFSwitch(SFComponent):
+    def __init__(self, backend, *, wires):
+        super().__init__(backend, wires)
 
     def apply(self):
         with self.backend.circuit.context as q:
             Interferometer(np.array([[0, 1], [1, 0]])) | (q[self.reindexed_wires[0]], q[self.reindexed_wires[1]])
 
-class SFLoss(Loss):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+class SFPhaseShift(SFComponent):
+    def __init__(self, backend, *, wires, phase = 180):
+        super().__init__(backend, wires)
 
-    def apply(self):
-        with self.backend.circuit.context as q:
-            LossChannel(self.eta) | (q[self.reindexed_wires[0]])
-
-class SFPhaseShift(PhaseShift):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        self.phase = degrees_to_radians(phase)
 
     def apply(self):
         with self.backend.circuit.context as q:
             Rgate(self.phase) | q[self.reindexed_wires[0]]
 
-class SFDetector(Detector):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+class SFLoss(SFComponent):
+    def __init__(self, backend, *, wires, eta = 1):
+        super().__init__(backend, wires)
+
+        self.eta = eta
+
+    def apply(self):
+        with self.backend.circuit.context as q:
+            LossChannel(self.eta) | (q[self.reindexed_wires[0]])
+
+class SFDetector(SFComponent):
+    def __init__(self, backend, *, wires, herald):
+        super().__init__(backend, wires)
+
+        self.herald = herald
 
     def apply(self):
         with self.backend.circuit.context as q:

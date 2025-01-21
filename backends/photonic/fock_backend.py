@@ -5,9 +5,10 @@ Basic Fock state model for fixed photon number
 import numpy as np
 import math
 import scipy
+from abc import abstractmethod
+from backends.component import Component
 from backends.backend import PhotonicBackend
-from backends.photonic.components import BeamSplitter, Switch, PhaseShift, Loss, Detector
-from backends.utils import rank_to_fock_basis, fock_hilbert_dimension, spin_y_matrix, tuple_to_str
+from backends.utils import rank_to_fock_basis, fock_hilbert_dimension, spin_y_matrix, tuple_to_str, degrees_to_radians
 
 class FockBackend(PhotonicBackend):
     def __init__(self, n_wires, n_photons):
@@ -51,17 +52,31 @@ class FockBackend(PhotonicBackend):
     def eliminate_tolerance(self, tol=1E-10):
         self.density_matrix[np.abs(self.density_matrix) < tol] = 0
 
-class FockBeamSplitter(BeamSplitter):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+class FockComponent(Component):
+    def __init__(self, backend, wires):
+        super().__init__(backend)
 
-        self.photon_count_per_rank = {}
-
-        self.two_wire_unitaries = {n_photons: self.two_wire_unitary(n_photons) for n_photons in range(self.backend.n_photons+1)}
+        self.wires = wires
+        self.reindexed_wires = [w - 1 for w in wires]
 
     def apply(self):
         unitary = self.unitary()
         self.backend.density_matrix = unitary @ self.backend.density_matrix @ np.conjugate(unitary).T
+
+    @abstractmethod
+    def unitary(self):
+        raise NotImplementedError
+
+
+class FockBeamSplitter(FockComponent):
+    def __init__(self, backend, *, wires, theta=90):
+        super().__init__(backend, wires)
+
+        self.theta = degrees_to_radians(theta)
+
+        self.photon_count_per_rank = {}
+
+        self.two_wire_unitaries = {n_photons: self.two_wire_unitary(n_photons) for n_photons in range(self.backend.n_photons+1)}
 
     def unitary(self):
         """Unitary operator in the full Fock space."""
@@ -116,36 +131,29 @@ class FockBeamSplitter(BeamSplitter):
             connected_ranks.append(self.backend.basis_to_rank(tuple(basis_element)))
         return connected_ranks
     
-class FockSwitch(Switch):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-    def apply(self):
-        unitary = self.unitary()
-        self.backend.density_matrix = unitary @ self.backend.density_matrix @ np.conjugate(unitary).T
+class FockSwitch(FockComponent):
+    def __init__(self, backend, *, wires):
+        super().__init__(backend, wires)
 
     def unitary(self):
         """Switch operator in the full Fock space."""
         hilbert = self.backend.hilbert_dimension
         unitary = np.zeros((hilbert, hilbert), dtype=complex)
 
+        i, j = self.reindexed_wires
         for rank in self.backend.occupied_ranks:
             switched_basis_element = list(self.backend.rank_to_basis(rank))
-            i, j = self.reindexed_wires
             switched_basis_element[i], switched_basis_element[j] = switched_basis_element[j], switched_basis_element[i]
-            switched_basis_element = tuple(switched_basis_element)
-            switched_rank = self.backend.basis_to_rank(switched_basis_element)
+            switched_rank = self.backend.basis_to_rank(tuple(switched_basis_element))
             unitary[switched_rank, rank] = 1
 
         return unitary
     
-class FockPhaseShift(PhaseShift):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+class FockPhaseShift(FockComponent):
+    def __init__(self, backend, *, wires, phase = 180):
+        super().__init__(backend, wires)
 
-    def apply(self):
-        unitary = self.unitary()
-        self.backend.density_matrix = unitary @ self.backend.density_matrix @ np.conjugate(unitary).T
+        self.phase = degrees_to_radians(phase)
 
     def unitary(self):
         """Switch operator in the full Fock space."""
@@ -166,17 +174,22 @@ class FockPhaseShift(PhaseShift):
 
         return unitary
     
-class FockLoss(Loss):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+class FockLoss(FockComponent):
+    def __init__(self, backend, *, wires, eta = 1):
+        super().__init__(backend, wires)
+
+        self.eta = eta
 
     def apply(self):
         self.backend.density_matrix = sum([kraus @ self.backend.density_matrix @ np.conjugate(kraus).T for kraus in self.kraus_operators().values()])
 
+    def unitary(self):
+        pass
+
     def kraus_operators(self):
-        kraus_operators = {}
+        kraus_operators = {lost_photons: np.zeros((self.backend.hilbert_dimension, self.backend.hilbert_dimension)) for lost_photons in range(self.backend.n_photons + 1)}
+
         for lost_photons in range(self.backend.n_photons + 1):
-            kraus_operators[lost_photons] = np.zeros((self.backend.hilbert_dimension, self.backend.hilbert_dimension))
 
             for rank in self.backend.occupied_ranks:
                 basis_element = self.backend.rank_to_basis(rank)
@@ -189,18 +202,22 @@ class FockLoss(Loss):
                     kraus_operators[lost_photons][new_rank, rank] = np.sqrt(math.comb(photons_in_wire, lost_photons))*self.eta**((photons_in_wire - lost_photons)/2)*(1 - self.eta)**(lost_photons / 2)
         return kraus_operators
     
-class FockDetector(Detector):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+class FockDetector(FockComponent):
+    def __init__(self, backend, *, wires, herald):
+        super().__init__(backend, wires)
+
+        self.herald = herald
 
     def apply(self):
         for rank in self.backend.occupied_ranks:
             basis_element = np.array(self.backend.rank_to_basis(rank))
             keep = np.all(basis_element[self.reindexed_wires] == self.herald)
-            print(basis_element, keep)
             if not keep:
                 self.backend.density_matrix[rank, :] = 0
                 self.backend.density_matrix[:, rank] = 0
 
         if len(self.backend.occupied_ranks) == 0:
             raise ValueError("No population remaining.")
+        
+    def unitary(self):
+        pass

@@ -1,9 +1,9 @@
-import numpy as np
 import perceval as pcvl
+from abc import abstractmethod
 from perceval.components import BS, PS, PERM, LC
 from backends.backend import PhotonicBackend
-from backends.photonic.components import BeamSplitter, Switch, PhaseShift, Loss, Detector
-from backends.utils import tuple_to_str
+from backends.component import Component
+from backends.utils import tuple_to_str, degrees_to_radians
 
 class PercevalBackend(PhotonicBackend):
     def __init__(self, n_wires, n_photons):
@@ -47,10 +47,23 @@ class PercevalBackend(PhotonicBackend):
     @property
     def basis_strings(self):
         return [tuple_to_str(key) for key in self.output_dict.keys()]
+    
+class PercevalComponent(Component):
+    def __init__(self, backend, wires):
+        super().__init__(backend)
 
-class PercevalBeamSplitter(BeamSplitter):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        self.wires = wires
+        self.reindexed_wires = [w - 1 for w in wires]
+
+    @abstractmethod
+    def apply(self):
+        raise NotImplementedError
+
+class PercevalBeamSplitter(PercevalComponent):
+    def __init__(self, backend, *, wires, theta=90):
+        super().__init__(backend, wires)
+
+        self.theta = degrees_to_radians(theta)
 
     def apply(self):
         # Perceval can only do beam splitters and switches on consecutive wires (it claims it can handle non-consecutive wires but it doesn't seem to work)
@@ -69,23 +82,27 @@ class PercevalBeamSplitter(BeamSplitter):
         if switched:
             self.backend.circuit.add(all_wires, PERM(permuted_wires))
 
-class PercevalSwitch(Switch):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+class PercevalSwitch(PercevalComponent):
+    def __init__(self, backend, *, wires):
+        super().__init__(backend, wires)
 
     def apply(self):
         self.backend.circuit.add(tuple(self.reindexed_wires), PERM([1, 0]))
 
-class PercevalPhaseShift(PhaseShift):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+class PercevalPhaseShift(PercevalComponent):
+    def __init__(self, backend, *, wires, phase = 180):
+        super().__init__(backend, wires)
+
+        self.phase = degrees_to_radians(phase)
 
     def apply(self):
         self.backend.circuit.add(self.reindexed_wires, PS(phi = self.phase))
 
-class PercevalLoss(Loss):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+class PercevalLoss(PercevalComponent):
+    def __init__(self, backend, *, wires, eta = 1):
+        super().__init__(backend, wires)
+
+        self.eta = eta
 
     def apply(self):
         for wire in range(self.backend.n_wires):
@@ -94,9 +111,11 @@ class PercevalLoss(Loss):
             else:
                 self.backend.circuit.add(wire, LC(0)) # perceval seems to have a problem with applying loss to only 1 wire
 
-class PercevalDetector(Detector):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+class PercevalDetector(PercevalComponent):
+    def __init__(self, backend, *, wires, herald):
+        super().__init__(backend, wires)
+
+        self.herald = herald
 
     def apply(self):
         for w, h in zip(self.reindexed_wires, self.herald):
