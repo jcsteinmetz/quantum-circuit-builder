@@ -3,13 +3,12 @@ from PySide6.QtGui import QPainter, QWheelEvent, QMouseEvent
 from PySide6.QtCore import QEvent, Qt
 from UI.canvas.grid import Grid
 from UI.canvas.canvas_tools import Select, CanvasTool
-from UI.component import Detector, ComponentRenderer
+from UI.component import Detector
+from UI.component_renderer import ComponentRenderer
 import numpy as np
 
 class Canvas(QWidget):
-    """
-    The main working area where circuit components can be drawn.
-    """
+    """The main working area where circuit components can be drawn."""
     def __init__(self, window):
         super().__init__()
         self.window = window
@@ -32,16 +31,12 @@ class Canvas(QWidget):
         self.active_tool = None
 
     def update_styles(self):
-        """
-        Change the colours of the canvas background and grid depending on the current theme.
-        """
+        """Change the colours of the canvas background and grid depending on the current theme."""
         self.bg_color = self.window.style_manager.get_style("bg_color")
         self.gridline_color = self.window.style_manager.get_style("gridline_color")
 
     def paintEvent(self, event):
-        """
-        Repaints the canvas.
-        """
+        """Repaints the canvas."""
         painter = QPainter(self)
 
         # Draw the grid
@@ -56,17 +51,13 @@ class Canvas(QWidget):
             self.component_renderer.preview(painter, self.active_tool)
 
     def all_placed_components(self):
-        """
-        Returns a list of all components, no matter their type.
-        """
+        """Returns a list of all components, no matter their type."""
         for comp_list in self.placed_components.values():
             for comp in comp_list[:]:
                 yield comp
 
     def eventFilter(self, obj, event):
-        """
-        Calls the corresponding action when a mouse event occurs on the canvas.
-        """
+        """Calls the corresponding action when a mouse event occurs on the canvas."""
         if obj == self:
             handlers = {
                 QEvent.MouseButtonPress: self.on_mouse_press,
@@ -82,9 +73,7 @@ class Canvas(QWidget):
         return super().eventFilter(obj, event)
     
     def initialize_active_tool(self):
-        """
-        Start with the Select tool.
-        """
+        """Start with the Select tool."""
         self.active_tool = Select(self.window)
         self.installEventFilter(self)
 
@@ -101,16 +90,12 @@ class Canvas(QWidget):
 
     @property
     def n_wires(self):
-        """
-        Current number of wires on the canvas.
-        """
+        """Current number of wires on the canvas."""
         return len(self.placed_components["wires"])
     
     @property
     def n_photons(self):
-        """
-        Current number of photons entered into the simulation.
-        """
+        """Current number of photons entered into the simulation."""
         n_photons = 0
         for wire in self.placed_components["wires"]:
             n_photons += wire.n_photons
@@ -126,18 +111,19 @@ class Canvas(QWidget):
         self.placed_components["detectors"] = sorted(self.placed_components["detectors"], key = lambda comp: (comp.node_positions[0][1], comp.node_positions[0][0]))
 
     def deselect_all(self):
-        """
-        Deselects all components on the canvas.
-        """
+        """Deselects all components on the canvas."""
         for comp in self.all_placed_components():
             comp.is_selected = False
             comp.property_box.hide()
         self.update()
 
+    def snap_all_components(self):
+        """Snaps all placed components to the grid"""
+        for comp in self.all_placed_components():
+            comp.snap()
+
     def drag(self, delta):
-        """
-        Drag the canvas, including the grid and all components, by an amount delta
-        """
+        """Drag the canvas, including the grid and all components, by an amount delta"""
         # Move the grid
         self.grid.offset = (self.grid.offset[0] - delta[0], self.grid.offset[1] - delta[1])
 
@@ -146,9 +132,7 @@ class Canvas(QWidget):
             comp.move(delta)
 
     def recenter(self):
-        """
-        Resets the canvas offset to return to the original position.
-        """
+        """Resets the canvas offset to return to the original position."""
         self.drag(self.grid.offset)
         self.repaint()
 
@@ -177,9 +161,7 @@ class Canvas(QWidget):
         self.preview_enabled = False
 
     def place(self, comp):
-        """
-        Place a component on the canvas. The component is drawn and saved in placed_components.
-        """
+        """Place a component on the canvas. The component is drawn and saved in placed_components."""
         self.active_tool = comp.__class__(self.window)
         if comp.direction == "H":
             self.placed_components["wires"].append(comp)
@@ -194,9 +176,7 @@ class Canvas(QWidget):
         self.window.mark_unsaved_changes()
 
     def on_mouse_press(self, event: QMouseEvent):
-        """
-        Action to perform when a mouse press occurs on the canvas.
-        """
+        """Action to perform when a mouse press occurs on the canvas."""
         if isinstance(self.active_tool, CanvasTool):
             self.active_tool.on_mouse_press(event)
 
@@ -212,9 +192,7 @@ class Canvas(QWidget):
             self.deselect_all()
 
     def on_mouse_move(self, event: QMouseEvent):
-        """
-        Action to perform when the mouse is moved on the canvas.
-        """
+        """Action to perform when the mouse is moved on the canvas."""
         if isinstance(self.active_tool, CanvasTool):
             self.active_tool.on_mouse_move(event)
         # Update the mouse position
@@ -222,9 +200,7 @@ class Canvas(QWidget):
         self.update()
 
     def on_mouse_release(self, event: QMouseEvent):
-        """
-        Action to perform when the mouse button is released on the canvas.
-        """
+        """Action to perform when the mouse button is released on the canvas."""
         if isinstance(self.active_tool, CanvasTool):
             self.active_tool.on_mouse_release(event)
         if event.button() == Qt.LeftButton:
@@ -233,9 +209,7 @@ class Canvas(QWidget):
             self.update()
 
     def on_mouse_enter(self, event):
-        """
-        Action to perform when the mouse enters the canvas.
-        """
+        """Action to perform when the mouse enters the canvas."""
         # Begin tracking the mouse position
         self.current_mouse_position = event.position().toTuple()
 
@@ -248,9 +222,7 @@ class Canvas(QWidget):
         self.update()
     
     def on_mouse_leave(self, event):
-        """
-        Action to perform when the mouse leaves the canvas.
-        """
+        """Action to perform when the mouse leaves the canvas."""
         # Stop tracking the mouse position
         self.current_mouse_position = None
 
@@ -263,9 +235,7 @@ class Canvas(QWidget):
         self.update()
 
     def on_mouse_wheel(self, event: QWheelEvent):
-        """
-        Action to perform when the mouse wheel scrolls on the canvas.
-        """
+        """Action to perform when the mouse wheel scrolls on the canvas."""
         # Zoom the canvas
         zoom_delta = event.angleDelta().y() / 120
         self.zoom(zoom_delta)
