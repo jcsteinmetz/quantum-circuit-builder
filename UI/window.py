@@ -72,7 +72,6 @@ class MainWindow(QMainWindow):
         if self.redo_stack:
             self.redo_stack.clear()
 
-        self.update_undo_stack()
         self.unsaved_changes = True
         self.update_title()
 

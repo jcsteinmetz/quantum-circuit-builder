@@ -173,6 +173,7 @@ class Canvas(QWidget):
         self.sort_components()
         self.window.console.refresh()
         self.window.control_panel.components_tab.refresh()
+        self.window.update_undo_stack()
         self.window.mark_unsaved_changes()
 
     def on_mouse_press(self, event: QMouseEvent):

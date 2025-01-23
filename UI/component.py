@@ -161,6 +161,7 @@ class Component(ABC):
                         comp.delete()
 
         self.window.mark_unsaved_changes()
+        self.window.update_undo_stack()
         self.window.console.refresh()
 
     def move(self, delta):
