@@ -34,19 +34,19 @@ class PercevalBackend(PhotonicBackend):
         self.circuit.with_input(pcvl.BasicState(list(input_basis_element)))
 
     @property
-    def probabilities(self):
+    def _probabilities(self):
         pass
     
     @property
-    def occupied_ranks(self):
+    def _occupied_ranks(self):
         pass
     
     @property
-    def nonzero_probabilities(self):
+    def _nonzero_probabilities(self):
         return self.output_dict.values()
     
     @property
-    def basis_strings(self):
+    def _basis_strings(self):
         return [tuple_to_str(key) for key in self.output_dict.keys()]
     
 class PercevalComponent(Component):

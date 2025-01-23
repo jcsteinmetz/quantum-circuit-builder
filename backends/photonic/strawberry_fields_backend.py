@@ -4,7 +4,7 @@ from strawberryfields.ops import Fock, Vac, BSgate, Interferometer, LossChannel,
 import numpy as np
 from abc import abstractmethod
 from backends.component import Component
-from backends.utils import tuple_to_str, degrees_to_radians
+from backends.utils import tuple_to_str, degrees_to_radians, eliminate_tolerance
 
 class SFBackend(PhotonicBackend):
     def __init__(self, n_wires, n_photons):
@@ -28,7 +28,7 @@ class SFBackend(PhotonicBackend):
         results = self.eng.run(self.circuit)
 
         self.output_probabilities = np.real(np.copy(results.state.all_fock_probs()))
-        self.eliminate_tolerance()
+        self.output_probabilities = eliminate_tolerance(self.output_probabilities)
 
     def set_input_state(self, input_basis_element):
         super().set_input_state(input_basis_element)
@@ -40,19 +40,19 @@ class SFBackend(PhotonicBackend):
                     Fock(n_photons) | q[wire]
     
     @property
-    def occupied_ranks(self):
-        return np.nonzero(self.probabilities)[0]
+    def _occupied_ranks(self):
+        return np.nonzero(self._probabilities)[0]
     
     @property
-    def nonzero_probabilities(self):
-        return self.probabilities[self.occupied_ranks]
+    def _nonzero_probabilities(self):
+        return self._probabilities[self._occupied_ranks]
     
     @property
-    def basis_strings(self):
-        return [tuple_to_str(self.rank_to_basis(rank)) for rank in self.occupied_ranks]
+    def _basis_strings(self):
+        return [tuple_to_str(self.rank_to_basis(rank)) for rank in self._occupied_ranks]
     
     @property
-    def probabilities(self):
+    def _probabilities(self):
         """
         Strawberry Fields stores density matrix elements in a multidimensional array, where the
         indices are occupation numbers for each wire. For example, output_probabilities[0, 3] is
@@ -78,9 +78,6 @@ class SFBackend(PhotonicBackend):
             prob_vector.extend(sector_probabilities[::-1]) # strawberry fields uses reverse lex order
 
         return np.array(prob_vector)
-
-    def eliminate_tolerance(self, tol=1E-10):
-        self.output_probabilities[np.abs(self.output_probabilities) < tol] = 0
 
 class SFComponent(Component):
     def __init__(self, backend, wires):

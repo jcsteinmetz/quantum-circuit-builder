@@ -4,7 +4,7 @@ Basic matrix product model
 
 import numpy as np
 from abc import abstractmethod
-from backends.utils import insert_gate, pauli_x, pauli_y, pauli_z, computational_basis_to_rho, tuple_to_str
+from backends.utils import insert_gate, pauli_x, pauli_y, pauli_z, computational_basis_to_rho, tuple_to_str, eliminate_tolerance
 from backends.backend import GateBasedBackend
 from backends.component import Component
 
@@ -34,26 +34,23 @@ class MPBackend(GateBasedBackend):
     def run(self):
         for comp in self.component_list:
             comp.apply()
-            self.eliminate_tolerance()
+        self.density_matrix = eliminate_tolerance(self.density_matrix)
 
     @property
-    def probabilities(self):
+    def _probabilities(self):
         return np.real(self.density_matrix.diagonal())
     
     @property
-    def occupied_ranks(self):
-        return np.nonzero(self.probabilities)[0]
+    def _occupied_ranks(self):
+        return np.nonzero(self._probabilities)[0]
     
     @property
-    def nonzero_probabilities(self):
-        return self.probabilities[self.occupied_ranks]
+    def _nonzero_probabilities(self):
+        return self._probabilities[self._occupied_ranks]
     
     @property
-    def basis_strings(self):
-        return [tuple_to_str(self.rank_to_basis(rank)) for rank in self.occupied_ranks]
-        
-    def eliminate_tolerance(self, tol=1E-10):
-        self.density_matrix[np.abs(self.density_matrix) < tol] = 0
+    def _basis_strings(self):
+        return [tuple_to_str(self.rank_to_basis(rank)) for rank in self._occupied_ranks]
 
 class MPComponent(Component):
     def __init__(self, backend, qubits):

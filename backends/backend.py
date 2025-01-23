@@ -25,7 +25,7 @@ class BaseBackend(ABC):
 
     def get_output_data(self):
         """Returns a 2-column array containing basis elements and their probabilities."""
-        return fill_table(self.basis_strings, self.nonzero_probabilities)
+        return fill_table(self._basis_strings, self._nonzero_probabilities)
 
     @abstractmethod
     def rank_to_basis(self, rank):
@@ -39,21 +39,31 @@ class BaseBackend(ABC):
 
     @property
     @abstractmethod
-    def basis_strings(self):
+    def _basis_strings(self):
         """String representations of nonzero basis elements, ex. '0101'."""
         raise NotImplementedError
     
     @property
     @abstractmethod
-    def nonzero_probabilities(self):
-        """Probabilities associated with nonzero basis elements, in the same order as basis_strings."""
+    def _probabilities(self):
+        raise NotImplementedError
+    
+    @property
+    @abstractmethod
+    def _occupied_ranks(self):
+        raise NotImplementedError
+    
+    @property
+    @abstractmethod
+    def _nonzero_probabilities(self):
+        """Probabilities associated with nonzero basis elements, in the same order as _basis_strings."""
         raise NotImplementedError
 
     @property
     @abstractmethod
     def hilbert_dimension(self):
         """Dimension of the Hilbert space."""
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def set_input_state(self, input_basis_element):
@@ -71,7 +81,7 @@ class BaseBackend(ABC):
     
     @abstractmethod
     def validate_input_state(self, input_basis_element):
-        pass
+        raise NotImplementedError
 
 
 class PhotonicBackend(BaseBackend):

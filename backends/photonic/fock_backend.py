@@ -8,7 +8,7 @@ import scipy
 from abc import abstractmethod
 from backends.component import Component
 from backends.backend import PhotonicBackend
-from backends.utils import rank_to_fock_basis, fock_hilbert_dimension, spin_y_matrix, tuple_to_str, degrees_to_radians
+from backends.utils import rank_to_fock_basis, fock_hilbert_dimension, spin_y_matrix, tuple_to_str, degrees_to_radians, eliminate_tolerance
 
 class FockBackend(PhotonicBackend):
     def __init__(self, n_wires, n_photons):
@@ -32,26 +32,23 @@ class FockBackend(PhotonicBackend):
     def run(self):
         for comp in self.component_list:
             comp.apply()
-            self.eliminate_tolerance()
+        self.density_matrix = eliminate_tolerance(self.density_matrix)
 
     @property
-    def probabilities(self):
+    def _probabilities(self):
         return np.real(self.density_matrix.diagonal())
     
     @property
-    def occupied_ranks(self):
-        return np.nonzero(self.probabilities)[0]
+    def _occupied_ranks(self):
+        return np.nonzero(self._probabilities)[0]
     
     @property
-    def nonzero_probabilities(self):
-        return self.probabilities[self.occupied_ranks]
+    def _nonzero_probabilities(self):
+        return self._probabilities[self._occupied_ranks]
     
     @property
-    def basis_strings(self):
-        return [tuple_to_str(self.rank_to_basis(rank)) for rank in self.occupied_ranks]
-        
-    def eliminate_tolerance(self, tol=1E-10):
-        self.density_matrix[np.abs(self.density_matrix) < tol] = 0
+    def _basis_strings(self):
+        return [tuple_to_str(self.rank_to_basis(rank)) for rank in self._occupied_ranks]
 
 class FockComponent(Component):
     def __init__(self, backend, wires):
@@ -77,7 +74,6 @@ class FockBeamSplitter(FockComponent):
         super().__init__(backend, wires)
 
         self.photon_count_per_rank = {}
-
         self.two_wire_unitaries = {n_photons: self.two_wire_unitary(n_photons) for n_photons in range(self.backend.n_photons+1)}
 
     def validate(self):
@@ -115,7 +111,7 @@ class FockBeamSplitter(FockComponent):
         photon_count_per_rank = {}
 
         # For each rank, count the photons in self.wires
-        for rank in self.backend.occupied_ranks:
+        for rank in self.backend._occupied_ranks:
             basis_element = np.array(self.backend.rank_to_basis(rank))
             photon_count_per_rank[rank] = int(sum(basis_element[self.reindexed_wires]))
         return photon_count_per_rank
@@ -149,7 +145,7 @@ class FockSwitch(FockComponent):
         unitary = np.zeros((hilbert, hilbert), dtype=complex)
 
         i, j = self.reindexed_wires
-        for rank in self.backend.occupied_ranks:
+        for rank in self.backend._occupied_ranks:
             switched_basis_element = list(self.backend.rank_to_basis(rank))
             switched_basis_element[i], switched_basis_element[j] = switched_basis_element[j], switched_basis_element[i]
             switched_rank = self.backend.basis_to_rank(tuple(switched_basis_element))
@@ -175,7 +171,7 @@ class FockPhaseShift(FockComponent):
         if self.phase == 0 or self.phase == 2*np.pi:
             return unitary
 
-        for rank in self.backend.occupied_ranks:
+        for rank in self.backend._occupied_ranks:
             basis_element = self.backend.rank_to_basis(rank)
             photons_in_wire = basis_element[self.reindexed_wires[0]]
 
@@ -207,7 +203,7 @@ class FockLoss(FockComponent):
 
         for lost_photons in range(self.backend.n_photons + 1):
 
-            for rank in self.backend.occupied_ranks:
+            for rank in self.backend._occupied_ranks:
                 basis_element = self.backend.rank_to_basis(rank)
                 photons_in_wire = basis_element[self.reindexed_wires[0]]
 
@@ -229,14 +225,14 @@ class FockDetector(FockComponent):
         self.validate_detector(self.wires, self.herald)
 
     def apply(self):
-        for rank in self.backend.occupied_ranks:
+        for rank in self.backend._occupied_ranks:
             basis_element = np.array(self.backend.rank_to_basis(rank))
             keep = np.all(basis_element[self.reindexed_wires] == self.herald)
             if not keep:
                 self.backend.density_matrix[rank, :] = 0
                 self.backend.density_matrix[:, rank] = 0
 
-        if len(self.backend.occupied_ranks) == 0:
+        if len(self.backend._occupied_ranks) == 0:
             raise ValueError("No population remaining.")
         
     def unitary(self):

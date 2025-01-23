@@ -74,3 +74,7 @@ def tuple_to_str(tup):
 def fill_table(col1, col2):
     """Combines two columns of data into a 2-column array."""
     return np.array(list(zip(col1, col2)), dtype=object)
+
+def eliminate_tolerance(mat, tol=1E-10):
+    mat[np.abs(mat) < tol] = 0
+    return mat

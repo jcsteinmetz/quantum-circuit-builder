@@ -25,10 +25,10 @@ class QiskitBackend(GateBasedBackend):
 
     def set_input_state(self, input_basis_element):
         super().set_input_state(input_basis_element)
-        self.density_matrix = self.create_density_matrix(input_basis_element)
+        self.density_matrix = self._create_density_matrix(input_basis_element)
         self.circuit.set_density_matrix(self.density_matrix)
 
-    def create_density_matrix(self, input_basis_element):
+    def _create_density_matrix(self, input_basis_element):
         density_matrix = computational_basis_to_rho(input_basis_element[0])
         for qubit in reversed(range(1, self.n_qubits)): # qiskit uses a reversed tensor product space
             density_matrix = np.kron(density_matrix, computational_basis_to_rho(input_basis_element[qubit]))
@@ -48,20 +48,20 @@ class QiskitBackend(GateBasedBackend):
         self.density_matrix = result.data().get('density_matrix')
 
     @property
-    def probabilities(self):
+    def _probabilities(self):
         return np.real(self.density_matrix.diagonal())
     
     @property
-    def occupied_ranks(self):
-        return np.nonzero(self.probabilities)[0]
+    def _occupied_ranks(self):
+        return np.nonzero(self._probabilities)[0]
     
     @property
-    def nonzero_probabilities(self):
-        return self.probabilities[self.occupied_ranks]
+    def _nonzero_probabilities(self):
+        return self._probabilities[self._occupied_ranks]
     
     @property
-    def basis_strings(self):
-        return [tuple_to_str(self.rank_to_basis(rank)[::-1]) for rank in self.occupied_ranks] # qiskit uses a reversed tensor product space
+    def _basis_strings(self):
+        return [tuple_to_str(self.rank_to_basis(rank)[::-1]) for rank in self._occupied_ranks] # qiskit uses a reversed tensor product space
 
 class QiskitComponent(Component):
     def __init__(self, backend, qubits, gate_function):

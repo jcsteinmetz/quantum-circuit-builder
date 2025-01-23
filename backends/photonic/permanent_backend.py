@@ -9,7 +9,7 @@ import numpy as np
 from abc import abstractmethod
 from backends.component import Component
 from backends.backend import PhotonicBackend
-from backends.utils import spin_y_matrix, tuple_to_str, degrees_to_radians, pauli_x
+from backends.utils import spin_y_matrix, tuple_to_str, degrees_to_radians, pauli_x, eliminate_tolerance
 
 
 class PermanentBackend(PhotonicBackend):
@@ -45,7 +45,7 @@ class PermanentBackend(PhotonicBackend):
             if isinstance(comp, PermanentDetector):
                 comp.apply()
 
-        self.eliminate_tolerance()
+        self.output_probabilities = eliminate_tolerance(self.output_probabilities)
 
     def output_probability(self, circuit_unitary, output_basis_element):
         circuit_submatrix = self.submatrix(circuit_unitary, output_basis_element)
@@ -82,23 +82,20 @@ class PermanentBackend(PhotonicBackend):
         return total
     
     @property
-    def probabilities(self):
+    def _probabilities(self):
         return self.output_probabilities
     
     @property
-    def occupied_ranks(self):
-        return np.nonzero(self.probabilities)[0]
+    def _occupied_ranks(self):
+        return np.nonzero(self._probabilities)[0]
     
     @property
-    def nonzero_probabilities(self):
-        return self.probabilities[self.occupied_ranks]
+    def _nonzero_probabilities(self):
+        return self._probabilities[self._occupied_ranks]
     
     @property
-    def basis_strings(self):
-        return [tuple_to_str(self.rank_to_basis(rank)) for rank in self.occupied_ranks]
-    
-    def eliminate_tolerance(self, tol=1E-10):
-        self.output_probabilities[np.abs(self.output_probabilities) < tol] = 0
+    def _basis_strings(self):
+        return [tuple_to_str(self.rank_to_basis(rank)) for rank in self._occupied_ranks]
 
 class PermanentComponent(Component):
     def __init__(self, backend, wires):
@@ -194,7 +191,7 @@ class PermanentDetector(PermanentComponent):
             if not keep:
                 self.backend.output_probabilities[rank] = 0
 
-        if len(self.backend.occupied_ranks) == 0:
+        if len(self.backend._occupied_ranks) == 0:
             raise ValueError("No population remaining.")
         
     def sub_unitary(self):
