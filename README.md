@@ -42,7 +42,7 @@ circuit = MPBackend(n_qubits = 2)
 ```
 The initial state is entered as a list of zeros and ones, which are the initial states of each qubit. For example, to input both qubits in the zero state, use
 ```
-circuit.set_input_state([0, 0])
+circuit.set_input_state((0, 0))
 ```
 Currently, more complicated input states like superpositions must be created with components.
 
@@ -68,7 +68,7 @@ circuit.FockBackend(n_wires = 4, n_photons = 2)
 ```
 The input state is a Fock state, which is the number of photons in each wire,
 ```
-circuit.set_input_state([1, 0, 1, 0])
+circuit.set_input_state((1, 0, 1, 0))
 ```
 This creates two dual-rail photonic qubits in the zero state.
 
