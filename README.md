@@ -20,6 +20,8 @@ Quantum Circuit Builder is a GUI for designing and simulating quantum linear opt
 * `QiskitBackend`: [Qiskit](https://github.com/qiskit) density matrix backend
 
 ## Installation
+Quantum Circuit Builder requires Python version 3.7, 3.8, 3.9, or 3.10, which are compatible with StrawberryFields.
+
 Clone the repository using
 ```
 git clone https://github.com/jcsteinmetz/quantum-circuit-designer
