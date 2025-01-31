@@ -25,9 +25,9 @@ Clone the repository using
 git clone https://github.com/jcsteinmetz/quantum-circuit-designer
 cd quantum-circuit-designer
 ```
-then install the package by running
+then install the requirements by running
 ```
-pip install .
+pip install -r requirements.txt
 ```
 
 ## Usage
