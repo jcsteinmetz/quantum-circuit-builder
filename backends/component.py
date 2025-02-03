@@ -30,8 +30,7 @@ class Component(ABC):
         self.validate_transmission(eta)
 
     def validate_detector(self, wires, herald):
-        self.validate_wires(wires, 1)
-        self.validate_herald(herald)
+        pass
 
     def validate_angle(self, angle):
         if not isinstance(angle, (int, float)):
@@ -59,7 +58,7 @@ class Component(ABC):
         if not isinstance(wires, list):
             raise TypeError("Wires must be a list.")
         if len(wires) != length:
-            raise ValueError(f"Wires must contain exactly {length} elements.")
+            raise ValueError(f"Wires must contain exactly {length} element(s).")
         if not all(isinstance(wire, int) for wire in wires):
             raise TypeError("All elements in wires must be integers.")
         if len(set(wires)) != length:
