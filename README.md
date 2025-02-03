@@ -13,7 +13,7 @@ Quantum Circuit Builder is a GUI for designing and simulating quantum linear opt
 ### Photonic
 * `FockBackend`: Fock space demo backend
 * `PermanentBackend`: Matrix permanent demo backend
-* `SFBackend`: [Strawberry fields](https://github.com/XanaduAI/strawberryfields) Fock backend
+* `MrMustardBackend`: [MrMustard](https://github.com/XanaduAI/MrMustard) backend
 * `PercevalBackend`: [Perceval](https://github.com/Quandela/Perceval) Naive backend
 ### Gate-based
 * `MPBackend`: Matrix product demo backend
