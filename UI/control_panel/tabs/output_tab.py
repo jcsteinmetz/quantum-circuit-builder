@@ -12,9 +12,6 @@ class OutputTab(QWidget):
         self.output_table.setHorizontalHeaderLabels(["Basis state", "Probability"])
         self.table_data = None
 
-        # self.output_table = QTextEdit()
-        # self.output_table.setReadOnly(True)
-
         self.error_message = QTextEdit()
         self.error_message.setReadOnly(True)
 
