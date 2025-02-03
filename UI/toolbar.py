@@ -7,7 +7,7 @@ from PySide6.QtWidgets import QFileDialog, QSizePolicy, QWidget, QToolBar, QAppl
 from PySide6.QtGui import QAction, QActionGroup, QIcon
 from UI.component import Wire, BeamSplitter, Switch, Loss, Detector, PhaseShift, XGate, YGate, ZGate, Hadamard, Qubit, CNOT
 from UI.canvas import Select, Grab
-from backends import FockBackend, PermanentBackend, SFBackend, PercevalBackend, MPBackend, QiskitBackend
+from backends import FockBackend, PermanentBackend, MrMustardBackend, PercevalBackend, MPBackend, QiskitBackend
 
 class ToolBar(QToolBar):
     """
@@ -50,7 +50,7 @@ class ToolBar(QToolBar):
             backend_options = {
                 "Fock backend": FockBackend,
                 "Permanent backend": PermanentBackend,
-                "Strawberry fields": SFBackend,
+                "Mr Mustard": MrMustardBackend,
                 "Perceval": PercevalBackend
             }
         else:
