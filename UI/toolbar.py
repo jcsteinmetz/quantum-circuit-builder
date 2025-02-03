@@ -3,6 +3,7 @@ Contains the ToolBar class.
 """
 import os
 from functools import partial
+import qtawesome as qta
 from PySide6.QtWidgets import QFileDialog, QSizePolicy, QWidget, QToolBar, QApplication, QComboBox, QStyle
 from PySide6.QtGui import QAction, QActionGroup, QIcon
 from UI.component import Wire, BeamSplitter, Switch, Loss, Detector, PhaseShift, XGate, YGate, ZGate, Hadamard, Qubit, CNOT
@@ -24,16 +25,27 @@ class ToolBar(QToolBar):
         self.clear() # clear the toolbar in case it has previously been set up
 
         # Button icons
-        open_icon = self.style().standardIcon(QStyle.StandardPixmap.SP_DialogOpenButton)
-        save_icon = self.style().standardIcon(QStyle.StandardPixmap.SP_DialogSaveButton)
-        undo_icon = self.style().standardIcon(QStyle.StandardPixmap.SP_ArrowBack)
-        redo_icon = self.style().standardIcon(QStyle.StandardPixmap.SP_ArrowForward)
+        open_icon = qta.icon("fa.folder-open")
+        save_icon = qta.icon("fa.save")
+        undo_icon = qta.icon("fa5s.undo")
+        redo_icon = qta.icon("fa5s.redo")
         recenter_icon = QIcon("assets/recenter.png")
-        run_icon = self.style().standardIcon(QStyle.StandardPixmap.SP_MediaPlay)
-        delete_icon = self.style().standardIcon(QStyle.StandardPixmap.SP_DialogCancelButton)
+        run_icon = qta.icon("fa.play")
+        delete_icon = qta.icon("fa.eraser")
         darkmode_icon = QIcon("assets/darkmode.png")
-        clear_icon = self.style().standardIcon(QStyle.StandardPixmap.SP_DialogDiscardButton)
-        quit_icon = self.style().standardIcon(QStyle.StandardPixmap.SP_DialogCloseButton)
+        clear_icon = qta.icon("fa.trash")
+        quit_icon = qta.icon("fa.close")
+
+        # open_icon = self.style().standardIcon(qta.icon('fa.google'))
+        # save_icon = self.style().standardIcon(QStyle.StandardPixmap.SP_DialogSaveButton)
+        # undo_icon = self.style().standardIcon(QStyle.StandardPixmap.SP_ArrowBack)
+        # redo_icon = self.style().standardIcon(QStyle.StandardPixmap.SP_ArrowForward)
+        # recenter_icon = QIcon("assets/recenter.png")
+        # run_icon = self.style().standardIcon(QStyle.StandardPixmap.SP_MediaPlay)
+        # delete_icon = self.style().standardIcon(QStyle.StandardPixmap.SP_DialogCancelButton)
+        # darkmode_icon = QIcon("assets/darkmode.png")
+        # clear_icon = self.style().standardIcon(QStyle.StandardPixmap.SP_DialogDiscardButton)
+        # quit_icon = self.style().standardIcon(QStyle.StandardPixmap.SP_DialogCloseButton)
 
         # Tools (name of tool class, tool icon)
         if self.window.simulation_type == "photonic":
