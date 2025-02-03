@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QWidget, QTableWidget, QCheckBox, QLineEdit, QHBoxLayout, QVBoxLayout, QTableWidgetItem
+from PySide6.QtWidgets import QWidget, QTableWidget, QCheckBox, QLineEdit, QHBoxLayout, QVBoxLayout, QTableWidgetItem, QLabel
 from PySide6.QtGui import QBrush, QColor
 from PySide6.QtCore import Qt
 import numpy as np
@@ -21,8 +21,14 @@ class InputStateTab(QWidget):
 
         # Gram tab layout
         gram_tab_layout = QVBoxLayout()
-        gram_tab_layout.addWidget(self.gram_table)
-        gram_tab_layout.addLayout(uniform_layout)
+
+        # Temporary incomplete message, until distinguishability is added
+        # gram_tab_layout.addWidget(self.gram_table)
+        # gram_tab_layout.addLayout(uniform_layout)
+        under_construction_label = QLabel("Custom input states are not implemented yet for this backend.")
+        under_construction_label.setWordWrap(True)
+        gram_tab_layout.addWidget(under_construction_label)
+
         self.setLayout(gram_tab_layout)
 
         self.uniform_checkbox.stateChanged.connect(self.update_obbm)

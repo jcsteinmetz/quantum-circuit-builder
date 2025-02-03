@@ -14,7 +14,7 @@ class ControlPanel(QTabWidget):
         self.addTab(self.components_tab, "Components")
 
         self.input_state_tab = InputStateTab(window)
-        self.addTab(self.input_state_tab, "Input state (disabled)")
+        self.addTab(self.input_state_tab, "Input state")
         
         self.output_tab = OutputTab(window)
         self.addTab(self.output_tab, "Output")
