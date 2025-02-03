@@ -16,6 +16,7 @@ class Canvas(QWidget):
         self.setMouseTracking(True)
         self.current_mouse_position = None
         self.mouse_pressed_position = None
+        self.double_click_flag = False
         self.preview_enabled = False
         self.gram_matrix = np.ones((0, 0))
 
@@ -65,7 +66,8 @@ class Canvas(QWidget):
                 QEvent.MouseButtonRelease: self.on_mouse_release,
                 QEvent.Enter: self.on_mouse_enter,
                 QEvent.Leave: self.on_mouse_leave,
-                QEvent.Wheel: self.on_mouse_wheel
+                QEvent.Wheel: self.on_mouse_wheel,
+                QEvent.MouseButtonDblClick: self.on_double_click
             }
             handler = handlers.get(event.type())
             if handler:
@@ -202,12 +204,15 @@ class Canvas(QWidget):
 
     def on_mouse_release(self, event: QMouseEvent):
         """Action to perform when the mouse button is released on the canvas."""
-        if isinstance(self.active_tool, CanvasTool):
-            self.active_tool.on_mouse_release(event)
-        if event.button() == Qt.LeftButton:
-            # Forget where the mouse press occured
-            self.mouse_pressed_position = None
-            self.update()
+        if not self.double_click_flag:
+            if isinstance(self.active_tool, CanvasTool):
+                self.active_tool.on_mouse_release(event)
+            if event.button() == Qt.LeftButton:
+                # Forget where the mouse press occured
+                self.mouse_pressed_position = None
+                self.update()
+        else:
+            self.double_click_flag = False
 
     def on_mouse_enter(self, event):
         """Action to perform when the mouse enters the canvas."""
@@ -241,3 +246,6 @@ class Canvas(QWidget):
         zoom_delta = event.angleDelta().y() / 120
         self.zoom(zoom_delta)
         self.update()
+
+    def on_double_click(self, event: QMouseEvent):
+        self.double_click_flag = True
