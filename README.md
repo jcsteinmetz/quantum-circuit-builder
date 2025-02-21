@@ -69,7 +69,7 @@ which is a table containing each basis state and its associated probability, whi
 ### Photonic circuits
 The main difference with photonic circuits is that instead of giving the backend the number of qubits, we give it the number of wires and photons. For example, to create a circuit in the Fock space demo backend that is analogous to the circuit we just created, use
 ```
-circuit.FockBackend(n_wires = 4, n_photons = 2)
+circuit = FockBackend(n_wires = 4, n_photons = 2)
 ```
 The input state is a Fock state, which is the number of photons in each wire,
 ```
